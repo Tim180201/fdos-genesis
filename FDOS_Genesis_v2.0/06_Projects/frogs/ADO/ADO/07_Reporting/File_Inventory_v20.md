@@ -1,0 +1,61 @@
+# File Inventory v20 – übernommen aus v19.2
+
+Diese Liste wurde vor der v20-Umstrukturierung erstellt. Keine der aufgeführten Dateien wurde gelöscht.
+
+| # | Datei |
+|---:|---|
+| 1 | `ADO/00_Core/Decision_Log.md` |
+| 2 | `ADO/00_Core/Project_Status.md` |
+| 3 | `ADO/00_Core/Risk_Register.md` |
+| 4 | `ADO/00_Core/Sprint_Overview.md` |
+| 5 | `ADO/00_Startup/ADO_Working_Principles.md` |
+| 6 | `ADO/00_Startup/Product_Context.md` |
+| 7 | `ADO/00_Startup/Project_Vision.md` |
+| 8 | `ADO/00_Startup/Role_Workflow.md` |
+| 9 | `ADO/01_Cases/ADO_Case_F010_QA.md` |
+| 10 | `ADO/01_Cases/ADO_Case_F011_DevOps.md` |
+| 11 | `ADO/01_Cases/ADO_Case_F012_Dev.md` |
+| 12 | `ADO/01_Cases/ADO_Case_F013_QA.md` |
+| 13 | `ADO/01_Cases/ADO_Case_F014_Dev.md` |
+| 14 | `ADO/02_Results/Result_F008_Architect.md` |
+| 15 | `ADO/02_Results/Result_F010_QA.md` |
+| 16 | `ADO/02_Results/Result_F011_DevOps.md` |
+| 17 | `ADO/02_Results/Result_F012_Dev.md` |
+| 18 | `ADO/02_Results/Result_F013_QA.md` |
+| 19 | `ADO/03_Coordinator/Coordinator_Assessment_F008.md` |
+| 20 | `ADO/03_Coordinator/Coordinator_Assessment_F010.md` |
+| 21 | `ADO/03_Coordinator/Coordinator_Assessment_F011.md` |
+| 22 | `ADO/03_Coordinator/Coordinator_Assessment_F012.md` |
+| 23 | `ADO/03_Coordinator/Coordinator_Assessment_F013.md` |
+| 24 | `ADO/03_Project/Decision_Log.md` |
+| 25 | `ADO/03_Project/GoLive_Checklist.md` |
+| 26 | `ADO/03_Project/Project_Status.md` |
+| 27 | `ADO/03_Project/Risk_Register.md` |
+| 28 | `ADO/03_Project/Sprint_Overview.md` |
+| 29 | `ADO/04_FDOS/Best_Practices.md` |
+| 30 | `ADO/04_FDOS/Learnings.md` |
+| 31 | `ADO/04_FDOS/Patterns.md` |
+| 32 | `ADO/04_FDOS/Retrospective.md` |
+| 33 | `ADO/04_Risks/Risk_Register.md` |
+| 34 | `ADO/05_Decisions/Decision_Log.md` |
+| 35 | `ADO/05_Templates/ADO_Case_Template.md` |
+| 36 | `ADO/05_Templates/Decision_Template.md` |
+| 37 | `ADO/05_Templates/Result_Template.md` |
+| 38 | `ADO/05_Templates/Risk_Template.md` |
+| 39 | `ADO/90_Archive/Cases/ADO_Case_F003_QA.md` |
+| 40 | `ADO/90_Archive/Cases/ADO_Case_F004_Dev.md` |
+| 41 | `ADO/90_Archive/Cases/ADO_Case_F005_QA.md` |
+| 42 | `ADO/90_Archive/Cases/ADO_Case_F006_Dev.md` |
+| 43 | `ADO/90_Archive/Cases/ADO_Case_F008_Architect.md` |
+| 44 | `ADO/90_Archive/Cases/ADO_Case_F009_Dev.md` |
+| 45 | `ADO/90_Archive/Coordinator/Coordinator_Assessment_F005.md` |
+| 46 | `ADO/90_Archive/Coordinator/Coordinator_Assessment_F007.md` |
+| 47 | `ADO/90_Archive/Results/Result_F001_Architect_SUMMARY.md` |
+| 48 | `ADO/90_Archive/Results/Result_F002_Product_SUMMARY.md` |
+| 49 | `ADO/90_Archive/Results/Result_F005_QA.md` |
+| 50 | `ADO/90_Archive/Results/Result_F006_Dev.md` |
+| 51 | `ADO/90_Archive/Results/Result_F007_QA.md` |
+| 52 | `ADO/99_Handover/Coordinator_Handover_Protocol.md` |
+| 53 | `ADO/99_Handover/New_Chat_Start_Prompt.md` |
+| 54 | `ADO/Coordinator/Coordinator_Assessment_F003.md` |
+| 55 | `ADO/Results/Result_F003_QA.md` |
