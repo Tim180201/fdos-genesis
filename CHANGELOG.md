@@ -154,3 +154,12 @@
 
 ## v3.11.9 Draft
 - Completed AI Collaboration Standard.
+
+## v3.12.0 Clean LTS
+- Synchronized repository README with current Clean LTS baseline.
+- Added repository index.
+- Added repository cleanup report.
+- Added FDOS Object Library.
+- Added FDOS Core Object Definitions.
+- Preserved Core stability and avoided new capabilities.
+- Confirmed frogs status/security documentation issue as project evidence, not Core change.
