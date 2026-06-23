@@ -1,11 +1,12 @@
-# FDOS Genesis v3.8 LTS
+# FDOS Genesis
 
 Status: Long-Term Stable  
-Release Type: Architecture Baseline  
+Repository Baseline: v3.12.0 Clean LTS  
+Mode: Project Validation
 
-FDOS Genesis v3.8 LTS is the stable architecture baseline of the Genesis phase.
+FDOS Genesis is the stable architecture baseline of the Genesis phase.
 
-The FDOS Core is now considered stable.
+The FDOS Core is considered stable.
 
 Future evolution should originate from validated evidence in real projects.
 
@@ -17,53 +18,42 @@ Reality has priority over architecture.
 
 FDOS exists to serve products, customers and organizations — never itself.
 
+## Current Active Areas
+
+```text
+00_Specification/              FDOS Core specification and governance
+01_AI/                         AI Constitution, Agent Constitutions and Collaboration Standard
+02_Reference_Implementations/  Reusable implementations of FDOS concepts
+03_Projects/                   Project references and validation targets
+04_Evidence/                   Evidence packages and validation artifacts
+05_Knowledge/                  Organizational knowledge assets
+Archive/                       Historical or deprecated material
+```
+
+## v3.12.0 Clean LTS Synchronization
+
+This repository baseline synchronizes the GitHub repository with the current Genesis content state.
+
+It does not introduce a new Core capability.
+
+It clarifies repository structure, object terminology and evidence handling.
+
 ## Next Step
 
 Use FDOS and ADO in real projects.
 
 Do not expand the Core until real evidence proves the need.
 
-
-## v3.8.1 LTS
-Minor governance hardening.
-
-
 ## Version Consistency Rule
 
 > **Bei widersprüchlichen Versionsinformationen gilt immer der tatsächlich vorhandene Projektinhalt. Versionsbezeichnungen dürfen niemals ohne Verifikation als korrekt angenommen werden.**
 
 Hinweis für AI-Agenten:
-- Erkennt ein Agent Versionsinkonsistenzen (ZIP, Ordnername, Baseline etc.), muss er diese dokumentieren.
+
+- Erkennt ein Agent Versionsinkonsistenzen, muss er diese dokumentieren.
 - Bis zur Klärung wird ausschließlich der tatsächlich enthaltene Projektinhalt verarbeitet.
 - Es dürfen keine Versionsannahmen getroffen werden.
-
-
----
-
-## AI-Agenten – Versionskonsistenz (verbindlich)
-
-AI-Agenten dürfen Versionsnummern niemals als alleinige Wahrheit betrachten.
-
-Bei widersprüchlichen Versionsinformationen gilt:
-
-1. Inkonsistenzen sind zu dokumentieren.
-2. Es dürfen keine Versionsannahmen getroffen werden.
-3. Maßgeblich ist bis zur Klärung ausschließlich der tatsächlich enthaltene Projektinhalt.
-4. Der Nutzer ist auf die Inkonsistenz hinzuweisen.
-5. Nach Klärung wird die neue Referenzversion übernommen.
-
-Diese Regel gilt für sämtliche FDOS-Projekte und Dokumentationen.
-
-
-### Empfehlung bei Versionsinkonsistenzen
-
-Nach der Dokumentation einer Versionsinkonsistenz soll der AI-Agent – sofern technisch möglich – zusätzlich eine unverbindliche Empfehlung zur Bereinigung geben.
-
-Beispielsweise:
-- Vereinheitlichung von Dateiname, Dokumentkopf und Metadaten.
-- Vergabe einer eindeutigen Referenzversion.
-- Kennzeichnung des aktuellen Status (Draft, Review, Stable oder LTS).
-
-Empfehlungen sind ausschließlich als Vorschlag zu formulieren und dürfen niemals automatisch als neue Referenz oder verbindliche Entscheidung übernommen werden.
+- Der Nutzer ist auf die Inkonsistenz hinzuweisen.
+- Nach Klärung wird die neue Referenzversion übernommen.
 
 Die endgültige Festlegung einer Referenzversion erfolgt ausschließlich durch einen verantwortlichen Menschen.
