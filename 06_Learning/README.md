@@ -1,7 +1,7 @@
 # FDOS Learning System
 
-Status: Foundation Charter  
-Release: Learning Foundation R1.0  
+Status: Active Learning Area  
+Release: Architecture Consolidation R2.8  
 Scope: Additive, backward-compatible
 
 ## Purpose
@@ -15,6 +15,20 @@ It develops organizational understanding.
 Software projects remain the primary source of organizational reality, but software delivery is not the final purpose of learning.
 
 The purpose of learning is to improve the organization's ability to make better future decisions.
+
+## Navigation
+
+Read the Learning area in this order:
+
+1. `01_Learning_Principles.md` — foundational learning rules.
+2. `02_Reality_Model.md` — distinction between Reality, Observation, Evidence and Knowledge.
+3. `03_Learning_Architecture.md` — responsibilities and boundaries between Projects, Learning, Research and Governance.
+4. `04_FDOS_Learning_Integration.md` — relationship to Evidence, Knowledge, Project ADO and FDOS Core.
+5. `05_Learning_Roadmap.md` — controlled evolution path.
+6. `06_Learning_Boundaries.md` — non-negotiable constraints.
+7. `07_Observation_Model.md` — conceptual entry point for organizational learning.
+8. `08_Organizational_Learning_Lifecycle.md` — continuous learning lifecycle.
+9. `09_Confidence_Model.md` — confidence levels and evaluation factors.
 
 ## Relationship to FDOS Core
 
@@ -55,6 +69,8 @@ AI may assist with observation, summarization, analysis and proposal preparation
 
 AI shall not independently turn learning into organizational standards.
 
+See also: `../01_AI/05_AI_Collaboration_Evolution.md`
+
 ## Relationship to Governance
 
 Learning never changes organizational standards directly.
@@ -64,6 +80,16 @@ Learning produces organizational input.
 Governance determines organizational truth.
 
 Human governance remains the final authority for Core evolution, standards, capabilities and organizational decisions.
+
+## Relationship to Specification
+
+The canonical architecture language is defined in:
+
+- `../00_Specification/Organizational_Vocabulary.md`
+- `../00_Specification/FDOS_Architecture_Map.md`
+- `../00_Specification/Organizational_Object_Model.md`
+
+Learning documents should reuse these definitions instead of redefining them.
 
 ## Guiding Principle
 
