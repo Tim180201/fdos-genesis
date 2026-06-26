@@ -163,3 +163,9 @@
 - Added FDOS Core Object Definitions.
 - Preserved Core stability and avoided new capabilities.
 - Confirmed frogs status/security documentation issue as project evidence, not Core change.
+
+## Architecture Consolidation R2.8
+- Consolidated `06_Learning/README.md` into the Learning area entry point and navigation document.
+- Updated `INDEX.md` with Learning area, recommended reading order and consolidation rule.
+- Updated `00_Specification/FDOS_Architecture_Map.md` with canonical references and closed-loop architecture framing.
+- Preserved all existing project compatibility and avoided new concepts or capabilities.
