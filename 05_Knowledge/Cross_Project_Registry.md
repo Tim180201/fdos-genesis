@@ -21,7 +21,10 @@ Project
 
 | ID | Type | Source Projects | Status | Next Step |
 |----|------|-----------------|--------|-----------|
-| KP-001 | Knowledge Candidate | TapTime | Candidate | Validate in additional projects |
+| KP-001 | Knowledge Candidate | TapTime | Candidate (with Known Limitation added, see document) | Validate in additional projects, specifically for multi-operator role separation |
+| CPE-001 | Cross-Project Evidence | frogs, TapTime | Evidence | Knowledge Owner review of KP-002 |
+| KP-002 | Knowledge Candidate | frogs, TapTime | Candidate | Knowledge Owner review; consider lightweight non-Core verification capability |
+| KP-003 | Knowledge Candidate | TapTime | Candidate | Validate in additional projects handling regulated personal data |
 
 ## Governance
 

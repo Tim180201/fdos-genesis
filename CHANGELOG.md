@@ -169,3 +169,12 @@
 - Updated `INDEX.md` with Learning area, recommended reading order and consolidation rule.
 - Updated `00_Specification/FDOS_Architecture_Map.md` with canonical references and closed-loop architecture framing.
 - Preserved all existing project compatibility and avoided new concepts or capabilities.
+
+## v3.12.1 Draft — TapTime Knowledge Intake
+- Added three Project Evidence records for TapTime under `04_Evidence/taptime/`: status/reality drift, single-operator role separation, and a regulated-data compliance checkpoint gap.
+- Added `05_Knowledge/Cross_Project_Evidence/CPE-001_Status_Reality_Drift.md`, linking the existing frogs status/security evidence with the new TapTime evidence as two independent occurrences of the same failure mode.
+- Added Knowledge Candidates `KP-002_Status_Reality_Drift_Requires_Automated_Verification.md` and `KP-003_Regulated_Data_Compliance_Guardrail.md`.
+- Amended `KP-001_Role_vs_Agent_Instance.md` with a Known Limitation section (single-operator evidence from the same source project).
+- Updated `05_Knowledge/Cross_Project_Registry.md` with CPE-001, KP-002 and KP-003.
+- Evidence and reasoning: see the linked evidence and knowledge-candidate documents. Per Evidence Governance Minimum, none of this is Validated Evidence yet; all items remain at Evidence/Candidate confidence pending Knowledge Owner review.
+- No FDOS Core change. No new capability created. No Object ID Registry entry added (no `FDOS-*` identifiers were assigned).
