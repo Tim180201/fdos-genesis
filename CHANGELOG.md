@@ -170,6 +170,13 @@
 - Updated `00_Specification/FDOS_Architecture_Map.md` with canonical references and closed-loop architecture framing.
 - Preserved all existing project compatibility and avoided new concepts or capabilities.
 
+## v3.12.2 Draft — TapTime Knowledge Intake (Sprint 011–015 Follow-up)
+- Added two further Project Evidence records for TapTime under `04_Evidence/taptime/`: status drift persisting unchanged through Development Sprint 015 despite the project's own "Critical"-priority self-diagnosis, and a depth-before-breadth sequencing observation (Organization/Membership domain built while Finding F-01, a core product-behavior decision, remained open).
+- Added Knowledge Candidates `KP-004_Diagnosis_Without_Remediation.md` (diagnosis quality and remediation follow-through are separate capabilities) and `KP-005_Sequencing_Decisions_Require_Explicit_Rationale.md` (work-sequencing choices need the same explicit rationale as content decisions).
+- Updated `05_Knowledge/Cross_Project_Registry.md` with KP-004 and KP-005.
+- All items remain at Evidence/Candidate confidence pending Knowledge Owner review, per Evidence Governance Minimum.
+- No FDOS Core change. No new capability created. No `FDOS-*` identifiers assigned.
+
 ## v3.12.1 Draft — TapTime Knowledge Intake
 - Added three Project Evidence records for TapTime under `04_Evidence/taptime/`: status/reality drift, single-operator role separation, and a regulated-data compliance checkpoint gap.
 - Added `05_Knowledge/Cross_Project_Evidence/CPE-001_Status_Reality_Drift.md`, linking the existing frogs status/security evidence with the new TapTime evidence as two independent occurrences of the same failure mode.

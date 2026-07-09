@@ -25,6 +25,8 @@ Project
 | CPE-001 | Cross-Project Evidence | frogs, TapTime | Evidence | Knowledge Owner review of KP-002 |
 | KP-002 | Knowledge Candidate | frogs, TapTime | Candidate | Knowledge Owner review; consider lightweight non-Core verification capability |
 | KP-003 | Knowledge Candidate | TapTime | Candidate | Validate in additional projects handling regulated personal data |
+| KP-004 | Knowledge Candidate | TapTime | Candidate | Validate in additional projects; track diagnosis-vs-remediation gap explicitly |
+| KP-005 | Knowledge Candidate | TapTime | Candidate | Validate in additional projects; check Decision Logs for sequencing rationale |
 
 ## Governance
 
