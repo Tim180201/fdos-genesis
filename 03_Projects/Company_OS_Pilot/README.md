@@ -26,6 +26,11 @@ system with a small pilot:
 - exact, allowlisted read-only Git reference evidence;
 - Human-reviewed, evidence-bound knowledge candidates;
 - exclusive ownership of the local event store;
+- Ed25519-signed, short-lived Invocation Contexts;
+- exact organization, audience, principal, operation and command binding;
+- server-side Agent Registry role derivation;
+- persistent one-time Invocation consumption across restarts;
+- a deny-by-default authenticated command gateway;
 - tamper-evident audit events;
 - automated tests and evidence export.
 
@@ -36,6 +41,9 @@ system with a small pilot:
 - production operation;
 - real model calls;
 - real Slack, Teams, email, CRM or MCP connectors;
+- production identity provider, key custody or revocation;
+- exposure of the lower-level runtime to untrusted callers;
+- distributed replay protection or transactional command execution;
 - writes, builds or tests in TapTime or Company AI;
 - legal, financial, personnel, publication or deletion actions.
 
@@ -44,10 +52,12 @@ system with a small pilot:
 The pilot is technically complete when:
 
 1. the entire automated test suite passes;
-2. the deterministic demo completes all four steps;
-3. unauthorized access, approval replay and audit tampering are rejected;
-4. an evidence record documents results and limitations;
-5. no change occurred outside the FDOS repository.
+2. the authenticated deterministic demo completes all four steps;
+3. every demo command carries a verified one-time Invocation Context;
+4. unauthorized access, signature/command tampering, invocation replay,
+   approval replay and audit tampering are rejected;
+5. an evidence record documents results and limitations;
+6. no change occurred outside the FDOS repository.
 
 ## Reference Assessment
 

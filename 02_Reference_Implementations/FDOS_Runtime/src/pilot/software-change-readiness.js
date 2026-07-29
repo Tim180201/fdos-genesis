@@ -1,4 +1,6 @@
 import { FdosRuntime } from "../runtime/fdos-runtime.js";
+import { AuthenticatedRuntimeGateway } from "../runtime/authenticated-gateway.js";
+import { ValidationError } from "../kernel/errors.js";
 
 export const SOFTWARE_CHANGE_READINESS_WORKFLOW = Object.freeze({
   id: "company.software-change-readiness",
@@ -109,4 +111,25 @@ export async function openPilotRuntime(options = {}) {
       SOFTWARE_CHANGE_READINESS_WORKFLOW
     ]
   });
+}
+
+export async function openAuthenticatedPilotRuntime({
+  invocationVerifier,
+  ...options
+} = {}) {
+  if (typeof invocationVerifier?.verify !== "function") {
+    throw new ValidationError(
+      "Authenticated pilot runtime requires an invocation verifier."
+    );
+  }
+  const runtime = await openPilotRuntime({
+    ...options,
+    invocationVerifier
+  });
+  try {
+    return new AuthenticatedRuntimeGateway(runtime);
+  } catch (error) {
+    await runtime.close().catch(() => {});
+    throw error;
+  }
 }

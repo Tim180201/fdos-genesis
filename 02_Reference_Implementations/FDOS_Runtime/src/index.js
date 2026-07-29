@@ -42,6 +42,15 @@ export {
 export { EventLog } from "./kernel/event-log.js";
 export { RuntimeDirectoryLease } from "./kernel/runtime-lease.js";
 export {
+  INVOCATION_OPERATIONS,
+  InvocationVerifier,
+  LocalInvocationAuthority,
+  invocationCommandDigest,
+  invocationSubject,
+  normalizeInvocationCommand,
+  verifyInvocationReceipt
+} from "./identity/invocation.js";
+export {
   GitReferenceSource,
   verifyReferenceDocumentEvidence,
   verifyReferenceSnapshot
@@ -54,6 +63,10 @@ export {
   executeSoftwareChangeReadinessDemo
 } from "./pilot/demo.js";
 export {
+  executeAuthenticatedSoftwareChangeReadinessDemo
+} from "./pilot/authenticated-demo.js";
+export {
+  openAuthenticatedPilotRuntime,
   openPilotRuntime,
   SOFTWARE_CHANGE_READINESS_WORKFLOW
 } from "./pilot/software-change-readiness.js";
@@ -61,6 +74,9 @@ export {
   openPilotReferenceSource,
   PILOT_REFERENCE_POLICIES
 } from "./pilot/reference-sources.js";
+export {
+  AuthenticatedRuntimeGateway
+} from "./runtime/authenticated-gateway.js";
 export {
   FdosRuntime,
   verifyEvidenceBundle

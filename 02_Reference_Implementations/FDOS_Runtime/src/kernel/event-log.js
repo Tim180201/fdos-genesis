@@ -7,7 +7,7 @@ import {
   jsonClone
 } from "./canonical-json.js";
 import { IntegrityError, ValidationError } from "./errors.js";
-import { createId } from "./ids.js";
+import { assertId, createId } from "./ids.js";
 import { assertPlainObject, isoDate, requiredString } from "./validation.js";
 
 const EVENT_SCHEMA_VERSION = "1.0";
@@ -27,6 +27,34 @@ function validateActor(actor) {
     max: 160,
     pattern: /^[a-zA-Z0-9][a-zA-Z0-9:._-]+$/
   });
+  const hasInvocationId = actor.invocationId !== undefined;
+  const hasCorrelationId = actor.correlationId !== undefined;
+  if (hasInvocationId !== hasCorrelationId) {
+    throw new IntegrityError(
+      "Event actor invocation attribution is incomplete."
+    );
+  }
+  const attribution = hasInvocationId
+    ? {
+        invocationId: assertId(
+          actor.invocationId,
+          "event actor invocation id"
+        ),
+        correlationId: assertId(
+          actor.correlationId,
+          "event actor correlation id"
+        )
+      }
+    : {};
+  const allowedKeys = new Set([
+    "type",
+    "id",
+    ...(type === "agent" ? ["roleId"] : []),
+    ...(hasInvocationId ? ["invocationId", "correlationId"] : [])
+  ]);
+  if (Object.keys(actor).some((key) => !allowedKeys.has(key))) {
+    throw new IntegrityError("Event actor has an unexpected shape.");
+  }
   if (type === "agent") {
     return {
       type,
@@ -34,10 +62,11 @@ function validateActor(actor) {
       roleId: requiredString(actor.roleId, "event actor role id", {
         max: 64,
         pattern: /^[a-z][a-z0-9-]{1,63}$/
-      })
+      }),
+      ...attribution
     };
   }
-  return { type, id };
+  return { type, id, ...attribution };
 }
 
 function validateEvent(event, index, expectedPreviousHash) {

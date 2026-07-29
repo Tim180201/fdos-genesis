@@ -7,14 +7,18 @@ Production Status: Not Production Ready
 FDOS Runtime is a small executable kernel for testing whether FDOS can safely
 coordinate specialized AI roles as one organizational system.
 
-The first slice implements coordination infrastructure, not autonomous model
-calls. Callers supply the work results; the runtime governs who may act, in
-which order, within which information scope and under which approval.
+The current slices implement coordination and authenticated invocation
+infrastructure, not autonomous model calls. Callers supply the work results;
+the runtime governs who may act, in which order, within which information
+scope and under which approval.
 
 ## Implemented Scope
 
 - separate Chief of Staff, Operations and Marketing role definitions;
 - individually attributable and revocable agent instances assigned to roles;
+- Ed25519-signed, organization- and command-bound Invocation Contexts;
+- persistent one-time replay protection across runtime restarts;
+- exact authenticated-command schemas and correlation attribution;
 - capability-based authorization;
 - versioned workflow definitions and acyclic dependency validation;
 - immutable action intents with canonical SHA-256 bindings;
@@ -50,8 +54,10 @@ npm test
 npm run demo
 ```
 
-The demo creates a new local run below `.runtime/`, executes only internal
-preparation steps and prints a content-minimized evidence bundle.
+The demo creates an ephemeral local Ed25519 authority, gives the runtime only
+its public trust descriptor, executes a fully authenticated internal workflow
+below `.runtime/` and prints a content-minimized evidence bundle. It performs
+no external action.
 
 Read-only reference verification is explicit and prints no document content:
 
@@ -63,8 +69,9 @@ node src/cli.js reference-snapshot company-ai /absolute/path/to/company-ai-platf
 ## Architecture
 
 - `src/kernel/` — canonical serialization, identifiers and event integrity;
+- `src/identity/` — signed Invocation Contexts and public-key verification;
 - `src/domain/` — roles, action intents, policy and workflow definitions;
-- `src/runtime/` — event-sourced coordination, approvals and memory;
+- `src/runtime/` — authenticated gateway, coordination, approvals and memory;
 - `src/integrations/` — disabled-by-default, read-only reference boundaries;
 - `src/pilot/` — the three-role reference workflow;
 - `test/` — unit, security and end-to-end verification.
@@ -72,6 +79,7 @@ node src/cli.js reference-snapshot company-ai /absolute/path/to/company-ai-platf
 See:
 
 - `docs/ARCHITECTURE.md`
+- `docs/AUTHENTICATED_INVOCATIONS.md`
 - `docs/AGENT_AND_ROLE_MODEL.md`
 - `docs/SECURITY_MODEL.md`
 - `docs/PILOT_WORKFLOW.md`
@@ -79,6 +87,8 @@ See:
 
 ## Important Boundary
 
-Passing tests proves behavior only inside the local process-leased experiment.
-It does not prove production identity, infrastructure, connector or tenant
-security.
+Untrusted integrations must use `AuthenticatedRuntimeGateway`; the lower-level
+runtime object is an internal reference-kernel and test surface. Passing tests
+proves behavior only inside the local process-leased experiment. The ephemeral
+demo signer is not a production identity provider and does not prove
+infrastructure, connector or tenant security.

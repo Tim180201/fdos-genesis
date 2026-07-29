@@ -14,6 +14,12 @@ system vision without granting external autonomy.
 Human Governance
         │
         ▼
+Signed Invocation Context
+        │
+        ▼
+Authenticated Runtime Gateway
+        │
+        ▼
 Workflow Definition Registry
         │
         ▼
@@ -47,6 +53,21 @@ local process.
 The local store has one exclusive process owner. The lease prevents a second
 cooperating runtime from rehydrating stale state and appending a competing
 sequence. It does not make a multi-event transition transactional.
+
+### Authenticated invocation boundary
+
+Every untrusted command must enter through the authenticated gateway. A
+configured public-key verifier checks the Ed25519 signature, issuer, audience,
+organization, principal, exact operation, canonical command digest and
+validity window.
+
+The runtime consumes the Invocation ID in the event log before dispatch.
+Replays therefore remain denied after restart. A failed business command also
+consumes its Invocation ID.
+
+The local demo signer is intentionally separate from the gateway object. The
+runtime receives only a public trust descriptor. Production still requires an
+independent identity provider and governed key custody.
 
 ### Immutable execution scope
 
@@ -130,6 +151,14 @@ candidate ──human accept──> accepted
 candidate ──human reject──> rejected
 ```
 
+### Invocation
+
+```text
+issued ──signature, scope and time valid──> accepted/consumed
+issued ──invalid or expired──> denied
+accepted/consumed ──any replay──> denied
+```
+
 ## Persistence
 
 Events are stored as JSON Lines with:
@@ -138,6 +167,7 @@ Events are stored as JSON Lines with:
 - event identifier,
 - timestamp,
 - actor,
+- Invocation and correlation attribution where authenticated,
 - subject,
 - payload,
 - previous event hash,
@@ -150,7 +180,7 @@ are restricted to the local account where supported.
 
 These are not implemented:
 
-- authenticated actor identity provider;
+- production identity-provider federation and revocation;
 - transactional database event store;
 - message bus and durable queues;
 - model-provider adapter;

@@ -14,8 +14,8 @@ Experimental Track: FDOS Runtime Level 1, authorized by ADR-0043.
 
 ## Immediate Priorities
 
-1. Human-review both FDOS Company OS Pilot evidence records, the reference
-   adoption assessment and limitations.
+1. Human-review all three FDOS Company OS Pilot evidence records, the
+   authenticated-invocation limitations and the reference adoption assessment.
 2. Validate ADO through frogs.
 3. Continue TapTime using FDOS and ADO.
 4. Capture evidence from real project work.
@@ -53,7 +53,7 @@ Parallel experimental gate:
 ```text
 FDOS Runtime Level 1
 → Human Evidence Review
-→ Authenticated Identity Experiment
+→ Authenticated Identity Experiment (technical slice passed)
 → Transactional Event-Store Adapter
 → Authenticated Read-Only Sandboxed Connector
 → Single-Project Validation Decision

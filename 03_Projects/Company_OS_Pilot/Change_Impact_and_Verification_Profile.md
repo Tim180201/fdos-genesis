@@ -40,38 +40,47 @@ V4 and V5 cannot be claimed for an uncommitted local experiment.
 
 Baseline commit/tree:
 
-- FDOS commit: `09a1703defc4bcaf5590cc3aa4c9ed8339cd3994`
-- implementation remains an uncommitted FDOS working-tree candidate;
+- FDOS commit:
+  `60a66b171bf4134607b2014c79f18d0c2e62dd86`
+- FDOS tree:
+  `aae3f92260537c26a11344c3942034e355412b87`
+- the authenticated-invocation slice is evaluated as the change from that
+  published baseline;
 - external references are bound separately in
   `Reference_Adoption_Assessment.md`.
 
 Changed boundaries:
 
-- read-only Git reference adapter;
-- reference-source allowlists;
-- content-minimized document evidence;
-- evidence-bound Memory Candidates;
-- exclusive runtime-directory lease and runtime close lifecycle;
-- pilot documentation, risks, decisions, knowledge candidates and evidence.
+- signed Invocation Context creation and verification;
+- public-key trust-store configuration and bounded key rotation;
+- exact principal, organization, audience, operation, command and time binding;
+- persistent one-time Invocation consumption;
+- authenticated command dispatch and lower-level runtime isolation rule;
+- Agent Registry role derivation;
+- Invocation/correlation attribution in audit and exported evidence;
+- authenticated pilot, tests, governance, risks, knowledge and evidence.
 
 Risk class: R3.
 
 Rationale:
 
-- source trust affects organizational knowledge;
-- process ownership affects durable audit consistency;
-- memory provenance and persistence are governance/security boundaries.
+- identity establishes the premise for every later authorization decision;
+- replay handling and event rehydration affect durable execution semantics;
+- gateway bypass and trust-root bootstrap are security boundaries;
+- accepted identity metadata affects audit and evidence contracts.
 
-Selected verification:
+Selected verification and result:
 
-- V0: exact FDOS status/diff, `git diff --check`, navigation and source-manifest
-  verification;
-- V1: focused reference-source, evidence and runtime-lease tests;
-- V2: adversarial path, symlink, dirty-worktree, tamper, stale-lease,
-  concurrent-owner and closed-runtime tests;
-- V3: complete runtime test suite, coverage, deterministic demo, syntax checks
-  and final scope review;
-- V4: not available until a reviewed commit and CI run exist;
+- V0: exact FDOS status/diff, `git diff --check`, navigation, unsupported-claim
+  review and source-manifest verification passed;
+- V1: 16 focused authenticated-invocation tests and syntax checks passed;
+- V2: signature/claim/command tamper, time window, wrong organization/audience,
+  unknown key, role injection, connector identity, request smuggling, failed
+  command, sequential/concurrent/restart replay, handoff, retry/cancellation
+  and A2 approval paths passed;
+- V3: complete 79-test runtime regression, coverage, authenticated deterministic
+  demo and final scope review passed;
+- V4: not claimed; no independent exact-commit CI evidence is attached;
 - V5: not applicable and not authorized; no physical or external operation.
 
 Checks intentionally not run:
@@ -87,8 +96,10 @@ Evidence carried forward:
 
 - `EV-FDOS-RUNTIME-PILOT-001` remains the evidence record for the original
   49-test three-role slice;
-- new behavior is bound separately in
-  `EV-FDOS-REFERENCE-INTAKE-002`.
+- `EV-FDOS-REFERENCE-INTAKE-002` remains the evidence record for reference
+  intake and single-writer persistence;
+- authenticated-invocation behavior is bound separately in
+  `EV-FDOS-AUTHENTICATED-INVOCATION-003`.
 
 ## Required Completion Report
 

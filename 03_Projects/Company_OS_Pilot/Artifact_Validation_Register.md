@@ -28,6 +28,10 @@ promotion and not a production approval.
 | Content-minimized document evidence | Tested | Level 1 — Experimental | `EV-FDOS-REFERENCE-INTAKE-002` | Pending | Not ready |
 | Evidence-bound Memory Candidate bridge | Tested | Level 1 — Experimental | `EV-FDOS-REFERENCE-INTAKE-002` | Pending | Not ready |
 | Runtime directory lease | Tested | Level 1 — Experimental | `EV-FDOS-REFERENCE-INTAKE-002` | Pending | Not ready |
+| Ed25519 Invocation Context and verifier | Tested | Level 1 — Experimental | `EV-FDOS-AUTHENTICATED-INVOCATION-003` | Pending | Not ready |
+| Persistent one-time Invocation ledger | Tested | Level 1 — Experimental | `EV-FDOS-AUTHENTICATED-INVOCATION-003` | Pending | Not ready |
+| Authenticated Runtime Gateway | Tested | Level 1 — Experimental | `EV-FDOS-AUTHENTICATED-INVOCATION-003` | Pending | Not ready |
+| Authenticated three-role workflow | Tested | Level 1 — Experimental | `EV-FDOS-AUTHENTICATED-INVOCATION-003` | Pending | Not ready |
 | TapTime/Company AI adoption assessment | Tested as documentation/evidence | Level 1 — Experimental | exact reference manifests | Pending | Not applicable |
 
 ## Promotion Rule

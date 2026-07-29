@@ -30,6 +30,7 @@ Project
 | KP-006 | Knowledge Candidate | FDOS Company OS Pilot | Candidate / Level 1 experiment | Human review; validate exact intent binding with a sandboxed connector and an independent project |
 | KP-007 | Knowledge Candidate | TapTime, Company AI, FDOS Company OS Pilot | Candidate / Level 1 experiment | Human review; validate exact source binding through an authenticated read-only connector |
 | KP-008 | Knowledge Candidate | Company AI, FDOS Company OS Pilot | Candidate / Level 1 experiment | Human review; replace filesystem ownership with transactional worker fencing |
+| KP-009 | Knowledge Candidate | Company AI, FDOS Company OS Pilot | Candidate / Level 1 experiment | Human review; validate independent identity, revocation and transactional replay protection through a read-only sandboxed connector |
 
 ## Governance
 

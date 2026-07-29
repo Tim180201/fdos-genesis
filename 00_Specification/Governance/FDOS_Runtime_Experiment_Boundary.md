@@ -5,6 +5,9 @@ Authorized: 2026-07-29
 Validation Level: Level 1 — Experimental  
 Related Decision: `../ADR/ADR-0043_FDOS_Runtime_Level_1_Experiment.md`
 
+Related Identity Decision:
+`../ADR/ADR-0044_Authenticated_Invocation_Boundary_Experiment.md`
+
 ## Purpose
 
 Keep the FDOS Runtime experiment useful, reversible and constitutionally
@@ -17,6 +20,26 @@ publication authority.
 
 The runtime may coordinate bounded internal preparation work. It may not infer
 authority from technical capability or from the absence of an explicit denial.
+
+## Invocation Boundary
+
+Untrusted commands must enter through the authenticated runtime gateway.
+
+The gateway requires one signed Invocation Context bound to:
+
+- an explicitly trusted issuer and public key;
+- the FDOS runtime audience;
+- one organization;
+- one human or registered Agent Instance identifier;
+- one exact operation and command digest;
+- a short validity window;
+- a unique one-time Invocation ID.
+
+Caller-provided role claims are prohibited. FDOS derives an agent's role from
+the Agent Registry after identity verification.
+
+The local demo signing authority is experimental and may not be treated as a
+production identity provider. Connector principals remain denied.
 
 ## Execution Boundary
 
@@ -78,6 +101,8 @@ This experiment is not production ready.
 It provides:
 
 - domain controls,
+- local Ed25519-signed Invocation Context verification,
+- persistent one-time invocation replay rejection,
 - deterministic state transitions,
 - role checks,
 - approval binding,
@@ -86,6 +111,8 @@ It provides:
 It does not yet provide:
 
 - authenticated network identities,
+- production identity-provider federation or key revocation,
+- transactional identity acceptance plus command execution,
 - encryption key management,
 - transactional or distributed multi-process concurrency,
 - database transactions,
@@ -100,6 +127,9 @@ It does not yet provide:
 
 Execution must stop safely when:
 
+- an Invocation signature, issuer, audience or organization is invalid;
+- an Invocation is expired, not active, replayed or command-mismatched;
+- a caller attempts to provide a role inside authenticated identity claims;
 - an action type is unknown;
 - an action is classified below its registered minimum;
 - a capability is missing;

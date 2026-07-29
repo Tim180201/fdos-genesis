@@ -13,9 +13,13 @@ import {
   ValidationError
 } from "../kernel/errors.js";
 import { EventLog } from "../kernel/event-log.js";
-import { createId } from "../kernel/ids.js";
+import { assertId, createId } from "../kernel/ids.js";
 import { RuntimeDirectoryLease } from "../kernel/runtime-lease.js";
 import { verifyReferenceDocumentEvidence } from "../integrations/git-reference-source.js";
+import {
+  invocationSubject,
+  verifyInvocationReceipt
+} from "../identity/invocation.js";
 import {
   assertPlainObject,
   enumValue,
@@ -62,23 +66,57 @@ function normalizeActor(
   if (!actor || typeof actor !== "object" || Array.isArray(actor)) {
     throw new AuthorizationError("A structured actor identity is required.");
   }
+  const hasInvocationId = actor.invocationId !== undefined;
+  const hasCorrelationId = actor.correlationId !== undefined;
+  if (hasInvocationId !== hasCorrelationId) {
+    throw new AuthorizationError(
+      "Actor invocation attribution is incomplete."
+    );
+  }
+  const invocationAttribution = hasInvocationId
+    ? {
+        invocationId: assertId(
+          actor.invocationId,
+          "actor invocation id"
+        ),
+        correlationId: assertId(
+          actor.correlationId,
+          "actor correlation id"
+        )
+      }
+    : {};
   if (actor.type === "human" && human) {
     return immutableJson({
       type: "human",
       id: requiredString(actor.id, "human actor id", {
         max: 120,
         pattern: /^human:[a-zA-Z0-9][a-zA-Z0-9._-]+$/
-      })
+      }),
+      ...invocationAttribution
     });
   }
   if (actor.type === "agent" && agent) {
-    return agentRegistry.resolveActor(actor);
+    return immutableJson({
+      ...agentRegistry.resolveActor(actor),
+      ...invocationAttribution
+    });
   }
   throw new AuthorizationError(`Actor type ${actor.type || "<empty>"} is denied.`);
 }
 
 function requireHuman(actor, agentRegistry) {
   return normalizeActor(actor, agentRegistry, { human: true, agent: false });
+}
+
+function attributedSystemActor(triggerActor) {
+  if (!triggerActor?.invocationId || !triggerActor?.correlationId) {
+    return systemActor;
+  }
+  return immutableJson({
+    ...systemActor,
+    invocationId: triggerActor.invocationId,
+    correlationId: triggerActor.correlationId
+  });
 }
 
 function assertResultContract(task, result) {
@@ -165,6 +203,7 @@ export class FdosRuntime {
   #mutations;
   #runtimeLease;
   #leaseOwnership;
+  #invocationVerifier;
   #closed;
 
   static async open({
@@ -175,7 +214,8 @@ export class FdosRuntime {
     agentDefinitions = PILOT_AGENT_DEFINITIONS,
     actionDefinitions = [],
     workflowDefinitions = [],
-    runtimeLeaseOptions = {}
+    runtimeLeaseOptions = {},
+    invocationVerifier = null
   }) {
     const actionCatalog = new ActionCatalog(actionDefinitions);
     const roleRegistry = new RoleRegistry(roleDefinitions);
@@ -209,7 +249,8 @@ export class FdosRuntime {
         agentRegistry,
         workflowRegistry,
         runtimeLease,
-        leaseOwnership
+        leaseOwnership,
+        invocationVerifier
       });
       runtime.rehydrate();
       return runtime;
@@ -229,7 +270,8 @@ export class FdosRuntime {
     agentRegistry,
     workflowRegistry,
     runtimeLease,
-    leaseOwnership
+    leaseOwnership,
+    invocationVerifier
   }) {
     if (constructionToken !== RUNTIME_CONSTRUCTION_TOKEN) {
       throw new AuthorizationError(
@@ -248,6 +290,15 @@ export class FdosRuntime {
     this.#mutations = Promise.resolve();
     this.#runtimeLease = runtimeLease;
     this.#leaseOwnership = leaseOwnership;
+    if (
+      invocationVerifier !== null &&
+      typeof invocationVerifier?.verify !== "function"
+    ) {
+      throw new ValidationError(
+        "Runtime invocation verifier must expose verify()."
+      );
+    }
+    this.#invocationVerifier = invocationVerifier;
     this.#closed = false;
   }
 
@@ -326,6 +377,44 @@ export class FdosRuntime {
     });
     applyRuntimeEvent(this.#state, event);
     return event;
+  }
+
+  async acceptAuthenticatedInvocation({ invocation, command }) {
+    return this.mutate(async () => {
+      if (!this.#invocationVerifier) {
+        throw new PolicyError(
+          "Authenticated invocation verification is not configured."
+        );
+      }
+      const receipt = this.#invocationVerifier.verify(invocation, {
+        command
+      });
+      verifyInvocationReceipt(receipt);
+      if (this.#state.acceptedInvocations.has(receipt.invocationId)) {
+        throw new ConflictError(
+          `Invocation ${receipt.invocationId} was already consumed.`
+        );
+      }
+      const actor = normalizeActor(
+        {
+          ...receipt.principal,
+          invocationId: receipt.invocationId,
+          correlationId: receipt.correlationId
+        },
+        this.#agentRegistry
+      );
+      const acceptedAt = receipt.verifiedAt;
+      await this.append(
+        "identity.invocation.accepted",
+        actor,
+        invocationSubject(command, receipt.invocationId),
+        {
+          receipt,
+          acceptedAt
+        }
+      );
+      return immutableJson({ actor, receipt });
+    });
   }
 
   findRun(runId) {
@@ -730,14 +819,14 @@ export class FdosRuntime {
         completedAt
       });
 
-      await this.releaseHandoffParents(task.runId);
-      await this.releaseWorkflowDependencies(task.runId);
-      await this.finalizeRunIfComplete(task.runId);
+      await this.releaseHandoffParents(task.runId, normalizedActor);
+      await this.releaseWorkflowDependencies(task.runId, normalizedActor);
+      await this.finalizeRunIfComplete(task.runId, normalizedActor);
       return jsonClone(this.findTask(task.id));
     });
   }
 
-  async releaseHandoffParents(runId) {
+  async releaseHandoffParents(runId, triggerActor = systemActor) {
     const parents = [...this.#state.tasks.values()].filter(
       (task) =>
         task.runId === runId &&
@@ -749,15 +838,20 @@ export class FdosRuntime {
     );
     for (const parent of parents) {
       const returnedAt = this.now().toISOString();
-      await this.append("task.handoff.returned", systemActor, parent.id, {
-        parentTaskId: parent.id,
-        childTaskIds: [...parent.childTaskIds],
-        returnedAt
-      });
+      await this.append(
+        "task.handoff.returned",
+        attributedSystemActor(triggerActor),
+        parent.id,
+        {
+          parentTaskId: parent.id,
+          childTaskIds: [...parent.childTaskIds],
+          returnedAt
+        }
+      );
     }
   }
 
-  async releaseWorkflowDependencies(runId) {
+  async releaseWorkflowDependencies(runId, triggerActor = systemActor) {
     const run = this.findRun(runId);
     const ready = run.taskIds
       .map((taskId) => this.findTask(taskId))
@@ -771,15 +865,20 @@ export class FdosRuntime {
       );
     for (const task of ready) {
       const readyAt = this.now().toISOString();
-      await this.append("task.ready", systemActor, task.id, {
-        taskId: task.id,
-        reason: "dependencies_completed",
-        readyAt
-      });
+      await this.append(
+        "task.ready",
+        attributedSystemActor(triggerActor),
+        task.id,
+        {
+          taskId: task.id,
+          reason: "dependencies_completed",
+          readyAt
+        }
+      );
     }
   }
 
-  async finalizeRunIfComplete(runId) {
+  async finalizeRunIfComplete(runId, triggerActor = systemActor) {
     const run = this.findRun(runId);
     if (run.status === "completed") return;
     const tasks = run.taskIds.map((taskId) => this.findTask(taskId));
@@ -796,12 +895,17 @@ export class FdosRuntime {
       ),
       evidenceBaseHeadHash
     });
-    await this.append("workflow.run.completed", systemActor, run.id, {
-      runId: run.id,
-      evidenceDigest,
-      evidenceBaseHeadHash,
-      completedAt
-    });
+    await this.append(
+      "workflow.run.completed",
+      attributedSystemActor(triggerActor),
+      run.id,
+      {
+        runId: run.id,
+        evidenceDigest,
+        evidenceBaseHeadHash,
+        completedAt
+      }
+    );
   }
 
   async failTask(taskId, actor, { reason, retryable = true }) {
@@ -1349,6 +1453,8 @@ export class FdosRuntime {
         eventId: event.id,
         type: event.type,
         subject: event.subject,
+        invocationId: event.actor.invocationId || null,
+        correlationId: event.actor.correlationId || null,
         previousHash: event.previousHash,
         hash: event.hash
       }));
@@ -1378,7 +1484,9 @@ export class FdosRuntime {
         verified: integrity.valid
       },
       limitations: [
-        "local process-lease identity and non-transactional persistence",
+        this.#invocationVerifier
+          ? "experimental Ed25519 invocation trust root and non-transactional persistence"
+          : "caller-asserted identity and non-transactional persistence",
         "no external connector execution",
         "no production-security claim"
       ]
@@ -1401,7 +1509,10 @@ export class FdosRuntime {
       validationLevel: "Level 1 — Experimental",
       productionReady: false,
       externalActionsEnabled: false,
+      authenticatedInvocationVerifierConfigured:
+        this.#invocationVerifier !== null,
       runtimeLeaseHeld: !this.#closed,
+      acceptedInvocations: this.#state.acceptedInvocations.size,
       runs: {
         total: runs.length,
         active: runs.filter((run) => run.status === "active").length,

@@ -167,3 +167,11 @@ Unsupported conclusions:
 All implementation and documentation changes are confined to `fdos-genesis`.
 TapTime and Company AI remain independent, read-only sources. This record is
 project evidence, not Validated Knowledge, production approval or FDOS Core.
+
+## 8. Follow-Up
+
+The later signed Invocation Context, authenticated gateway and persistent
+replay controls are recorded separately in
+`EV-FDOS-AUTHENTICATED-INVOCATION-003.md`. That evidence addresses a bounded
+part of the caller-asserted identity gap but does not retroactively change this
+record's 63-test source binding or establish production identity.

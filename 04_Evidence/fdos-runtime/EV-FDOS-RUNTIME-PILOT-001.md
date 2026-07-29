@@ -173,3 +173,7 @@ not retroactively change this record's original 49-test source binding. The
 original manifest is a historical binding and is not expected to match the
 expanded runtime; the current candidate is bound separately by
 `EV-FDOS-REFERENCE-INTAKE-002_Source_Manifest.sha256`.
+
+The still later authenticated-invocation controls are recorded in
+`EV-FDOS-AUTHENTICATED-INVOCATION-003.md`. They do not change this record's
+historical conclusions or source manifest.

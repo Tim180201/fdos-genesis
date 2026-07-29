@@ -47,7 +47,8 @@ the role or the identity of another instance.
 
 ## Enforcement
 
-The caller provides an agent-instance identifier.
+The authenticated gateway verifies a signed principal containing an
+agent-instance identifier and no role claim.
 
 The runtime:
 
@@ -60,6 +61,8 @@ The runtime:
 
 ## Current Limitation
 
-The local registry is trusted configuration. Actor authentication does not yet
-exist. Production operation requires cryptographically authenticated workload
-identities and a governed agent lifecycle service.
+The local registry and public-key bootstrap are trusted configuration. The
+ephemeral demo signer proves the invocation mechanism, not a production
+workload identity. Production operation requires an independent identity
+provider, protected key custody, revocation and a governed agent lifecycle
+service.

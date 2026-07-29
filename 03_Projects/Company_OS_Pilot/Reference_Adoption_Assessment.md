@@ -151,7 +151,8 @@ Runtime Store
 
 ## Recommended Next Build Order
 
-1. Authenticate human and agent invocation identities.
+1. Human-review the completed authenticated-invocation experiment and its
+   remaining identity/key-management limits.
 2. Replace the local event store with a transactional adapter and worker
    claims.
 3. Add a connector contract with dry-run, idempotency and uncertain-outcome

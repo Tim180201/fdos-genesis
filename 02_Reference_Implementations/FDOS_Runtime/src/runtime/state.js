@@ -1,12 +1,15 @@
 import { digestObject, jsonClone } from "../kernel/canonical-json.js";
 import { IntegrityError } from "../kernel/errors.js";
+import { isoDate } from "../kernel/validation.js";
+import { verifyInvocationReceipt } from "../identity/invocation.js";
 
 export function createRuntimeState() {
   return {
     runs: new Map(),
     tasks: new Map(),
     approvals: new Map(),
-    memoryCandidates: new Map()
+    memoryCandidates: new Map(),
+    acceptedInvocations: new Map()
   };
 }
 
@@ -53,6 +56,49 @@ export function applyRuntimeEvent(state, event) {
   const payload = event.payload;
 
   switch (event.type) {
+    case "identity.invocation.accepted": {
+      verifyInvocationReceipt(payload.receipt);
+      const receipt = jsonClone(payload.receipt);
+      if (state.acceptedInvocations.has(receipt.invocationId)) {
+        throw new IntegrityError(
+          `Duplicate invocation ${receipt.invocationId}.`
+        );
+      }
+      if (
+        event.actor.type !== receipt.principal.type ||
+        event.actor.id !== receipt.principal.id ||
+        event.actor.invocationId !== receipt.invocationId ||
+        event.actor.correlationId !== receipt.correlationId
+      ) {
+        throw new IntegrityError(
+          "Invocation receipt and event actor differ."
+        );
+      }
+      const acceptedAt = isoDate(
+        payload.acceptedAt,
+        "invocation acceptedAt"
+      );
+      const eventTimestamp = isoDate(
+        event.timestamp,
+        "invocation event timestamp"
+      );
+      if (
+        acceptedAt !== receipt.verifiedAt ||
+        Date.parse(eventTimestamp) +
+          receipt.verificationClockSkewMs <
+          Date.parse(acceptedAt)
+      ) {
+        throw new IntegrityError(
+          "Invocation acceptance time is inconsistent."
+        );
+      }
+      state.acceptedInvocations.set(receipt.invocationId, {
+        ...receipt,
+        acceptedAt
+      });
+      return;
+    }
+
     case "workflow.run.started": {
       if (state.runs.has(payload.run.id)) {
         throw new IntegrityError(`Duplicate run ${payload.run.id}.`);

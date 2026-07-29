@@ -81,3 +81,44 @@ Decision: Reuse Company AI runtime controls and TapTime evidence/governance
 patterns selectively; do not copy either repository wholesale.  
 Rationale: FDOS needs reusable organizational controls, not product-specific
 code, duplicated ADO or premature connectors.
+
+## PILOT-DEC-011 — Authenticated Gateway Before Integrations
+
+Date: 2026-07-29
+
+Decision: Models, connectors and other untrusted callers may access the
+experimental runtime only through an authenticated command gateway.
+
+Rationale: Giving an integration the lower-level runtime object would allow it
+to submit caller-asserted actor identities and bypass the new trust boundary.
+
+## PILOT-DEC-012 — Identity Without Role Claims
+
+Date: 2026-07-29
+
+Decision: A signed agent principal binds only the Agent Instance identifier.
+FDOS derives the role and lifecycle status from the Agent Registry.
+
+Rationale: Cryptographically signing a caller-selected role would authenticate
+the claim's origin but would not prove that the principal currently owns that
+role.
+
+## PILOT-DEC-013 — Persistent One-Time Invocation
+
+Date: 2026-07-29
+
+Decision: Consume a verified Invocation ID in the event log before dispatch
+and reject its reuse after success, failure, concurrency or restart.
+
+Rationale: In-memory replay caches disappear on restart and consuming only
+after success permits duplicate execution after an uncertain outcome.
+
+## PILOT-DEC-014 — Local Signer Is Test Infrastructure
+
+Date: 2026-07-29
+
+Decision: Use an ephemeral Ed25519 signer only for the local experiment and
+give the runtime verifier public trust material only.
+
+Rationale: This proves signature and claim enforcement without pretending that
+local key generation authenticates a production human or workload.

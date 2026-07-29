@@ -4,6 +4,8 @@
 
 - Added ADR-0043 authorizing a bounded FDOS Runtime Reference Implementation
   experiment without changing the FDOS Core.
+- Added ADR-0044 authorizing an authenticated Invocation boundary experiment
+  before any model provider or connector.
 - Added the runtime experiment boundary for A0–A4 action governance, data
   scopes, repository ownership and production limitations.
 - Added `02_Reference_Implementations/FDOS_Runtime/` with:
@@ -18,22 +20,34 @@
   - exact Git-bound read-only reference snapshots;
   - content-minimized reference evidence for Memory Candidates;
   - exclusive local runtime-directory ownership;
+  - Ed25519-signed, short-lived Invocation Contexts;
+  - exact organization, audience, principal, operation and command binding;
+  - public-key trust configuration with bounded key-rotation overlap;
+  - server-side Agent Registry role derivation;
+  - persistent one-time replay protection across runtime restarts;
+  - a deny-by-default authenticated command gateway;
+  - Invocation/correlation attribution for resulting audit events;
   - append-only hash-chained audit events;
   - content-minimized evidence export.
 - Added the Chief of Staff, Operations and Marketing software-change-readiness
   pilot under `03_Projects/Company_OS_Pilot/`.
-- Added an initial 49-test three-role slice, then expanded the complete suite to
-  63 tests for reference intake, provenance and runtime-lease behavior.
-- Recorded 89.54% line, 77.44% branch and 88.93% function coverage for the
-  expanded candidate.
+- Added an initial 49-test three-role slice, expanded it to 63 tests for
+  reference intake/provenance/runtime ownership, and then to 79 tests for the
+  authenticated Invocation boundary and gateway lifecycle.
+- Recorded 90.83% line, 77.73% branch and 90.48% function coverage for the
+  authenticated candidate.
 - Added Evidence Item `EV-FDOS-RUNTIME-PILOT-001` and its SHA-256 source
   manifest.
 - Added Evidence Item `EV-FDOS-REFERENCE-INTAKE-002` and its SHA-256 source
   manifest, a TapTime/Company AI adoption assessment, project Change-Impact
   profile and Artifact Validation Register.
+- Added Evidence Item `EV-FDOS-AUTHENTICATED-INVOCATION-003`, its SHA-256
+  source manifest and Validation Report 003.
 - Added Knowledge Candidate KP-006 for exact Action Intent approval binding.
 - Added Knowledge Candidates KP-007 for exact external-source binding and
   KP-008 for exclusive ownership before transactional persistence.
+- Added Knowledge Candidate KP-009 for verified Invocation identity before
+  authorization.
 - Applied KP-001 Role-versus-Agent-Instance separation in the experiment
   without changing its candidate status.
 - No FDOS Core capability, canonical object or release version was added.
