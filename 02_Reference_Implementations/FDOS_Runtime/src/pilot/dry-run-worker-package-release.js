@@ -4,7 +4,7 @@ import { immutableJson } from "../kernel/canonical-json.js";
 export const PILOT_DRY_RUN_WORKER_PACKAGE_PATH =
   fileURLToPath(
     new URL(
-      "../../artifacts/worker-packages/connector-dry-run-v1.fdos-package.json",
+      "../../artifacts/worker-packages/connector-dry-run-v2.fdos-package.json",
       import.meta.url
     )
   );
@@ -13,15 +13,15 @@ export const PILOT_DRY_RUN_WORKER_PACKAGE_TRUST =
   immutableJson({
     algorithm: "Ed25519",
     issuerId: "issuer:fdos-worker-package-pilot",
-    keyId: "key:a189dda72dfdc5905ee62a94",
+    keyId: "key:449d04c19a66d93bc574d99b",
     publicKeyPem:
       "-----BEGIN PUBLIC KEY-----\n" +
-      "MCowBQYDK2VwAyEA32Gmk9mS97l4KsxUc1fDjAv3TUEd3fX6STLl78b7/Vg=\n" +
+      "MCowBQYDK2VwAyEAFyoMgSeB0+mVNhZ7qvT8h93kh6HYjUlCdYLa1mvYf7w=\n" +
       "-----END PUBLIC KEY-----"
   });
 
 export const PILOT_DRY_RUN_WORKER_PACKAGE_TRUST_ANCHOR_DIGEST =
-  "sha256:78dccc7696bb736ab5135ef8c3fc1745dcd413e5a8640b43cd9e5c68935fe01b";
+  "sha256:c70b21a175dbfa514447d1de2476a7931e52632446abcaee6cba3c8a5da92c39";
 
 export const PILOT_DRY_RUN_WORKER_PACKAGE_ATTESTATION =
   immutableJson({
@@ -29,18 +29,18 @@ export const PILOT_DRY_RUN_WORKER_PACKAGE_ATTESTATION =
     kind: "fdos-signed-worker-package-attestation",
     algorithm: "Ed25519",
     issuerId: "issuer:fdos-worker-package-pilot",
-    keyId: "key:a189dda72dfdc5905ee62a94",
+    keyId: "key:449d04c19a66d93bc574d99b",
     packageId: "worker-package:connector-dry-run",
-    packageVersion: "1.0.0-experimental",
+    packageVersion: "2.0.0-experimental",
     packageDigest:
-      "sha256:046b7dd22fc2454865139fd6951e2ccc7bfba4f1fa497a5831b164c77794fec4",
+      "sha256:51cd86533646d78353ed91fc86e0d16f74fc7b4eb404c722c77d3b4a3d67d196",
     artifactId: "worker:connector-dry-run",
-    artifactVersion: "2.0.0-experimental",
+    artifactVersion: "3.0.0-experimental",
     artifactDigest:
-      "sha256:b0c0107c2a90919831ab78866eb760e0094f75a34f002c667897e49c516cc59b",
-    issuedAt: "2026-07-29T16:15:00.000Z",
+      "sha256:59933e5c2830b0a63d32c2938cb00175431495862a2c948af8d3d4c105a7db8a",
+    issuedAt: "2026-07-29T14:17:25.900Z",
     signature:
-      "Nqs_XWN2WXy_INtqYPVcOHmyWamnm9QPG-4ZXOMKTjAsJdDsqVjqJSPoWfK--KMM6Jfl8n62aZYSaRCmo_B1BQ"
+      "kUunQbbwAPYV4qTXWTmhANCKOmmXXjDi-SW6huXPhtt-nvVUT3EmrFa2Z_vrpNiLnSgfElzn8AFdjHojL3bCBQ"
   });
 
 export const PILOT_DRY_RUN_WORKER_PACKAGE_RELEASE =

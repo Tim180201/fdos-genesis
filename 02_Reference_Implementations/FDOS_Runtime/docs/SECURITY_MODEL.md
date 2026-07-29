@@ -25,6 +25,8 @@ The Level 1 runtime assumes:
 - one canonical worker package plus repository-local public trust descriptor,
   trust-anchor pin and release attestation whose private signing key is not
   stored in FDOS;
+- one fresh parent challenge and bootstrap-created response key per worker
+  launch, whose private key remains in child-process memory;
 - for the optional Darwin experiment, a trusted local kernel and fixed
   root-owned `/usr/bin/sandbox-exec` launcher;
 - trusted bootstrap registration of the Invocation Verifier public keys;
@@ -87,7 +89,9 @@ authenticated gateway and is prohibited.
 | Child hangs or floods output | Parent timeout, byte limits and forced termination |
 | Child receives parent secrets or runtime authority | No runtime/database/key object; minimal non-inherited environment; standard-I/O protocol only |
 | Worker execution bytes change before launch | Canonical package, exact module/source/package digests, closed graph and parent Ed25519 release verification before every spawn |
-| Child package differs from parent-verified release | Bootstrap independently repeats package, signature and trust-pin verification before module evaluation; protocol 1.3 requires an exact observation |
+| Child package differs from parent-verified release | Bootstrap independently repeats package, signature and trust-pin verification before module evaluation; protocol 1.4 requires an exact observation |
+| Worker response is substituted or replayed | Fresh 256-bit parent challenge, fresh one-use Ed25519 session key and exact session/request/response/package signature binding |
+| Valid signature claims another durable session | Parent cross-compares authenticated session evidence with every response-bound observation field |
 | Public release key is silently replaced | Verification requires the exact SHA-256 pin of the selected public trust descriptor |
 | Package signature is mistaken for immutable deployment | Explicit repository-fixture and mutable-bootstrap status; no real connector; immutable deployment storage remains a promotion gate |
 | Process separation is mistaken for a sandbox | Process-only mode reports both isolation flags false; exact Darwin-required executions must pass kernel-denial probes |
@@ -143,7 +147,7 @@ probes still produce only a local digest-only simulation.
 
 ## Known Gaps
 
-- the ephemeral local signer does not prove a real human or workload identity;
+- the ephemeral Invocation signer does not prove a real human identity;
 - public-key bootstrap and host process remain trusted;
 - there is no online key revocation or identity-provider federation;
 - internal direct-runtime access can bypass the authenticated gateway;
@@ -161,8 +165,8 @@ probes still produce only a local digest-only simulation.
 - the optional Darwin profile enforces tested `network*` and `file-write*`
   denials only; it is deprecated, platform-specific and does not restrict
   reads, CPU, memory, process creation, inherited descriptors or every syscall;
-- the local denial probes are child observations, not independently signed
-  kernel or workload attestation;
+- the local denial probes are child observations; the response session signs
+  them but does not independently attest the kernel or workload;
 - the worker package has a local Ed25519 release attestation and pinned public
   trust-descriptor digest, but both fixture and pin are in the same mutable
   repository and have no protected custody, expiry, revocation or
@@ -173,8 +177,11 @@ probes still produce only a local digest-only simulation.
 - Node.js VM modules are experimental and provide loading, not isolation;
 - caller-provided release configuration does not prove protected external
   custody;
-- the Node.js executable, built-in modules, worker response and workload
-  identity are not independently signed or attested;
+- worker responses are authenticated to fresh bootstrap-created keys, but the
+  Node.js executable, built-ins, bootstrap and workload identity are not
+  independently signed or attested;
+- no secure session-key erasure, host-memory confidentiality, certificate
+  chain, revocation or durable network replay ledger exists;
 - no real connector, production outbound allowlist or secret vault;
 - no model-level personality, precedence or prompt-injection evaluation;
 - Operating Profile digests are not yet bound into model-output evidence;

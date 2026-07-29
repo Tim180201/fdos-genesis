@@ -420,3 +420,60 @@ gates.
 Rationale: Repository packaging materially narrows the execution race, but a
 mutable host can still replace the parent, bootstrap, verifier and pilot trust
 pin together.
+
+## PILOT-DEC-041 — Every Worker Launch Gets a Fresh Parent Challenge
+
+Date: 2026-07-29
+
+Decision: Generate one cryptographically random 32-byte challenge for every
+worker launch and bind its canonical base64url value into protocol 1.4.
+
+Rationale: A response must not be portable to another launch merely because
+the package and connector request shape are similar.
+
+## PILOT-DEC-042 — Bootstrap Owns One Ephemeral Response Key
+
+Date: 2026-07-29
+
+Decision: Generate a fresh Ed25519 key pair only after bootstrap package
+verification, retain its private key in a one-use child-process closure and
+expose only the public session descriptor plus signing function to packaged
+code.
+
+Rationale: Response authentication should not require a serialized private
+key or reuse the parent Invocation or package-release signing authority.
+
+## PILOT-DEC-043 — Sign Session, Request and Response Digests Together
+
+Date: 2026-07-29
+
+Decision: Emit one canonical authenticated envelope whose Ed25519 statement
+binds the complete session digest, exact request digest and exact response
+digest.
+
+Rationale: Authenticating only response bytes would leave challenge, package
+or request-context confusion as separate unsigned assumptions.
+
+## PILOT-DEC-044 — Durable Result Cross-Binds Minimized Session Identity
+
+Date: 2026-07-29
+
+Decision: Include key, session, challenge and package-binding digests in the
+response/result boundary and require the parent to compare them with evidence
+derived from the authenticated full session.
+
+Rationale: A valid signature for one session must not authorize a durable
+result that claims another session while raw public-key material remains
+outside the long-term evidence projection.
+
+## PILOT-DEC-045 — Ephemeral Session Authentication Is Not Workload Attestation
+
+Date: 2026-07-29
+
+Decision: Report `externallyAttested: false` and keep immutable bootstrap
+provenance, external workload identity, secure key erasure, revocation and
+network replay state as separate promotion gates.
+
+Rationale: The mutable bootstrap self-issues the launch key. Possession of
+that key authenticates one local response but does not prove which immutable
+workload or infrastructure identity created it.

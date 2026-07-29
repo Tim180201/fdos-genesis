@@ -113,7 +113,7 @@ test("recorded worker package is reproducible and release-bound", async () => {
     rebuilt.artifact.digest,
     recorded.artifact.digest
   );
-  assert.equal(recorded.modules.length, 12);
+  assert.equal(recorded.modules.length, 13);
   assert.equal(
     Buffer.byteLength(
       await readFile(

@@ -198,8 +198,11 @@ async function runOutboxDemo({ sandbox = false } = {}) {
               .evaluatedFromVerifiedMemory,
           releaseAttestationVerifiedByParent: true
         },
+        workloadSession: result.worker.workloadSession,
         requestDigest: result.worker.requestDigest,
-        responseDigest: result.worker.responseDigest
+        responseDigest: result.worker.responseDigest,
+        responseEnvelopeDigest:
+          result.worker.responseEnvelopeDigest
       },
       evidence: {
         bundleDigest: result.evidence.bundleDigest,

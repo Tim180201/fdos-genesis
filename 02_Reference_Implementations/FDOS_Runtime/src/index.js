@@ -49,6 +49,20 @@ export {
   workerPackageBindingsEqual
 } from "./domain/worker-package-contract.js";
 export {
+  createAuthenticatedWorkerResponse,
+  createWorkloadResponseSignatureRequest,
+  createWorkloadSession,
+  createWorkloadSessionObservation,
+  normalizeAuthenticatedWorkerResponse,
+  normalizeWorkloadSession,
+  normalizeWorkloadSessionChallenge,
+  normalizeWorkloadSessionObservation,
+  verifyAuthenticatedWorkerResponse,
+  verifyWorkloadSessionObservation,
+  workloadSessionKeyId,
+  WORKLOAD_SESSION_MODE
+} from "./domain/workload-session-contract.js";
+export {
   createDryRunWorkerPackage,
   createWorkerPackageAttestation,
   createWorkerPackageAttestationRequest,

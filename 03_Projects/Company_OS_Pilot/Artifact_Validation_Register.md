@@ -59,6 +59,10 @@ promotion and not a production approval.
 | Exact public trust-anchor digest pin | Tested | Level 1 — Experimental | `EV-FDOS-WORKER-PACKAGE-010` | Pending | Pilot pin remains repository-local |
 | Parent/bootstrap package verification | Tested with fault injection | Level 1 — Experimental | `EV-FDOS-WORKER-PACKAGE-010` | Pending | Bootstrap/verifier remain host TCB |
 | Verified-memory package evaluation | Tested locally | Level 1 — Experimental | `EV-FDOS-WORKER-PACKAGE-010` | Pending | Experimental VM loader / no workload identity |
+| Ephemeral challenge-bound workload session | Tested locally | Level 1 — Experimental | `EV-FDOS-WORKLOAD-SESSION-011` | Pending | Bootstrap self-issues identity |
+| Canonical Ed25519 worker-response envelope | Tested with fault injection | Level 1 — Experimental | `EV-FDOS-WORKLOAD-SESSION-011` | Pending | No external attestation or transport |
+| Response/result session cross-binding | Tested with valid-signature confusion fault | Level 1 — Experimental | `EV-FDOS-WORKLOAD-SESSION-011` | Pending | Mutable parent/bootstrap remain TCB |
+| Non-exported one-use session-key boundary | Tested by API and output inspection | Level 1 — Experimental | `EV-FDOS-WORKLOAD-SESSION-011` | Pending | No secure erasure or host-memory protection |
 | TapTime/Company AI adoption assessment | Tested as documentation/evidence | Level 1 — Experimental | exact reference manifests | Pending | Not applicable |
 
 ## Promotion Rule

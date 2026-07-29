@@ -21,7 +21,7 @@ const defaultOutput = path.join(
   runtimeRoot,
   "artifacts",
   "worker-packages",
-  "connector-dry-run-v1.fdos-package.json"
+  "connector-dry-run-v2.fdos-package.json"
 );
 
 async function main() {

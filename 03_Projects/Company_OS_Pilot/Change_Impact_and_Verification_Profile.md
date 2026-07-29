@@ -41,76 +41,81 @@ V4 and V5 cannot be claimed for an uncommitted local experiment.
 Baseline commit/tree:
 
 - FDOS commit:
-  `205302dc8613e54a0f9df977b24ed2e5b8ffd087`
+  `a566463fe083816f842c389128b77e93111bd520`
 - FDOS tree:
-  `4b918e6de912ddfa22994b7df9d63d7258fbcf9d`
-- the verified worker-package slice is evaluated as the change from that
-  signed-source-artifact baseline;
+  `35bb09ea86ce97594dde4389d7ca41b3af75ad22`
+- the authenticated workload-session slice is evaluated as the change from
+  that verified-worker-package baseline;
 - external references are bound separately in
   `Reference_Adoption_Assessment.md`.
 
 Changed boundaries:
 
-- fixed package, artifact, entry-point and 12-module identities;
-- deterministic canonical JSON package containing exact UTF-8 module strings;
-- separate per-module, source-artifact and complete-package SHA-256 bindings;
-- exact module ordering, byte limits and source-artifact reconstruction;
-- canonical package-file, stable descriptor, owner, permission and no-follow
-  checks;
-- closed static ESM graph enforcement against package contents;
-- detached package-attestation request and signature attachment with no
-  private-key parameter;
-- exact Ed25519 public trust descriptor and trust-anchor digest pin;
-- repository-local pilot package release with no stored private key;
-- caller-provided release-configuration seam without custody claim;
-- parent package, graph, signature and trust-pin verification before spawn;
-- fixed child verifier bootstrap and bounded public release envelope;
-- independent bootstrap package/release verification before module evaluation;
-- exact in-memory VM-module loader with fixed relative and built-in imports;
-- worker protocol version 1.3 binding package, artifact, attestation, trust
-  anchor, issuer and key;
-- response and result-digest binding of verified-memory package observation;
-- deliberate bootstrap trust mismatch and request package mismatch faults;
+- fixed package version 2, artifact version 3, entry point and 13-module
+  identities;
+- one closed workload-session, observation, signature-statement and response-
+  envelope contract;
+- canonical 32-byte base64url challenge and 64-byte Ed25519 signature rules;
+- cryptographically random parent challenge generated for every launch;
+- protocol version 1.4 request binding of challenge plus complete package,
+  artifact, attestation, trust, issuer and key identity;
+- bootstrap challenge intake and deletion before packaged code evaluates;
+- fresh Ed25519 key-pair generation only after bootstrap release verification;
+- public-key fingerprint-derived session key ID;
+- private session key retained only inside a one-use bootstrap closure;
+- complete public session binding of challenge and verified package;
+- canonical signature statement binding session, request and response digests;
+- canonical authenticated response envelope with exact envelope digest;
+- response/result-digest binding of minimized key, session, challenge and
+  package-binding digests;
+- parent verification of envelope canonicalization, session, package and
+  signature before protocol-result acceptance;
+- field-by-field parent cross-comparison of authenticated session evidence and
+  durable response observation;
+- stable result exposure of verification digests/booleans without public key,
+  signature, raw challenge or private key;
+- deliberate challenge mismatch, invalid signature and valid-signature
+  session-observation mismatch faults;
 - preservation of the durable claim followed by human-only uncertainty after
-  either mismatch;
-- package, signature, trust, schema, canonicalization, permission, import and
-  symlink tamper tests;
-- package identity in both process-only and Darwin demo output;
-- architecture, security, package, release, risk and evidence documentation.
+  every new fault;
+- package rebuild/release rotation for the changed admitted source graph;
+- process-only and Darwin demo output for the authenticated session;
+- architecture, security, protocol, package, risk, decision and evidence
+  documentation.
 
 Risk class: R3.
 
 Rationale:
 
-- package and release verification control which bytes may execute near a
-  future
-  connector boundary;
-- a false signature, incomplete package or confused trust binding would
-  create a material supply-chain and execution-identity error;
-- package, parent, bootstrap, verifier and pilot trust still run under one
-  mutable trusted account;
+- workload-session verification controls whether one child response may become
+  durable connector outcome evidence;
+- a predictable/reused challenge, exported key, incomplete signature statement
+  or confused session binding would create a material acknowledgement and
+  execution-identity error;
+- package, parent, bootstrap, verifier, session issuer and pilot trust still
+  run under one mutable trusted account;
 - the experiment remains dry-run and changes no external-effect authority.
 
 Selected verification and result:
 
 - V0: exact FDOS status/diff, `git diff --check`, navigation,
-  unsupported-claim review, package reproducibility and source-manifest
-  verification passed;
-- V1: package identity, contract, release, file inspector, builder, bootstrap,
-  protocol, process client and CLI syntax checks plus 22 focused
-  artifact/package/process-worker cases passed;
-- V2: exact source graph, package canonicalization, file/symlink/permission
-  checks, content and signature tampering, trust-pin mismatch, unexpected
-  fields, undeclared imports, exact request/response binding, bootstrap and
-  worker mismatch rejection, unchanged Outbox and human-only uncertainty
-  reconciliation passed;
-- V3: complete 132-test runtime regression, 90.77% line / 78.85% branch /
-  92.15% function coverage, internal/outbox/sandbox demos, deterministic
-  package rebuild and final scope review passed;
+  unsupported-claim review, private-material search, package reproducibility
+  and source-manifest verification passed;
+- V1: workload-session contract, bootstrap authority, protocol, packaged
+  worker, process client and CLI syntax checks plus 30 focused
+  artifact/package/process/session cases passed;
+- V2: canonical challenge/key/signature/envelope validation, content and
+  signature tampering, cross-challenge/package replay, second-sign denial,
+  real-child challenge/signature/session-confusion rejection, exact result
+  cross-binding, unchanged Outbox and human-only uncertainty reconciliation
+  passed;
+- V3: complete 140-test runtime regression, 91.09% line / 79.04% branch /
+  92.32% function coverage, internal/outbox/sandbox demos, deterministic
+  13-module package rebuild and final scope review passed;
 - V4: not claimed; no independent exact-commit CI evidence is attached;
-- V5: not claimed and not authorized; no immutable deployment, protected
-  signer, independent security review, real service, physical or external
-  operation was exercised.
+- V5: not claimed and not authorized; no immutable deployment, external
+  workload-identity issuer, protected session memory, independent security
+  review, real service, physical or external operation was exercised.
 
 Checks intentionally not run:
 
@@ -119,11 +124,14 @@ Checks intentionally not run:
   write-producing execution;
 - no external API/model/connector test, because the contract enforces
   `networkAccess: false` and `externalEffects: false`;
-- no immutable object/image storage, external release service, HSM/KMS,
-  expiry, revocation, transparency log or atomic deployment test;
-- no hostile bootstrap/verifier replacement, independently authenticated
-  worker, signed response, Node.js provenance, boot-chain or remote-attestation
+- no container image or OCI runtime test; the installed local daemon was not
+  running and starting a host service would exceed the FDOS-repository-only
+  mutation scope;
+- no immutable object/image storage, external release or workload-identity
+  service, HSM/KMS, expiry, revocation, transparency log or atomic deployment
   test;
+- no hostile bootstrap/verifier replacement, Node.js provenance, boot-chain,
+  process-memory inspection, secure-erasure or remote-attestation test;
 - no supported container/VM sandbox, destination allowlist, filesystem-read or
   CPU/memory/process isolation test;
 - no model personality/quality evaluation, because no model adapter exists;
@@ -131,19 +139,20 @@ Checks intentionally not run:
 
 Failures and retries:
 
-- the initial packaged end-to-end demo rejected its response because
-  observation-only booleans were passed into the exact package-binding
-  normalizer;
-- the comparison was narrowed to the exact binding projection while keeping
-  observation fields separately mandatory;
-- because that protocol correction changed admitted source bytes, the first
-  generated package and ephemeral signature were intentionally discarded;
-- after the admitted source stabilized, the package was rebuilt and signed
-  with a new ephemeral key; the private key was discarded;
-- a deliberately wrong trust pin was added as a separate bootstrap-preload
-  fault, proving rejection before package module evaluation;
-- focused tests, complete static/regression checks, coverage and all demos
-  then passed.
+- the first session implementation authenticated the transient envelope but
+  did not bind minimized session identity into the durable result digest;
+- the protocol was strengthened with a session observation and exact parent
+  cross-comparison before candidate validation;
+- integration tests then rejected the expected stale package because it still
+  contained the pre-observation source graph;
+- the package was rebuilt and the obsolete ephemeral release key/signature
+  discarded;
+- a separate valid-signature session-observation confusion fault was added,
+  which changed packaged bytes again; the interim package release was
+  intentionally discarded and regenerated;
+- no release or session private key was printed, stored or committed;
+- focused tests, complete static/regression checks, coverage and all three
+  demos then passed.
 
 Evidence carried forward:
 
@@ -159,7 +168,8 @@ Evidence carried forward:
 - `EV-FDOS-PROCESS-WORKER-007` remains the process/acknowledgement record;
 - `EV-FDOS-DARWIN-SANDBOX-008` remains the OS denial record;
 - `EV-FDOS-WORKER-ARTIFACT-009` remains the signed mutable-source record;
-- this slice is bound separately in `EV-FDOS-WORKER-PACKAGE-010`.
+- `EV-FDOS-WORKER-PACKAGE-010` remains the deterministic package record;
+- this slice is bound separately in `EV-FDOS-WORKLOAD-SESSION-011`.
 
 ## Required Completion Report
 

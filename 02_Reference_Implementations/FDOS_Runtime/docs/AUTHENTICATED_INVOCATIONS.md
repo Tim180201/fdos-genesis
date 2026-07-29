@@ -190,7 +190,8 @@ No command enables networked connector execution or A3/A4 execution.
 - Connector identities are local experimental registrations without
   production workload attestation or revocation. The simulation is
   process-separated and its closed source graph has a repository-local release
-  signature, but its response is not independently signed and its deployment
+  signature. Its response is authenticated to a fresh key self-issued by the
+  mutable bootstrap, not an externally attested workload, and its deployment
   is not immutable. The optional Darwin worker can prove local `network*` and
   `file-write*` denial under one deprecated platform profile; neither control
   establishes production workload identity, portable egress isolation or

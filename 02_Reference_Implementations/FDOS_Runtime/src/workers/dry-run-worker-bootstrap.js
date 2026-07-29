@@ -3,13 +3,23 @@ import vm from "node:vm";
 import { immutableJson } from "../kernel/canonical-json.js";
 import { IntegrityError } from "../kernel/errors.js";
 import {
+  normalizeWorkloadSessionChallenge
+} from "../domain/workload-session-contract.js";
+import {
   inspectDryRunWorkerPackageRelease,
   normalizeWorkerPackageReleaseEnvelope,
   serializeWorkerPackageReleaseEnvelope
 } from "../integrations/dry-run-worker-package.js";
+import {
+  createEphemeralWorkloadSessionAuthority
+} from "./ephemeral-workload-session.js";
 
 const RELEASE_ENVIRONMENT_KEY =
   "FDOS_WORKER_PACKAGE_RELEASE";
+const SESSION_CHALLENGE_ENVIRONMENT_KEY =
+  "FDOS_WORKLOAD_SESSION_CHALLENGE";
+const SESSION_FAULT_ENVIRONMENT_KEY =
+  "FDOS_WORKLOAD_SESSION_FAULT";
 const MAX_RELEASE_ENVELOPE_BYTES = 32 * 1024;
 const PACKAGE_URL_PREFIX = "fdos-worker-package:///";
 const ALLOWED_BUILTINS = new Set([
@@ -73,6 +83,30 @@ function releaseEnvelopeFromEnvironment() {
     );
   }
   return normalized;
+}
+
+function workloadSessionConfigurationFromEnvironment() {
+  const challenge =
+    process.env[SESSION_CHALLENGE_ENVIRONMENT_KEY];
+  const faultMode =
+    process.env[SESSION_FAULT_ENVIRONMENT_KEY] || "none";
+  delete process.env[SESSION_CHALLENGE_ENVIRONMENT_KEY];
+  delete process.env[SESSION_FAULT_ENVIRONMENT_KEY];
+  if (
+    faultMode !== "none" &&
+    faultMode !== "signature-mismatch"
+  ) {
+    throw new IntegrityError(
+      "Worker workload session configuration is invalid."
+    );
+  }
+  return {
+    challenge: normalizeWorkloadSessionChallenge(
+      challenge,
+      IntegrityError
+    ),
+    faultMode
+  };
 }
 
 function createPackageLoader(workerPackage) {
@@ -176,6 +210,8 @@ async function main() {
     );
   }
   const releaseEnvelope = releaseEnvelopeFromEnvironment();
+  const workloadSessionConfiguration =
+    workloadSessionConfigurationFromEnvironment();
   const release = await inspectDryRunWorkerPackageRelease({
     packagePath: argumentsList[0],
     ...releaseEnvelope
@@ -191,6 +227,39 @@ async function main() {
     "__FDOS_VERIFIED_WORKER_PACKAGE__",
     {
       value: observation,
+      configurable: false,
+      enumerable: false,
+      writable: false
+    }
+  );
+  const workloadSessionAuthority =
+    createEphemeralWorkloadSessionAuthority({
+      challenge:
+        workloadSessionConfiguration.challenge,
+      workerPackage: release.binding,
+      faultMode:
+        workloadSessionConfiguration.faultMode
+    });
+  Object.defineProperty(
+    globalThis,
+    "__FDOS_WORKLOAD_SESSION__",
+    {
+      value:
+        workloadSessionAuthority.workloadSession,
+      configurable: false,
+      enumerable: false,
+      writable: false
+    }
+  );
+  Object.defineProperty(
+    globalThis,
+    "__FDOS_SIGN_WORKER_RESPONSE__",
+    {
+      value: Object.freeze((response) =>
+        workloadSessionAuthority.signResponse(
+          response
+        )
+      ),
       configurable: false,
       enumerable: false,
       writable: false

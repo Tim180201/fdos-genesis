@@ -24,6 +24,9 @@
   exact public trust-anchor pinning and verified-memory module evaluation
   without claiming immutable deployment, protected custody or workload
   identity.
+- Added ADR-0052 for a fresh challenge-bound workload session and
+  authenticated worker response without claiming externally attested
+  workload identity or immutable bootstrap provenance.
 - Added the runtime experiment boundary for A0–A4 action governance, data
   scopes, repository ownership and production limitations.
 - Added `02_Reference_Implementations/FDOS_Runtime/` with:
@@ -107,6 +110,18 @@
   - noncanonical, linked, writable, changed and undeclared package rejection;
   - deliberate bootstrap-release and request-package mismatch faults with no
     recorded outcome;
+  - worker protocol 1.4 with a fresh canonical 32-byte parent challenge;
+  - one fresh bootstrap-generated Ed25519 key pair per worker launch;
+  - a one-use response signer whose private key never crosses a serialization
+    boundary;
+  - a canonical authenticated response envelope binding complete session,
+    request and response digests;
+  - minimized session identity bound into the response and simulated result
+    digest;
+  - parent cross-verification between authenticated session evidence and the
+    durable session observation;
+  - challenge mismatch, invalid signature and valid-signature session
+    confusion faults with no recorded outcome;
   - append-only hash-chained audit events;
   - content-minimized task and delivery evidence export.
 - Added the Chief of Staff, Operations and Marketing software-change-readiness
@@ -120,6 +135,8 @@
 - The Darwin sandbox slice expands the suite to 120 tests.
 - The signed worker source-artifact slice expands the suite to 125 tests.
 - The deterministic signed worker-package slice expands the suite to 132
+  tests.
+- The authenticated ephemeral workload-session slice expands the suite to 140
   tests.
 - Recorded 90.83% line, 77.73% branch and 90.48% function coverage for the
   authenticated candidate.
@@ -138,6 +155,8 @@
   signed worker source-artifact candidate.
 - Recorded 90.77% line, 78.85% branch and 92.15% function coverage for the
   deterministic signed worker-package candidate.
+- Recorded 91.09% line, 79.04% branch and 92.32% function coverage for the
+  authenticated ephemeral workload-session candidate.
 - Added Evidence Item `EV-FDOS-RUNTIME-PILOT-001` and its SHA-256 source
   manifest.
 - Added Evidence Item `EV-FDOS-REFERENCE-INTAKE-002` and its SHA-256 source
@@ -159,6 +178,8 @@
   manifest and Validation Report 009.
 - Added Evidence Item `EV-FDOS-WORKER-PACKAGE-010`, its SHA-256 source
   manifest and Validation Report 010.
+- Added Evidence Item `EV-FDOS-WORKLOAD-SESSION-011`, its SHA-256 source
+  manifest and Validation Report 011.
 - Added Knowledge Candidate KP-006 for exact Action Intent approval binding.
 - Added Knowledge Candidates KP-007 for exact external-source binding and
   KP-008 for exclusive ownership before transactional persistence.

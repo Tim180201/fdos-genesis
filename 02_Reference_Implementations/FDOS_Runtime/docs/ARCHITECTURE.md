@@ -41,8 +41,9 @@ FDOS Runtime
         │     -> exact expiring package/release/isolation binding
         │     -> separate verifier-bootstrap process
         │     -> verified in-memory package evaluation
+        │     -> fresh challenge-bound Ed25519 workload session
         │     -> optional Darwin network/write deny profile
-        │     -> verified denial probes + digest-only response
+        │     -> verified denial probes + signed digest-only response
         │
         ▼
 Transactional SQLite Event Store
@@ -186,7 +187,7 @@ After the authenticated Connector Instance claims a delivery, the demo binds
 that exact Delivery Intent, fencing claim, connector and validity window into
 a content-addressed worker request.
 
-The deterministic builder first reconstructs a fixed 12-file, closed and
+The deterministic builder first reconstructs a fixed 13-file, closed and
 reachable ES-module graph and emits one canonical package containing the exact
 UTF-8 source strings. The source artifact and complete package receive
 separate SHA-256 identities.
@@ -194,7 +195,8 @@ separate SHA-256 identities.
 Before every spawn, the parent stably reads that package, reconstructs every
 module and artifact digest, enforces the closed import graph and verifies an
 Ed25519 release plus the exact public trust-descriptor digest pin. Protocol
-1.3 binds package, artifact, attestation, trust anchor, issuer and key.
+1.4 binds package, artifact, attestation, trust anchor, issuer, key and one
+fresh parent-generated 256-bit session challenge.
 
 The parent then starts the fixed Node.js verifier bootstrap with no shell, no
 forwarded parent environment, explicit standard-I/O pipes, bounded bytes and a
@@ -204,6 +206,19 @@ package, graph, signature and trust-pin verification. It evaluates the fixed
 entry point from the verified in-memory module strings without extracting a
 source directory. Only an exact package observation may enter a digest-only
 simulated outcome.
+
+After release verification and before packaged code evaluates, the bootstrap
+generates a fresh Ed25519 key pair. Its private key remains in a one-use
+bootstrap closure. The public session descriptor binds the random challenge
+and complete worker-package identity. The packaged worker binds a minimized
+session observation into the response and simulated result digest, then emits
+one canonical envelope whose signature covers complete session, request and
+response digests.
+
+The parent verifies the envelope, signature, challenge and package. It then
+cross-compares the authenticated session with every field in the
+response-bound session observation. A wrong challenge, wrong signature or
+validly signed mismatched observation is rejected.
 
 The default `process-only` path adds no operating-system isolation. An optional
 Darwin experiment instead starts the worker through the fixed root-owned,
@@ -230,10 +245,12 @@ The package boundary removes live worker imports from the mutable worktree and
 prevents later package-file mutation from changing module strings already in
 memory. It does not make the package file, bootstrap, verifier or
 repository-local pilot trust pin immutable. The Node.js runtime, worker
-response and workload identity remain trusted local components rather than
-independently attested production artifacts. The detached signing interface
-is suitable for later protected custody, but no HSM, KMS or external release
-service is connected.
+and session issuer remain trusted local components rather than independently
+attested production artifacts. The response is authenticated to a fresh key
+created by the mutable bootstrap, not to an externally issued workload
+identity. The detached release-signing interface is suitable for later
+protected custody, but no HSM, KMS, external release service or remote
+attestation authority is connected.
 
 ## State Machines
 

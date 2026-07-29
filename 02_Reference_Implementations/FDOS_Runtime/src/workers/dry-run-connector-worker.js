@@ -13,13 +13,18 @@ import {
   normalizeWorkerPackageBinding,
   workerPackageBindingsEqual
 } from "../domain/worker-package-contract.js";
+import {
+  createWorkloadSessionObservation,
+  normalizeWorkloadSession
+} from "../domain/workload-session-contract.js";
 
 const MAX_INPUT_BYTES = 64 * 1024;
 const FAULT_MODES = new Set([
   "none",
   "crash-before-response",
   "hang",
-  "response-then-crash"
+  "response-then-crash",
+  "session-observation-mismatch"
 ]);
 let input = "";
 let inputBytes = 0;
@@ -221,6 +226,58 @@ function workerPackageObservation(request) {
   };
 }
 
+function workloadSessionForRequest(request) {
+  const source =
+    globalThis.__FDOS_WORKLOAD_SESSION__;
+  const signResponse =
+    globalThis.__FDOS_SIGN_WORKER_RESPONSE__;
+  if (!source || typeof signResponse !== "function") {
+    throw new Error(
+      "Worker workload session is unavailable."
+    );
+  }
+  const workloadSession =
+    normalizeWorkloadSession(source);
+  if (
+    workloadSession.challenge !==
+      request.execution.workloadSessionChallenge ||
+    !workerPackageBindingsEqual(
+      workloadSession.workerPackage,
+      request.execution.workerPackage
+    )
+  ) {
+    throw new Error(
+      "Worker workload session differs from its request."
+    );
+  }
+  return {
+    workloadSession,
+    signResponse
+  };
+}
+
+function workloadSessionObservationForResponse(
+  workloadSession,
+  faultMode
+) {
+  const observation =
+    createWorkloadSessionObservation(workloadSession);
+  if (faultMode !== "session-observation-mismatch") {
+    return observation;
+  }
+  const prefix = "key:session-";
+  const fingerprint = observation.keyId.slice(
+    prefix.length
+  );
+  return {
+    ...observation,
+    keyId:
+      `${prefix}` +
+      `${fingerprint.startsWith("0") ? "1" : "0"}` +
+      fingerprint.slice(1)
+  };
+}
+
 async function handleInput() {
   if (stopped) return;
   const faultMode =
@@ -244,6 +301,8 @@ async function handleInput() {
     verifyDryRunWorkerRequest(request, { now });
     const packageObservation =
       workerPackageObservation(request);
+    const workloadSession =
+      workloadSessionForRequest(request);
     const networkIsolationAttestation =
       await isolationAttestation(request);
 
@@ -260,15 +319,28 @@ async function handleInput() {
       request,
       completedAt: new Date().toISOString(),
       networkIsolationAttestation,
-      workerPackageObservation: packageObservation
+      workerPackageObservation: packageObservation,
+      workloadSessionObservation:
+        workloadSessionObservationForResponse(
+          workloadSession.workloadSession,
+          faultMode
+        )
     });
-    process.stdout.write(`${canonicalJson(response)}\n`, () => {
-      if (faultMode === "response-then-crash") {
-        stop(72, "WORKER_INJECTED_POST_RESPONSE_CRASH");
-        return;
+    const authenticatedResponse =
+      workloadSession.signResponse(response);
+    process.stdout.write(
+      `${canonicalJson(authenticatedResponse)}\n`,
+      () => {
+        if (faultMode === "response-then-crash") {
+          stop(
+            72,
+            "WORKER_INJECTED_POST_RESPONSE_CRASH"
+          );
+          return;
+        }
+        stop(0);
       }
-      stop(0);
-    });
+    );
   } catch {
     stop(65, "WORKER_INPUT_REJECTED");
   }

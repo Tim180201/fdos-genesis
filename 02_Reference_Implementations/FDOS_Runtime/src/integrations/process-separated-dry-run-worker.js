@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import {
   canonicalJson,
@@ -32,12 +33,16 @@ import {
   createDryRunWorkerRequest,
   verifyDryRunWorkerResponse
 } from "../workers/dry-run-worker-protocol.js";
+import {
+  verifyAuthenticatedWorkerResponse,
+  WORKLOAD_SESSION_MODE
+} from "../domain/workload-session-contract.js";
 
 const WORKER_BOOTSTRAP_FILE = fileURLToPath(
   new URL("../workers/dry-run-worker-bootstrap.js", import.meta.url)
 );
 const MAX_REQUEST_BYTES = 64 * 1024;
-const MAX_STDOUT_BYTES = 16 * 1024;
+const MAX_STDOUT_BYTES = 32 * 1024;
 const MAX_STDERR_BYTES = 4 * 1024;
 const FAULT_MODES = Object.freeze([
   "none",
@@ -46,7 +51,10 @@ const FAULT_MODES = Object.freeze([
   "response-then-crash",
   "sandbox-bypass",
   "bootstrap-release-mismatch",
-  "package-binding-mismatch"
+  "package-binding-mismatch",
+  "session-challenge-mismatch",
+  "session-observation-mismatch",
+  "response-signature-mismatch"
 ]);
 const NETWORK_ISOLATION_MODES = Object.freeze([
   "process-only",
@@ -80,6 +88,17 @@ function workerFailure(reasonCode, requestDigest, diagnostic = {}) {
     requestDigest,
     diagnosticDigest: digestObject(diagnostic)
   });
+}
+
+function createSessionChallenge() {
+  return randomBytes(32).toString("base64url");
+}
+
+function changedSessionChallenge(challenge) {
+  return (
+    `${challenge.startsWith("A") ? "B" : "A"}` +
+    challenge.slice(1)
+  );
 }
 
 export class ProcessSeparatedDryRunWorker {
@@ -187,6 +206,10 @@ export class ProcessSeparatedDryRunWorker {
       workerPackageTrustProvisioning:
         this.#workerPackageTrustProvisioning,
       externalReleaseKeyCustodyAttested: false,
+      workloadSessionResponseAuthenticationRequired: true,
+      workloadSessionMode: WORKLOAD_SESSION_MODE,
+      workloadSessionPrivateKeyExported: false,
+      independentWorkloadAttestationConfigured: false,
       timeoutMs: this.#timeoutMs,
       faultInjectionEnabled: this.#faultMode !== "none"
     });
@@ -249,12 +272,23 @@ export class ProcessSeparatedDryRunWorker {
     const expiresAt = new Date(
       Math.min(desiredExpiryMs, claimExpiryMs)
     ).toISOString();
+    const launchSessionChallenge =
+      createSessionChallenge();
+    const requestSessionChallenge =
+      this.#faultMode ===
+      "session-challenge-mismatch"
+        ? changedSessionChallenge(
+            launchSessionChallenge
+          )
+        : launchSessionChallenge;
     const request = createDryRunWorkerRequest({
       delivery,
       requestId: this.#idFactory("workerrequest"),
       issuedAt: now.toISOString(),
       expiresAt,
       networkIsolation: launch.isolation,
+      workloadSessionChallenge:
+        requestSessionChallenge,
       workerPackage:
         this.#faultMode === "package-binding-mismatch"
           ? {
@@ -289,7 +323,12 @@ export class ProcessSeparatedDryRunWorker {
                 this.#faultMode === "sandbox-bypass" ||
                 this.#faultMode ===
                   "bootstrap-release-mismatch" ||
-                this.#faultMode === "package-binding-mismatch"
+                this.#faultMode ===
+                  "package-binding-mismatch" ||
+                this.#faultMode ===
+                  "session-challenge-mismatch" ||
+                this.#faultMode ===
+                  "response-signature-mismatch"
                   ? "none"
                   : this.#faultMode,
               FDOS_WORKER_PACKAGE_RELEASE: Buffer.from(
@@ -315,6 +354,13 @@ export class ProcessSeparatedDryRunWorker {
                 launch.isolation.provider,
               FDOS_NETWORK_ISOLATION_POLICY_DIGEST:
                 launch.isolation.policyDigest,
+              FDOS_WORKLOAD_SESSION_CHALLENGE:
+                launchSessionChallenge,
+              FDOS_WORKLOAD_SESSION_FAULT:
+                this.#faultMode ===
+                  "response-signature-mismatch"
+                  ? "signature-mismatch"
+                  : "none",
               LANG: "C",
               LC_ALL: "C",
               ...(launch.isolation.required
@@ -434,15 +480,47 @@ export class ProcessSeparatedDryRunWorker {
           );
           return;
         }
+        let authenticatedResponse;
         let response;
+        let workloadSession;
         try {
-          response = JSON.parse(source);
-          if (canonicalJson(response) !== source) {
+          authenticatedResponse = JSON.parse(source);
+          if (
+            canonicalJson(authenticatedResponse) !== source
+          ) {
             throw new IntegrityError(
               "Process worker response is not canonical JSON."
             );
           }
+          workloadSession =
+            verifyAuthenticatedWorkerResponse(
+              authenticatedResponse,
+              {
+                expectedChallenge:
+                  request.execution
+                    .workloadSessionChallenge,
+                expectedWorkerPackage:
+                  request.execution.workerPackage
+              }
+            );
+          response = authenticatedResponse.response;
           verifyDryRunWorkerResponse(response, request);
+          const responseSession =
+            response.workerBoundary.workloadSession;
+          if (
+            responseSession.keyId !==
+              workloadSession.keyId ||
+            responseSession.sessionDigest !==
+              workloadSession.sessionDigest ||
+            responseSession.challengeDigest !==
+              workloadSession.challengeDigest ||
+            responseSession.packageBindingDigest !==
+              workloadSession.packageBindingDigest
+          ) {
+            throw new IntegrityError(
+              "Worker response session differs from its authenticated envelope."
+            );
+          }
         } catch (error) {
           reject(
             new IntegrityError(
@@ -466,9 +544,12 @@ export class ProcessSeparatedDryRunWorker {
             connectorId: request.connectorId,
             requestDigest: request.digest,
             responseDigest: response.digest,
+            responseEnvelopeDigest:
+              authenticatedResponse.digest,
             completedAt: response.completedAt,
             outcome: response.outcome,
-            workerBoundary: response.workerBoundary
+            workerBoundary: response.workerBoundary,
+            workloadSession
           })
         );
       });

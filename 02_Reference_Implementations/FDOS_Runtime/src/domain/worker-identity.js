@@ -1,7 +1,7 @@
 export const DRY_RUN_WORKER_ARTIFACT_ID =
   "worker:connector-dry-run";
 export const DRY_RUN_WORKER_ARTIFACT_VERSION =
-  "2.0.0-experimental";
+  "3.0.0-experimental";
 export const DRY_RUN_WORKER_ENTRYPOINT =
   "src/workers/dry-run-connector-worker.js";
 export const DRY_RUN_WORKER_ARTIFACT_FILES = Object.freeze([
@@ -11,6 +11,7 @@ export const DRY_RUN_WORKER_ARTIFACT_FILES = Object.freeze([
   "src/domain/network-isolation-contract.js",
   "src/domain/worker-identity.js",
   "src/domain/worker-package-contract.js",
+  "src/domain/workload-session-contract.js",
   "src/kernel/canonical-json.js",
   "src/kernel/errors.js",
   "src/kernel/ids.js",
@@ -22,4 +23,4 @@ export const DRY_RUN_WORKER_ARTIFACT_FILES = Object.freeze([
 export const DRY_RUN_WORKER_PACKAGE_ID =
   "worker-package:connector-dry-run";
 export const DRY_RUN_WORKER_PACKAGE_VERSION =
-  "1.0.0-experimental";
+  "2.0.0-experimental";

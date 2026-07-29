@@ -55,6 +55,7 @@ Review and validate the Level 1 Company OS Pilot:
 - `04_Evidence/fdos-runtime/EV-FDOS-DARWIN-SANDBOX-008.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-WORKER-ARTIFACT-009.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-WORKER-PACKAGE-010.md`
+- `04_Evidence/fdos-runtime/EV-FDOS-WORKLOAD-SESSION-011.md`
 
 The pilot now includes exact read-only Git reference intake for TapTime and
 Company AI, Human-reviewed source provenance and an exclusive local runtime
@@ -74,7 +75,13 @@ exact isolation-policy digests, runtime denial probes, sandbox-bypass
 rejection and package/release tamper rejection are tested without enabling a
 networked connector, model provider or external action.
 
-Human Governance should review all ten evidence records and the remaining
+Technical Slice 11 adds a fresh 256-bit challenge and bootstrap-generated
+one-use Ed25519 key for every worker launch. Protocol 1.4 authenticates the
+exact session, request, response and package, and binds a minimized session
+observation into the durable result. This is local response authentication,
+not independently attested workload identity.
+
+Human Governance should review all eleven evidence records and the remaining
 identity, database, recovery, model and isolation limits. The deprecated
 Darwin adapter must be replaced by a supported portable sandbox with outbound
 allowlisting, read/resource restrictions, workload identity, immutable

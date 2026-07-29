@@ -12,7 +12,10 @@ no-network connector Outbox and a process-separated digest-only simulation
 worker. The live worker now launches from a deterministic package only after
 the parent and child bootstrap independently verify its complete digest,
 closed source graph, Ed25519 release and pinned public trust anchor. The fixed
-entry point is then evaluated from the verified in-memory module strings. On
+entry point is then evaluated from the verified in-memory module strings. For
+every launch, the parent creates a fresh random challenge and the verified
+bootstrap creates a fresh one-use Ed25519 response key. Protocol 1.4
+authenticates the exact session, request, response and package binding. On
 Darwin, one optional experimental mode additionally denies
 network socket operations and new filesystem writes through the operating
 system and requires in-worker denial probes before accepting a result. The
@@ -40,17 +43,23 @@ which order, within which information scope and under which approval.
 - registered Connector Instance identity with claim leases and fencing IDs;
 - an exact, expiring worker request/response protocol bound to the active
   Connector claim;
-- a fixed, closed and reachable 12-file worker source graph with directory,
+- a fixed, closed and reachable 13-file worker source graph with directory,
   file, permission, UTF-8, stable-read and import-policy checks;
-- deterministic canonical packaging of the exact 12 admitted UTF-8 modules;
+- deterministic canonical packaging of the exact 13 admitted UTF-8 modules;
 - separate source-artifact and complete worker-package SHA-256 bindings;
 - a detached Ed25519 package-release API that accepts no private key;
 - an exact public trust-descriptor digest pin;
 - independent parent and bootstrap release verification before package module
   evaluation;
-- exact package, artifact, attestation and trust binding in worker protocol
-  1.3;
+- exact package, artifact, attestation, trust and random session-challenge
+  binding in worker protocol 1.4;
 - verified in-memory package evaluation without source-directory extraction;
+- a fresh bootstrap-generated Ed25519 key pair for every launch, with the
+  private key retained only by a one-use in-process signing closure;
+- one canonical authenticated response envelope binding complete session,
+  request and response digests;
+- exact parent cross-verification between the authenticated session and the
+  minimized session observation in the response/result digest;
 - a shell-free child process with a minimal environment, bounded input/output
   and hard timeout;
 - an optional Darwin-only, fail-closed `sandbox-exec` launch that binds the
@@ -59,7 +68,9 @@ which order, within which information scope and under which approval.
   exact attestation is bound into the request, response and result digest;
 - clean-exit acknowledgement plus crash-before-response,
   response-then-crash, hang, bootstrap-release-mismatch,
-  package-binding-mismatch and sandbox-bypass fault tests;
+  package-binding-mismatch, session-challenge-mismatch,
+  response-signature-mismatch, session-observation-mismatch and
+  sandbox-bypass fault tests;
 - failed retry, cancellation and uncertainty resolution under Human
   Governance;
 - content-minimized simulated, failed and uncertain connector outcomes;
@@ -110,7 +121,9 @@ connector claim, process-separated digest-only simulation and authenticated
 outcome recording. It performs no network operation and records
 `externalEffect: none`. Before each launch, the parent verifies the signed
 pilot worker package and pinned trust anchor. The child bootstrap repeats that
-verification before evaluating the exact package modules from memory.
+verification before evaluating the exact package modules from memory. It then
+creates a fresh one-use response key. The parent accepts only the signed
+challenge- and package-bound response envelope.
 
 The default process-only worker reports `networkIsolationEnforced: false`.
 Process separation alone is not a sandbox.
@@ -141,7 +154,7 @@ node src/cli.js reference-snapshot company-ai /absolute/path/to/company-ai-platf
 - `src/identity/` — signed Invocation Contexts and public-key verification;
 - `src/domain/` — roles, personality profiles, action and delivery intents,
   connector contracts, worker package and release contracts, policy and
-  workflow definitions;
+  workflow definitions, plus the ephemeral workload-session contract;
 - `src/runtime/` — authenticated gateway, coordination, approvals and memory;
 - `src/integrations/` — read-only reference and process-worker boundaries;
 - `src/workers/` — verifier bootstrap, closed dry-run protocol and packaged
@@ -161,6 +174,7 @@ See:
 - `docs/DARWIN_SANDBOXED_DRY_RUN_WORKER.md`
 - `docs/SIGNED_WORKER_SOURCE_ARTIFACT.md`
 - `docs/VERIFIED_WORKER_PACKAGE.md`
+- `docs/AUTHENTICATED_WORKLOAD_SESSION.md`
 - `docs/AGENT_AND_ROLE_MODEL.md`
 - `docs/AGENT_PERSONALITY_MODEL.md`
 - `docs/SECURITY_MODEL.md`
@@ -179,4 +193,5 @@ or tenant security. The worker package is deterministic, signed and evaluated
 from verified memory, but its file, bootstrap, verifier and pilot trust pin
 remain mutable repository-local trusted components. It is not immutable
 deployment, protected release-key custody or independent workload
-attestation.
+attestation. The fresh session key authenticates possession of a key created
+by that mutable bootstrap; it is not an externally issued workload identity.

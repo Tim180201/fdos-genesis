@@ -16,6 +16,10 @@ Related Decisions:
 - `ADR-0049_Darwin_Network_and_Write_Sandbox_Experiment.md`
 - `ADR-0050_Signed_Worker_Source_Artifact_Experiment.md`
 
+Subsequent Decision:
+
+- `ADR-0052_Ephemeral_Workload_Session_and_Authenticated_Response_Experiment.md`
+
 ## Decision
 
 The live Level 1 dry-run worker shall no longer load its execution modules

@@ -27,8 +27,13 @@ import {
   normalizeWorkerPackageBinding,
   workerPackageBindingsEqual
 } from "../domain/worker-package-contract.js";
+import {
+  normalizeWorkloadSessionChallenge,
+  normalizeWorkloadSessionObservation,
+  verifyWorkloadSessionObservation
+} from "../domain/workload-session-contract.js";
 
-const PROTOCOL_SCHEMA_VERSION = "1.3";
+const PROTOCOL_SCHEMA_VERSION = "1.4";
 const REQUEST_KIND = "fdos-process-worker-request";
 const RESPONSE_KIND = "fdos-process-worker-response";
 const MAX_REQUEST_TTL_MS = 5 * 60 * 1_000;
@@ -53,7 +58,8 @@ const executionKeys = Object.freeze([
   "mode",
   "networkAccess",
   "networkIsolation",
-  "workerPackage"
+  "workerPackage",
+  "workloadSessionChallenge"
 ]);
 const responseKeys = Object.freeze([
   "claimId",
@@ -79,7 +85,8 @@ const workerBoundaryKeys = Object.freeze([
   "networkIsolationProvider",
   "processSeparated",
   "shell",
-  "workerPackage"
+  "workerPackage",
+  "workloadSession"
 ]);
 const isolationAttestationKeys = Object.freeze([
   "enforced",
@@ -169,7 +176,12 @@ function normalizeExecution(value, ErrorType = ValidationError) {
     workerPackage: normalizeWorkerPackageBinding(
       value.workerPackage,
       ErrorType
-    )
+    ),
+    workloadSessionChallenge:
+      normalizeWorkloadSessionChallenge(
+        value.workloadSessionChallenge,
+        ErrorType
+      )
   };
 }
 
@@ -291,6 +303,11 @@ function normalizeWorkerBoundary(value, ErrorType = IntegrityError) {
     value.workerPackage,
     ErrorType
   );
+  const workloadSession =
+    normalizeWorkloadSessionObservation(
+      value.workloadSession,
+      ErrorType
+    );
   if (
     value.processSeparated !== true ||
     value.shell !== false ||
@@ -313,7 +330,8 @@ function normalizeWorkerBoundary(value, ErrorType = IntegrityError) {
     networkIsolationProvider: isolation.provider,
     networkIsolationPolicyDigest: isolation.policyDigest,
     networkIsolationProbe: expectedProbe,
-    workerPackage
+    workerPackage,
+    workloadSession
   };
 }
 
@@ -384,7 +402,9 @@ function createWorkerBoundary(
   requestIsolation,
   networkIsolationAttestation,
   requestPackage,
-  workerPackageObservation
+  workerPackageObservation,
+  requestWorkloadSessionChallenge,
+  workloadSessionObservation
 ) {
   const source =
     networkIsolationAttestation ??
@@ -417,7 +437,8 @@ function createWorkerBoundary(
       networkIsolationProvider: source.provider,
       networkIsolationPolicyDigest: source.policyDigest,
       networkIsolationProbe: source.probe,
-      workerPackage: workerPackageObservation
+      workerPackage: workerPackageObservation,
+      workloadSession: workloadSessionObservation
     },
     ValidationError
   );
@@ -439,6 +460,20 @@ function createWorkerBoundary(
   ) {
     throw new PolicyError(
       "Worker package observation differs from the request."
+    );
+  }
+  try {
+    verifyWorkloadSessionObservation(
+      boundary.workloadSession,
+      {
+        expectedChallenge:
+          requestWorkloadSessionChallenge,
+        expectedWorkerPackage: requestPackage
+      }
+    );
+  } catch {
+    throw new PolicyError(
+      "Worker workload session differs from the request."
     );
   }
   return boundary;
@@ -547,7 +582,8 @@ export function createDryRunWorkerRequest({
   issuedAt,
   expiresAt,
   networkIsolation = processOnlyNetworkIsolationBinding(),
-  workerPackage
+  workerPackage,
+  workloadSessionChallenge
 }) {
   assertPlainObject(delivery, "claimed connector delivery");
   if (
@@ -606,7 +642,11 @@ export function createDryRunWorkerRequest({
       ),
       workerPackage: normalizeWorkerPackageBinding(
         workerPackage
-      )
+      ),
+      workloadSessionChallenge:
+        normalizeWorkloadSessionChallenge(
+          workloadSessionChallenge
+        )
     },
     intent: jsonClone(delivery.intent)
   };
@@ -634,7 +674,8 @@ export function createDryRunWorkerResponse({
   request,
   completedAt,
   networkIsolationAttestation,
-  workerPackageObservation
+  workerPackageObservation,
+  workloadSessionObservation
 }) {
   const normalizedRequest = normalizeRequest(request, IntegrityError);
   const normalizedCompletedAt = isoDate(
@@ -655,7 +696,10 @@ export function createDryRunWorkerResponse({
     normalizedRequest.execution.networkIsolation,
     networkIsolationAttestation,
     normalizedRequest.execution.workerPackage,
-    workerPackageObservation
+    workerPackageObservation,
+    normalizedRequest.execution
+      .workloadSessionChallenge,
+    workloadSessionObservation
   );
   const outcome = normalizeDeliveryOutcome("simulated", {
     externalEffect: "none",
@@ -690,6 +734,16 @@ export function createDryRunWorkerResponse({
 export function verifyDryRunWorkerResponse(response, request) {
   const normalizedRequest = normalizeRequest(request, IntegrityError);
   const normalizedResponse = normalizeResponse(response, IntegrityError);
+  verifyWorkloadSessionObservation(
+    normalizedResponse.workerBoundary.workloadSession,
+    {
+      expectedChallenge:
+        normalizedRequest.execution
+          .workloadSessionChallenge,
+      expectedWorkerPackage:
+        normalizedRequest.execution.workerPackage
+    }
+  );
   if (
     normalizedResponse.requestId !== normalizedRequest.requestId ||
     normalizedResponse.deliveryId !== normalizedRequest.deliveryId ||

@@ -1,19 +1,20 @@
 # Company OS Pilot — Project Status
 
-Status: Technical Slice 10 Passed / Human Review Pending
+Status: Technical Slice 11 Passed / Human Review Pending
 Date: 2026-07-29  
 Validation Level: Level 1 — Experimental
 
 ## Current Goal
 
-Deliver and verify one deterministic, signed worker package whose exact
-modules are independently verified by parent and child bootstrap before
-in-memory evaluation, without claiming immutable deployment, protected key
-custody, production isolation or enabling an external effect.
+Deliver and verify one challenge-bound authenticated response from every
+ephemeral worker launch. Bind the exact session, request, response and verified
+package without claiming immutable deployment, protected key custody,
+externally attested workload identity, production isolation or enabling an
+external effect.
 
 ## Current Phase
 
-Level 1 deterministic worker-package evidence review.
+Level 1 authenticated ephemeral workload-session evidence review.
 
 ## Exit Criteria
 
@@ -78,7 +79,7 @@ Level 1 deterministic worker-package evidence review.
 - [x] mutable-source, same-account race, local-trust and runtime gaps
       documented;
 - [x] ADR, security model, operations guide and Evidence 009 prepared;
-- [x] canonical separately transportable 12-module worker package generated;
+- [x] canonical separately transportable 13-module worker package generated;
 - [x] source-artifact and complete package SHA-256 identities separated;
 - [x] detached signing request implemented without runtime private-key input;
 - [x] exact public trust-descriptor digest pin required;
@@ -86,7 +87,7 @@ Level 1 deterministic worker-package evidence review.
 - [x] child bootstrap independently repeats release verification;
 - [x] fixed entry point evaluated from verified in-memory module strings;
 - [x] live worker no longer imports execution modules from the worktree;
-- [x] package identity bound through worker protocol 1.3;
+- [x] package and session identity bound through worker protocol 1.4;
 - [x] noncanonical, changed, linked, writable and undeclared package input
       rejected;
 - [x] bootstrap trust mismatch and request package mismatch rejected;
@@ -95,11 +96,29 @@ Level 1 deterministic worker-package evidence review.
 - [x] mutable bootstrap, repository trust, VM-module and workload gaps
       documented;
 - [x] ADR, security model, operations guide and Evidence 010 prepared;
-- [ ] Human Governance reviewed Technical Slices 3–10 evidence.
+- [x] fresh canonical 32-byte parent challenge generated for every launch;
+- [x] bootstrap creates a fresh Ed25519 key only after package verification;
+- [x] private workload-session key retained by a one-use child closure;
+- [x] complete session binds challenge and exact verified package identity;
+- [x] protocol 1.4 binds the challenge into the exact worker request;
+- [x] canonical response signature binds session, request and response digests;
+- [x] minimized session observation enters response and simulated result
+      digests;
+- [x] parent cross-verifies authenticated and response-bound session identity;
+- [x] challenge replay, response/signature tampering and second-sign attempts
+      rejected;
+- [x] real-child challenge, signature and valid-signature session-confusion
+      faults rejected;
+- [x] session failures preserve the claim for human-only uncertainty
+      reconciliation;
+- [x] external attestation, secure erasure, memory confidentiality and replay
+      ledger non-claims documented;
+- [x] ADR, security model, operations guide and Evidence 011 prepared;
+- [ ] Human Governance reviewed Technical Slices 3–11 evidence.
 
 ## Verified Result
 
-- 132 of 132 tests passed;
+- 140 of 140 tests passed;
 - four workflow tasks completed;
 - Chief of Staff, Operations and Marketing participated;
 - 14 signed invocations accepted in 14 committed local transactions;
@@ -162,7 +181,7 @@ Level 1 deterministic worker-package evidence review.
 - the release private key was not stored in FDOS or passed to the child;
 - no immutable-package, independent workload or same-account race claim is
   made;
-- one canonical 12-module, 63,550-source-byte and 71,179-serialized-byte
+- one canonical 13-module, 80,676-source-byte and 89,555-serialized-byte
   worker package was reproduced exactly;
 - package and source artifact were bound by separate SHA-256 identities;
 - the package release was verified against an exact Ed25519 public
@@ -174,8 +193,8 @@ Level 1 deterministic worker-package evidence review.
   packaged code;
 - the fixed entry point evaluated from the verified in-memory module strings
   without source-directory extraction;
-- protocol 1.3 bound package, artifact, attestation, trust anchor, issuer and
-  key through request, response and result;
+- protocol 1.4 bound package, artifact, attestation, trust anchor, issuer, key
+  and fresh session challenge through request, response and result;
 - changed package content, signature, trust pin, schema, canonical encoding,
   import graph, permissions and symbolic links were rejected;
 - deliberately changed bootstrap trust and request package bindings caused
@@ -183,6 +202,22 @@ Level 1 deterministic worker-package evidence review.
   after expiry;
 - no immutable-storage, HSM/KMS-custody, independent workload or
   production-VM-module claim is made;
+- every normal and Darwin worker launch used a fresh bootstrap-generated
+  Ed25519 response key and parent-generated 256-bit challenge;
+- the private session key was absent from package, environment after bootstrap
+  intake, request, response and stable runtime result;
+- one-use signing, canonical challenge/signature material, content tampering
+  and cross-challenge/package replay were rejected;
+- the response envelope authenticated complete session, request and response
+  digests;
+- the response/result digest bound a minimized session observation that the
+  parent cross-checked against the authenticated full session;
+- deliberately mismatched challenge, signature and validly signed durable
+  session identity caused rejection, recorded no outcome and reconciled only
+  to `uncertain` after expiry;
+- the session key is self-issued by the mutable bootstrap; no external
+  workload-attestation, secure-erasure or host-memory protection claim is
+  made;
 - no real service was contacted and no external effect occurred.
 
 See `Validation_Report.md`,
@@ -194,6 +229,7 @@ See `Validation_Report.md`,
 `Validation_Report_008_Darwin_Sandbox.md`,
 `Validation_Report_009_Signed_Worker_Artifact.md`,
 `Validation_Report_010_Verified_Worker_Package.md`,
+`Validation_Report_011_Authenticated_Workload_Session.md`,
 `Reference_Adoption_Assessment.md` and the evidence records under
 `../../04_Evidence/fdos-runtime/`.
 
@@ -207,8 +243,12 @@ host, an optional deprecated `sandbox-exec` experiment may report network and
 filesystem-write isolation true only after exact in-child denial probes.
 Both paths now require the same deterministic signed package. Parent and
 bootstrap verify it before the fixed entry point is evaluated from memory.
+Each launch also requires a fresh challenge-bound response signature and exact
+session-observation cross-check.
 The package file, verifier, bootstrap and pilot trust pin are not immutable or
-independently deployed. Neither path authorizes a real connector.
+independently deployed. The session key is created by that mutable bootstrap
+and is not external workload identity. Neither path authorizes a real
+connector.
 
 Personality is configuration only. No model provider is connected.
 

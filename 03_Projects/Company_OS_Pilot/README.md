@@ -49,8 +49,11 @@ system with a small pilot:
   artifact and package digests;
 - detached Ed25519 signing with an exact public trust-descriptor digest pin;
 - parent and bootstrap release verification before packaged module evaluation;
-- exact package/release identity in protocol 1.3 plus verified-memory
-  evaluation observation;
+- exact package/release identity in protocol 1.4 plus verified-memory
+  evaluation observation and a fresh random parent challenge;
+- a fresh bootstrap-generated one-use Ed25519 response key for every launch;
+- canonical session/request/response signing and exact parent-side session
+  observation cross-binding;
 - process-separated local connector simulation with bounded I/O and timeout;
 - optional Darwin-only network and filesystem-write denial with exact
   launcher/policy digest and in-worker denial probes;
@@ -74,6 +77,8 @@ system with a small pilot:
 - filesystem-read, CPU, memory, process-count and general syscall isolation;
 - independently attested worker identity, immutable deployment storage or
   externally protected release trust;
+- secure workload-session key erasure, host-memory confidentiality,
+  certificate revocation or a network replay ledger;
 - external-effect transaction or service-side idempotency;
 - database migration, backup, restore or encryption;
 - production support for the evolving synchronous `node:sqlite` dependency;
@@ -117,7 +122,12 @@ The pilot is technically complete when:
     package modules;
 19. changed package, signature, trust pin, import graph, path or request
     binding fails closed without an Outbox outcome;
-20. no change occurred outside the FDOS repository.
+20. every launch uses a fresh random challenge and bootstrap-generated
+    one-use response key;
+21. wrong challenge, wrong response signature and a validly signed mismatched
+    session observation fail closed without an Outbox outcome;
+22. the private session key never crosses a serialization boundary;
+23. no change occurred outside the FDOS repository.
 
 ## Reference Assessment
 

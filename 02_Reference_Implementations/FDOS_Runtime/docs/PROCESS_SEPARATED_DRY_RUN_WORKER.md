@@ -12,6 +12,7 @@ Related Decisions:
 - `../../../00_Specification/ADR/ADR-0049_Darwin_Network_and_Write_Sandbox_Experiment.md`
 - `../../../00_Specification/ADR/ADR-0050_Signed_Worker_Source_Artifact_Experiment.md`
 - `../../../00_Specification/ADR/ADR-0051_Deterministic_Signed_Worker_Package_Experiment.md`
+- `../../../00_Specification/ADR/ADR-0052_Ephemeral_Workload_Session_and_Authenticated_Response_Experiment.md`
 
 ## Purpose
 
@@ -33,31 +34,35 @@ authenticated Operations command
   -> authenticated Connector Instance claim
   -> read canonical worker package
   -> verify package, source graph, Ed25519 release and trust pin
-  -> exact, expiring worker package, release and isolation binding
+  -> generate fresh random parent challenge
+  -> exact, expiring worker package, release, session and isolation binding
        │
        ▼
      separate Node.js verifier bootstrap
        -> direct process-only mode; or
        -> Darwin sandbox-exec network/write-deny mode
        -> independently reverify package, release and trust pin
+       -> generate fresh one-use Ed25519 session key
        -> load exact verified modules into memory
        -> evaluate fixed packaged entry point
        -> verify exact request and no-effect contract
        -> match exact package and release binding
        -> when required, prove socket and write-open denial
        -> compute digest-only simulation outcome
-       -> emit one exact response
+       -> sign exact session, request and response digests
+       -> emit one canonical authenticated response envelope
        │
        ▼
-  -> parent verifies response and clean process exit
+  -> parent verifies envelope, response, session cross-binding and clean exit
   -> authenticated Connector Instance outcome command
   -> durable simulated delivery
 ```
 
 The controller retains the gateway, runtime, SQLite store, Invocation
 Authority and Connector principal. The child receives none of those objects
-or private keys. It receives one request over standard input and can return
-only one protocol response over standard output.
+or parent/release private keys. It receives one request over standard input
+and can return only one protocol response over standard output. Its ephemeral
+session private key is generated inside the bootstrap and never serialized.
 
 ## Process Launch Contract
 
@@ -77,12 +82,17 @@ only one protocol response over standard output.
 - supplies the package path and one bounded public release envelope;
 - requires the bootstrap to repeat package, release and trust verification
   before evaluating the fixed entry point from verified in-memory modules;
+- generates a fresh 32-byte parent challenge for each launch;
+- requires the verified bootstrap to generate a fresh Ed25519 key pair, expose
+  only its public session plus a one-use signer and retain the private key in
+  child-process memory;
 - uses `shell: false`;
 - opens only explicit standard-input, standard-output and standard-error
   pipes;
 - does not forward the parent environment;
-- supplies only the fixed fault-test selector, exact isolation
-  provider/policy digest and locale/timezone values;
+- supplies only the fixed fault-test selector, public release envelope,
+  session challenge, exact isolation provider/policy digest and
+  locale/timezone values;
 - explicitly disables child V8 coverage-file output in required no-write mode
   so test instrumentation cannot request a forbidden write at process exit;
 - uses a fixed working directory;
@@ -120,6 +130,7 @@ The content-addressed request binds:
 - exact artifact ID, version, source digest, release-attestation digest,
   issuer and key ID;
 - exact package ID, version, complete digest and trust-anchor digest;
+- one canonical 32-byte random workload-session challenge;
 - the complete verified Delivery Intent;
 - the request digest.
 
@@ -143,7 +154,14 @@ The content-addressed response binds:
 - `packageDigestMatched: true`,
   `releaseSignatureVerifiedByBootstrap: true` and
   `evaluatedFromVerifiedMemory: true` child observations;
+- a minimized session observation binding key, session, challenge and complete
+  package-binding digests while declaring `externallyAttested: false`;
 - the response digest.
+
+The response is wrapped in a canonical authenticated envelope containing the
+complete public session, exact response, one canonical 64-byte Ed25519
+signature and the complete envelope digest. The signed statement binds the
+session, request and response digests.
 
 The default process-only boundary contains
 `networkIsolationEnforced: false` and
@@ -166,14 +184,19 @@ Output is accepted only when all conditions hold:
 3. the process exited normally with code zero;
 4. standard error is empty;
 5. standard output contains exactly one JSON line;
-6. the response has the exact closed shape and digest;
-7. every request, delivery, claim, connector and time binding matches;
-8. any required isolation provider, policy digest and denial probes match
+6. the authenticated envelope has the exact closed shape and digest;
+7. its challenge, complete package binding and Ed25519 signature verify;
+8. the response has the exact closed shape and digest;
+9. every request, delivery, claim, connector and time binding matches;
+10. any required isolation provider, policy digest and denial probes match
    exactly;
-9. the bootstrap-observed package, artifact, attestation and trust pin match
+11. the bootstrap-observed package, artifact, attestation and trust pin match
    the parent-verified release binding;
-10. the response proves the fixed entry point was evaluated from the verified
-    in-memory module set.
+12. the response proves the fixed entry point was evaluated from the verified
+    in-memory module set;
+13. every response-bound session observation field matches the authenticated
+    full session;
+14. the one-use session key signed the exact request and response digests.
 
 A valid-looking response followed by a non-zero process exit is not accepted.
 This prevents the parent from interpreting a partially acknowledged or
@@ -189,6 +212,9 @@ The test worker supports bounded fault injection for:
 - a deliberately changed package digest in the otherwise exact request;
 - a deliberately changed bootstrap trust-anchor pin after valid parent
   preflight;
+- a request challenge different from the bootstrap challenge;
+- an invalid response signature from the real child;
+- a validly signed response with a different durable session observation;
 - a deliberate sandbox-launch bypass while the request still requires the
   Darwin policy.
 
@@ -216,10 +242,11 @@ The worker:
 - cannot authorize retry or resolve uncertainty.
 
 The parent-side demo still uses an ephemeral local authority to record the
-verified result as the registered Connector Instance. The child response
-itself is not independently signed or workload-attested. Positive Darwin
-probe results therefore demonstrate the behavior of the launched local
-process, not an independently established worker identity.
+verified result as the registered Connector Instance. The child response is
+authenticated by a fresh bootstrap-generated key, but that key is self-issued
+inside the same mutable workload boundary. Positive Darwin probe results
+therefore demonstrate the signed report of the launched local process, not an
+independently established or remotely attested worker identity.
 
 ## Explicit Non-Claims
 
@@ -228,7 +255,7 @@ This boundary does not establish:
 - portable, production-grade network denial or outbound allowlisting;
 - filesystem read, CPU, memory, process-count or general syscall isolation;
 - container, VM or tenant isolation;
-- independently authenticated worker identity;
+- externally issued or remotely attested worker identity;
 - immutable package storage or protected deployment trust; ADR-0051 packages
   and verifies exact bytes but the repository fixture remains owner-writable;
 - protection against compromise of the mutable bootstrap, verifier, Node.js
@@ -238,6 +265,10 @@ This boundary does not establish:
 - a real service API, DNS, TLS, rate, cost or service-idempotency control;
 - distributed worker fencing;
 - production monitoring or incident response.
+
+The ephemeral private key has no secure-erasure or host-memory-confidentiality
+claim. There is no certificate chain, revocation service or durable replay
+ledger for networked use.
 
 `processSeparated: true` means only that the simulation ran in another local
 process. `evaluatedFromVerifiedMemory: true` means the package bootstrap

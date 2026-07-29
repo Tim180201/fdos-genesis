@@ -28,7 +28,7 @@ claimed FDOS task
   -> durable Outbox record
   -> authenticated connector claim with lease and fencing ID
   -> exact expiring request to a separate local dry-run process
-  -> exact digest-only response accepted only after clean exit
+  -> challenge-bound signed digest-only response accepted only after clean exit
   -> content-minimized dry-run outcome
   -> success, failure or Human Governance uncertainty review
 ```
@@ -154,12 +154,17 @@ process. The request binds the full Delivery Intent, delivery, fencing claim,
 Connector Instance, short validity window and parent-verified worker release.
 The response binds that exact request, includes the bootstrap-observed package
 and trust verification and may contain only a digest-based simulated outcome.
+Protocol 1.4 also binds a fresh random parent challenge. After package
+verification, the bootstrap creates a fresh one-use Ed25519 response key and
+signs the complete session, request and response digests.
 
 The parent uses no shell, forwards no parent environment, limits input/output,
 enforces a timeout, verifies the canonical package, closed worker source graph,
 local Ed25519 release and exact trust-anchor pin, and requires clean exit code
 zero with empty standard error. The bootstrap repeats release verification
-before evaluating the packaged modules from memory. A valid response followed
+before evaluating the packaged modules from memory. The parent verifies the
+canonical signed envelope and cross-binds its session identity to the
+minimized observation included in the result digest. A valid response followed
 by a crash is rejected.
 
 The child has no runtime object, database handle or signing key. It cannot
@@ -175,14 +180,16 @@ binds the inspected launcher/policy digest, and the child must prove listen,
 connect and write-open denial before either enforcement flag can be true.
 Missing or bypassed enforcement rejects the worker and records no outcome.
 
-The interface is deprecated, the response is not independently signed and the
-profile does not isolate filesystem reads or general resources. Package,
+The interface is deprecated, and the profile does not isolate filesystem
+reads or general resources. The response is signed by an ephemeral key created
+by the mutable bootstrap, not by an independently attested workload. Package,
 bootstrap, verifier and pilot trust pin remain mutable and repository-local.
 See
 `PROCESS_SEPARATED_DRY_RUN_WORKER.md` and
 `DARWIN_SANDBOXED_DRY_RUN_WORKER.md`. Current package details and non-claims
 are in `VERIFIED_WORKER_PACKAGE.md`; the source-only predecessor remains in
-`SIGNED_WORKER_SOURCE_ARTIFACT.md`.
+`SIGNED_WORKER_SOURCE_ARTIFACT.md`. Session authentication is specified in
+`AUTHENTICATED_WORKLOAD_SESSION.md`.
 
 ## Transaction Semantics
 
@@ -228,7 +235,7 @@ A real read-only connector still requires:
 
 - supported OS-, container- or infrastructure-enforced worker isolation and
   portable outbound allowlisting;
-- independently authenticated worker identity, immutable deployment object
+- externally issued or attested worker identity, immutable deployment object
   and externally protected release trust;
 - production workload identity and connector revocation;
 - outbound network allowlist and DNS/TLS controls;

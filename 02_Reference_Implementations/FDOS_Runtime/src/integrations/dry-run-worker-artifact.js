@@ -58,6 +58,13 @@ const EXPECTED_IMPORT_SPECIFIERS = Object.freeze({
     "../kernel/validation.js",
     "./worker-identity.js"
   ],
+  "src/domain/workload-session-contract.js": [
+    "../kernel/canonical-json.js",
+    "../kernel/errors.js",
+    "../kernel/validation.js",
+    "./worker-package-contract.js",
+    "node:crypto"
+  ],
   "src/kernel/canonical-json.js": [
     "./errors.js",
     "node:crypto"
@@ -73,6 +80,7 @@ const EXPECTED_IMPORT_SPECIFIERS = Object.freeze({
   "src/workers/dry-run-connector-worker.js": [
     "../domain/network-isolation-contract.js",
     "../domain/worker-package-contract.js",
+    "../domain/workload-session-contract.js",
     "../kernel/canonical-json.js",
     "./dry-run-worker-protocol.js",
     "node:fs/promises",
@@ -82,6 +90,7 @@ const EXPECTED_IMPORT_SPECIFIERS = Object.freeze({
     "../domain/delivery-intent.js",
     "../domain/network-isolation-contract.js",
     "../domain/worker-package-contract.js",
+    "../domain/workload-session-contract.js",
     "../kernel/canonical-json.js",
     "../kernel/errors.js",
     "../kernel/ids.js",
