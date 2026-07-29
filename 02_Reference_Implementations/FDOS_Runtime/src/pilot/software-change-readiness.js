@@ -1,6 +1,11 @@
 import { FdosRuntime } from "../runtime/fdos-runtime.js";
 import { AuthenticatedRuntimeGateway } from "../runtime/authenticated-gateway.js";
 import { ValidationError } from "../kernel/errors.js";
+import {
+  CONNECTOR_OUTBOX_DRY_RUN_WORKFLOW,
+  PILOT_CONNECTOR_CONTRACT_DEFINITIONS,
+  PILOT_CONNECTOR_INSTANCE_DEFINITIONS
+} from "./connector-contracts.js";
 
 export const SOFTWARE_CHANGE_READINESS_WORKFLOW = Object.freeze({
   id: "company.software-change-readiness",
@@ -106,8 +111,15 @@ export const SOFTWARE_CHANGE_READINESS_WORKFLOW = Object.freeze({
 export async function openPilotRuntime(options = {}) {
   return FdosRuntime.open({
     ...options,
+    connectorContractDefinitions:
+      options.connectorContractDefinitions ||
+      PILOT_CONNECTOR_CONTRACT_DEFINITIONS,
+    connectorInstanceDefinitions:
+      options.connectorInstanceDefinitions ||
+      PILOT_CONNECTOR_INSTANCE_DEFINITIONS,
     workflowDefinitions: [
       ...(options.workflowDefinitions || []),
+      CONNECTOR_OUTBOX_DRY_RUN_WORKFLOW,
       SOFTWARE_CHANGE_READINESS_WORKFLOW
     ]
   });

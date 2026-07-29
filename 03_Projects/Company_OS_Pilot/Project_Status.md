@@ -1,18 +1,18 @@
 # Company OS Pilot — Project Status
 
-Status: Technical Slice 4 Passed / Human Review Pending
+Status: Technical Slice 5 Passed / Human Review Pending
 Date: 2026-07-29  
 Validation Level: Level 1 — Experimental
 
 ## Current Goal
 
-Deliver and verify the internal-only workflow across Chief of Staff,
-Operations and Marketing with authenticated commands whose Invocation
-acceptance and internal effects share one durable local transaction.
+Deliver and verify a deny-by-default Connector Contract and durable Outbox
+that remain bound to FDOS tasks while all network access and external effects
+stay disabled.
 
 ## Current Phase
 
-Level 1 transactional authenticated-command evidence review.
+Level 1 connector-contract and durable-Outbox evidence review.
 
 ## Exit Criteria
 
@@ -32,11 +32,17 @@ Level 1 transactional authenticated-command evidence review.
 - [x] authenticated Invocation acceptance and internal effects joined locally;
 - [x] crash, rollback, restart, tamper and format-selection behavior tested;
 - [x] transactional persistence ADR, operations guide and evidence prepared;
-- [ ] Human Governance reviewed Technical Slices 3 and 4 evidence.
+- [x] dry-run Connector Contract and active Connector Instance implemented;
+- [x] task-bound Delivery Intent and durable idempotent Outbox implemented;
+- [x] claim lease, fencing, retries and uncertainty state machine tested;
+- [x] connector principal restricted to claim and outcome commands;
+- [x] no-network Outbox demo completed with no external effect;
+- [x] ADR, security model, operations guide and Evidence 005 prepared;
+- [ ] Human Governance reviewed Technical Slices 3–5 evidence.
 
 ## Verified Result
 
-- 92 of 92 tests passed;
+- 106 of 106 tests passed;
 - four workflow tasks completed;
 - Chief of Staff, Operations and Marketing participated;
 - 14 signed invocations accepted in 14 committed local transactions;
@@ -52,16 +58,29 @@ Level 1 transactional authenticated-command evidence review.
 - 39 allowlisted reference files were byte- and evidence-verified;
 - a second runtime owner was rejected;
 - no external action executed.
+- one dry-run delivery prepared from a claimed Operations task;
+- exactly one registered Connector Instance claim succeeded;
+- the no-network demo completed two tasks with 12 signed Invocations, 12
+  committed transactions and 22 verified events;
+- the delivery ended `simulated` with `externalEffect: none`;
+- concurrent claims, stale contracts, raw result fields and connector
+  overreach were denied;
+- expired claims entered durable uncertainty, could be detected without a
+  live worker and could not auto-retry;
+- workflow completion evidence included a content-minimized delivery
+  projection without raw connector parameters.
 
 See `Validation_Report.md`,
 `Validation_Report_003_Authenticated_Invocation.md`,
 `Validation_Report_004_Transactional_Persistence.md`,
+`Validation_Report_005_Connector_Outbox.md`,
 `Reference_Adoption_Assessment.md` and the evidence records under
 `../../04_Evidence/fdos-runtime/`.
 
 ## External Action Status
 
-Disabled.
+Disabled. A local dry-run worker path is enabled with
+`networkAccess: false` and `externalEffects: false`.
 
 ## Reference Repository Status
 

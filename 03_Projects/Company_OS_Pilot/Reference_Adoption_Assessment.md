@@ -146,16 +146,16 @@ Runtime Store
   -> one exclusive Level 1 process owner
   -> local SQLite command transaction
   -> verified event-chain and transaction rehydration
-  -> serialized mutations
-  -> future distributed worker fencing and outbox
+  -> durable dry-run Outbox with serialized local claim fencing
+  -> future isolated connector and distributed worker fencing
 ```
 
 ## Recommended Next Build Order
 
 1. Human-review the authenticated-invocation and transactional-persistence
    evidence with their remaining identity, storage and recovery limits.
-2. Specify a connector contract with dry-run, durable outbox, idempotency and
-   uncertain-outcome review while keeping connector execution disabled.
+2. Human-review the implemented dry-run Connector Contract, durable Outbox,
+   idempotency and uncertain-outcome evidence.
 3. Validate one authenticated read-only GitHub or document connector in a
    sandbox.
 4. Add a model-provider adapter with budgets and structured response contracts.

@@ -29,6 +29,8 @@ FDOS Runtime
   ├── Policy Engine
   ├── Task State Machine
   ├── Approval State Machine
+  ├── Connector Contract Registry
+  ├── Durable Dry-Run Outbox
   ├── Scoped Memory
   ├── Git Reference Evidence
   └── Evidence Projection
@@ -76,8 +78,8 @@ Integrity and unexpected implementation failures before commit roll back both
 acceptance and internal effects. A finalization failure reloads authoritative
 state and reports confirmed rollback or an uncertain outcome. Retrying the
 same Invocation is permitted only after diagnosis and a clean reopen resolves
-replay state. This is safe in the current experiment because connectors and
-all external effects remain disabled.
+replay state. This is safe in the current experiment because Connector
+Contracts enforce no network and no external effects.
 
 The local demo signer is intentionally separate from the gateway object. The
 runtime receives only a public trust descriptor. Production still requires an
@@ -136,6 +138,21 @@ object before reading an allowlisted document from its committed blob. It
 never reads untracked content. A changing HEAD/status, tracked worktree drift,
 symlink or invalid evidence fails closed.
 
+### Connector work before connector execution
+
+A dry-run Connector Contract closes operation, capability, target, risk,
+sensitivity, parameters, retry budget, network policy and effect policy.
+
+An agent may prepare an immutable Delivery Intent only from its claimed task.
+The durable Outbox binds the task Action Intent, exact Connector Instance,
+contract/operation digests, normalized parameters and scoped idempotency.
+
+A signed Connector Instance can only claim its own delivery and report the
+active fencing claim outcome. Lease expiry becomes uncertain. Retry,
+cancellation and uncertainty resolution remain Human Governance actions.
+
+No contract in this slice can open a network or record an external effect.
+
 ## State Machines
 
 ### Task
@@ -173,6 +190,17 @@ issued ──invalid or expired──> denied
 accepted/consumed ──any replay──> denied
 ```
 
+### Connector Outbox
+
+```text
+prepared ──registered connector claim──> claimed
+claimed ──digest-only dry-run result──> simulated
+claimed ──typed failure──> failed ──human retry──> prepared
+claimed ──uncertain/lease expiry──> uncertain
+uncertain ──human evidence review──> simulated|failed|cancelled
+prepared|failed ──human cancel──> cancelled
+```
+
 ## Persistence
 
 Authenticated events are stored in SQLite with:
@@ -198,6 +226,7 @@ tests. Authenticated operation requires SQLite, and no non-empty store is
 migrated implicitly.
 
 See `TRANSACTIONAL_PERSISTENCE.md`.
+See `CONNECTOR_OUTBOX.md` for the external-work boundary.
 
 ## Future Extension Points
 
@@ -205,11 +234,11 @@ These are not implemented:
 
 - production identity-provider federation and revocation;
 - supported production database and schema migration service;
-- distributed fencing and transactional worker claims;
-- connector outbox and uncertain-outcome recovery;
+- distributed fencing and multi-process worker claims;
+- real read-only connector sandbox and service-specific idempotency;
 - message bus and durable queues;
 - model-provider adapter;
-- connector registry and isolated executors;
+- isolated connector executors and network egress policy;
 - secrets vault;
 - policy-as-code service;
 - observability and incident operations.

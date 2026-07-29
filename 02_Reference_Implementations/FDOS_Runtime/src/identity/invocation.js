@@ -184,6 +184,58 @@ const commandPayloadSchemas = Object.freeze({
     required: [],
     optional: []
   },
+  "outbox.prepare": {
+    required: [
+      "connectorId",
+      "idempotencyKey",
+      "operationId",
+      "parameters",
+      "taskId"
+    ],
+    optional: []
+  },
+  "outbox.get": {
+    required: ["deliveryId"],
+    optional: []
+  },
+  "outbox.list": {
+    required: [],
+    optional: ["status"]
+  },
+  "outbox.claim": {
+    required: ["deliveryId", "leaseSeconds"],
+    optional: []
+  },
+  "outbox.record-outcome": {
+    required: [
+      "claimId",
+      "deliveryId",
+      "evidence",
+      "outcome"
+    ],
+    optional: []
+  },
+  "outbox.reconcile-expired": {
+    required: ["deliveryId"],
+    optional: []
+  },
+  "outbox.retry": {
+    required: ["deliveryId", "reason"],
+    optional: []
+  },
+  "outbox.cancel": {
+    required: ["deliveryId", "reason"],
+    optional: []
+  },
+  "outbox.resolve-uncertain": {
+    required: [
+      "decision",
+      "deliveryId",
+      "evidenceDigest",
+      "reason"
+    ],
+    optional: ["resultDigest", "retryable"]
+  },
   "audit.read": {
     required: [],
     optional: ["runId"]
@@ -326,7 +378,13 @@ export function invocationCommandDigest(command) {
 
 export function invocationSubject(command, fallbackInvocationId) {
   const normalized = normalizeInvocationCommand(command);
-  for (const key of ["taskId", "runId", "approvalId", "candidateId"]) {
+  for (const key of [
+    "taskId",
+    "runId",
+    "approvalId",
+    "candidateId",
+    "deliveryId"
+  ]) {
     if (typeof normalized.payload[key] === "string") {
       return normalized.payload[key];
     }

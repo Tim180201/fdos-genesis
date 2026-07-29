@@ -41,48 +41,49 @@ V4 and V5 cannot be claimed for an uncommitted local experiment.
 Baseline commit/tree:
 
 - FDOS commit:
-  `5eb93c831f070a201a1e1763a944b2ea728df519`
+  `359af997a3a66a52d764b4b8d261835abd200080`
 - FDOS tree:
-  `c7921ca0ef36f2c36cdd7c3d4e0f6aeb597ffd79`
-- the transactional-persistence slice is evaluated as the change from that
-  authenticated-invocation baseline;
+  `7885821e241b8e24c58165a8a01fb21cf7aac2c4`
+- the Connector Contract and durable-Outbox slice is evaluated as the change
+  from that transactional-persistence baseline;
 - external references are bound separately in
   `Reference_Adoption_Assessment.md`.
 
 Changed boundaries:
 
-- synchronous local SQLite event and transaction schema;
-- authenticated Invocation-plus-command transaction orchestration;
-- recognized business-failure evidence and fatal rollback semantics;
-- transaction identity in canonical events and evidence references;
-- event-chain and transaction-metadata rehydration checks;
-- crash recovery, stale-context and out-of-context append controls;
-- persistence auto-detection and implicit-migration denial;
-- Node.js runtime requirement and dependency-maturity boundary;
-- pilot, tests, governance, risks, knowledge and evidence.
+- closed Connector Contract and active Connector Instance registries;
+- A0/A1 no-network/no-effect admission rules and typed parameter schemas;
+- immutable task-bound Delivery Intent and scoped idempotency;
+- authenticated Connector principal command separation;
+- durable Outbox preparation, claim, fencing, lease and attempt state;
+- digest-only simulated, typed failed and uncertain outcomes;
+- Human Governance retry, cancellation and uncertainty resolution;
+- stale-contract, concurrent-claim and lower-level-runtime denial;
+- no-network connector dry-run workflow and CLI demo;
+- project ADR, security, risk, knowledge and evidence.
 
 Risk class: R3.
 
 Rationale:
 
-- persistence determines whether replay and business state can diverge;
-- rollback and recognized-failure classification affect durable execution
-  semantics;
-- schema, migration and runtime dependency choices are security and recovery
-  boundaries;
-- transaction identity changes audit and evidence contracts.
+- connector contracts and parameters define future external authority;
+- claim fencing and uncertainty determine whether later effects could be
+  duplicated;
+- Connector principal isolation changes authorization;
+- durable idempotency, leases and outcomes change recovery and audit
+  contracts.
 
 Selected verification and result:
 
 - V0: exact FDOS status/diff, `git diff --check`, navigation, unsupported-claim
   review and source-manifest verification passed;
-- V1: 29 focused SQLite/authenticated-command tests and syntax checks passed;
-- V2: commit, empty/nested-context denial, savepoint rollback, process exit,
-  fatal rollback, recognized business failure, approval expiry, restart,
-  replay, event tamper, transaction-metadata tamper and format-selection paths
-  passed;
-- V3: complete 92-test runtime regression, coverage, authenticated deterministic
-  demo and final scope review passed;
+- V1: connector, delivery-intent, gateway and demo syntax checks plus 14
+  focused Outbox tests passed;
+- V2: contract admission, task/role binding, parameter closure, idempotency,
+  concurrent claims, connector isolation, lease expiry, retry budget,
+  uncertainty resolution, restart, contract drift and tamper paths passed;
+- V3: complete 106-test runtime regression, coverage, authenticated
+  three-role demo, no-network Outbox demo and final scope review passed;
 - V4: not claimed; no independent exact-commit CI evidence is attached;
 - V5: not applicable and not authorized; no physical or external operation.
 
@@ -91,8 +92,8 @@ Checks intentionally not run:
 - no tests/builds in TapTime or Company AI, because both are read-only
   references and their repository instructions prohibit or do not authorize
   write-producing execution;
-- no external API/model/connector test, because external integrations remain
-  disabled;
+- no external API/model/connector test, because the contract enforces
+  `networkAccess: false` and `externalEffects: false`;
 - no production, deployment, legal or physical gate.
 
 Evidence carried forward:
@@ -102,8 +103,8 @@ Evidence carried forward:
 - `EV-FDOS-REFERENCE-INTAKE-002` remains the evidence record for reference
   intake and single-writer persistence;
 - `EV-FDOS-AUTHENTICATED-INVOCATION-003` remains the identity-boundary record;
-- transactional behavior is bound separately in
-  `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004`.
+- `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004` remains the local transaction record;
+- this slice is bound separately in `EV-FDOS-CONNECTOR-OUTBOX-005`.
 
 ## Required Completion Report
 

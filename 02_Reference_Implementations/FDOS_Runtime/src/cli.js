@@ -10,6 +10,9 @@ import {
 import {
   executeAuthenticatedSoftwareChangeReadinessDemo
 } from "./pilot/authenticated-demo.js";
+import {
+  executeConnectorOutboxDryRunDemo
+} from "./pilot/connector-outbox-demo.js";
 import { openPilotReferenceSource } from "./pilot/reference-sources.js";
 import {
   openAuthenticatedPilotRuntime,
@@ -22,6 +25,7 @@ function usage() {
     "",
     "Commands:",
     "  demo                 execute the authenticated internal-only pilot",
+    "  outbox-demo          execute the no-network connector outbox dry-run",
     "  verify <directory>   verify and summarize an existing local store",
     "  reference-snapshot <taptime|company-ai> <repository>",
     "                       capture content-minimized, read-only Git evidence",
@@ -77,6 +81,65 @@ async function runDemo() {
   }
 }
 
+async function runOutboxDemo() {
+  const runtimeRoot = path.resolve(".runtime");
+  await mkdir(runtimeRoot, { recursive: true, mode: 0o700 });
+  const directory = await mkdtemp(path.join(runtimeRoot, "outbox-demo-"));
+  const authority = LocalInvocationAuthority.create();
+  const verifier = new InvocationVerifier({
+    trustedKeys: [authority.trustDescriptor()],
+    organizationId: authority.organizationId,
+    audience: authority.audience
+  });
+  const gateway = await openAuthenticatedPilotRuntime({
+    directory,
+    invocationVerifier: verifier
+  });
+  try {
+    const result = await executeConnectorOutboxDryRunDemo({
+      gateway,
+      authority
+    });
+    const summary = {
+      mode: "Level 1 — Experimental Connector Dry-Run",
+      productionReady: false,
+      networkAccess: false,
+      externalActionsExecuted: false,
+      store: directory,
+      correlationId: result.correlationId,
+      run: {
+        id: result.run.id,
+        status: result.run.status,
+        taskCount: result.run.tasks.length
+      },
+      delivery: {
+        id: result.delivery.id,
+        status: result.delivery.status,
+        attempt: result.delivery.attempt,
+        intentDigest: result.delivery.intent.digest,
+        resultDigest:
+          result.delivery.lastOutcome?.evidence?.resultDigest || null,
+        externalEffect:
+          result.delivery.lastOutcome?.evidence?.externalEffect || null
+      },
+      evidence: {
+        bundleDigest: result.evidence.bundleDigest,
+        deliveryCount: result.evidence.deliveries.length,
+        eventReferenceCount: result.evidence.eventReferences.length
+      },
+      audit: {
+        eventCount: result.audit.length,
+        valid: result.status.audit.valid,
+        headHash: result.status.audit.headHash
+      },
+      status: result.status
+    };
+    process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+  } finally {
+    await gateway.close();
+  }
+}
+
 async function verifyStore(directory) {
   if (!directory) throw new Error("verify requires a store directory.");
   const runtime = await openPilotRuntime({
@@ -122,6 +185,10 @@ async function main() {
   }
   if (command === "demo") {
     await runDemo();
+    return;
+  }
+  if (command === "outbox-demo") {
+    await runOutboxDemo();
     return;
   }
   if (command === "verify") {

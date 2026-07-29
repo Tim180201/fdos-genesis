@@ -50,6 +50,13 @@ const DEFAULT_ACTIONS = Object.freeze([
     description: "Perform a bounded specialist analysis."
   },
   {
+    type: "connector.reference.read",
+    capability: "connector:read:reference",
+    minimumRiskClass: "A1",
+    description:
+      "Prepare a bounded read-only reference request under a dry-run connector contract."
+  },
+  {
     type: "connector.reversible.write",
     capability: "connector:write:reversible",
     minimumRiskClass: "A2",

@@ -32,6 +32,7 @@ Project
 | KP-008 | Knowledge Candidate | Company AI, FDOS Company OS Pilot | Candidate / Level 1 experiment | Human review; validate multi-process worker fencing and durable outbox behavior |
 | KP-009 | Knowledge Candidate | Company AI, FDOS Company OS Pilot | Candidate / Level 1 experiment | Human review; validate independent identity, revocation and atomic external-outcome handling through a read-only sandboxed connector |
 | KP-010 | Knowledge Candidate | Company AI, FDOS Company OS Pilot | Candidate / Level 1 experiment | Human review; validate durable outbox, multi-worker fencing and uncertain outcomes through a read-only sandboxed connector |
+| KP-011 | Knowledge Candidate | Company AI, TapTime, FDOS Company OS Pilot | Candidate / Level 1 dry-run experiment | Human review; validate one isolated authenticated read-only connector with service-specific idempotency, egress, secrets and crash evidence |
 
 ## Governance
 

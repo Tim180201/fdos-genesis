@@ -170,3 +170,35 @@ version.
 Rationale: It avoids an added package supply-chain dependency and provides the
 needed local transaction primitive, but its evolving stability and blocking
 API prevent any production-support claim.
+
+## PILOT-DEC-019 — Contract and Outbox Before Connector
+
+Date: 2026-07-29
+
+Decision: Prepare future external work only through a content-addressed
+Connector Contract, immutable Delivery Intent and durable Outbox.
+
+Rationale: A generic tool call cannot prove which task, authority, target,
+parameters or connector contract produced an external request.
+
+## PILOT-DEC-020 — Dry-Run Connector Principal
+
+Date: 2026-07-29
+
+Decision: Admit a registered Connector Instance only for claim and outcome
+commands while contracts enforce no network and no external effect.
+
+Rationale: A worker needs an attributable identity and narrow fencing surface,
+not agent, task, memory or audit authority.
+
+## PILOT-DEC-021 — Uncertainty Never Auto-Retries
+
+Date: 2026-07-29
+
+Decision: Claim expiry or ambiguous worker outcome enters durable
+`uncertain`. Only Human Governance may resolve it; no automatic retry is
+permitted.
+
+Rationale: A local missing acknowledgement cannot distinguish lost work from a
+completed external operation. Automatic retry would risk duplicate effects in
+a future real adapter.

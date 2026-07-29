@@ -7,10 +7,10 @@ Production Status: Not Production Ready
 FDOS Runtime is a small executable kernel for testing whether FDOS can safely
 coordinate specialized AI roles as one organizational system.
 
-The current slices implement coordination and authenticated invocation
-infrastructure, not autonomous model calls. Callers supply the work results;
-the runtime governs who may act, in which order, within which information
-scope and under which approval.
+The current slices implement coordination, authenticated invocation and a
+no-network connector Outbox, not autonomous model calls or external execution.
+Callers supply work results; the runtime governs who may act, in which order,
+within which information scope and under which approval.
 
 ## Implemented Scope
 
@@ -23,6 +23,12 @@ scope and under which approval.
   events;
 - transaction-aware hash-chain and metadata verification across restart;
 - fail-closed persistence-format selection without implicit JSONL migration;
+- deny-by-default, content-addressed dry-run Connector Contracts;
+- immutable, task-bound Delivery Intents and durable idempotent preparation;
+- registered Connector Instance identity with claim leases and fencing IDs;
+- failed retry, cancellation and uncertainty resolution under Human
+  Governance;
+- content-minimized simulated, failed and uncertain connector outcomes;
 - capability-based authorization;
 - versioned workflow definitions and acyclic dependency validation;
 - immutable action intents with canonical SHA-256 bindings;
@@ -42,7 +48,7 @@ scope and under which approval.
 ## Intentionally Disabled
 
 - LLM or agent-provider calls;
-- Slack, Teams, email, calendar, CRM, GitHub or MCP execution;
+- networked Slack, Teams, email, calendar, CRM, GitHub or MCP execution;
 - publication, contracts, payments, deletions and personnel decisions;
 - A3 and A4 execution;
 - restricted-data storage;
@@ -56,12 +62,17 @@ Requirements: Node.js 22.13 or newer.
 cd 02_Reference_Implementations/FDOS_Runtime
 npm test
 npm run demo
+npm run demo:outbox
 ```
 
 The demo creates an ephemeral local Ed25519 authority, gives the runtime only
 its public trust descriptor, executes a fully authenticated internal workflow
 below `.runtime/`, commits each command as one local SQLite transaction and
 prints a content-minimized evidence bundle. It performs no external action.
+
+The Outbox demo separately exercises contract binding, task-bound preparation,
+connector claim and a digest-only simulated result. It opens no network and
+records `externalEffect: none`.
 
 The built-in `node:sqlite` API is still an evolving Node.js dependency. This
 candidate records exact runtime versions and makes no production-support
@@ -78,7 +89,8 @@ node src/cli.js reference-snapshot company-ai /absolute/path/to/company-ai-platf
 
 - `src/kernel/` — canonical serialization, identifiers and event integrity;
 - `src/identity/` — signed Invocation Contexts and public-key verification;
-- `src/domain/` — roles, action intents, policy and workflow definitions;
+- `src/domain/` — roles, action and delivery intents, connector contracts,
+  policy and workflow definitions;
 - `src/runtime/` — authenticated gateway, coordination, approvals and memory;
 - `src/integrations/` — disabled-by-default, read-only reference boundaries;
 - `src/pilot/` — the three-role reference workflow;
@@ -89,6 +101,7 @@ See:
 - `docs/ARCHITECTURE.md`
 - `docs/AUTHENTICATED_INVOCATIONS.md`
 - `docs/TRANSACTIONAL_PERSISTENCE.md`
+- `docs/CONNECTOR_OUTBOX.md`
 - `docs/AGENT_AND_ROLE_MODEL.md`
 - `docs/SECURITY_MODEL.md`
 - `docs/PILOT_WORKFLOW.md`
@@ -100,4 +113,4 @@ Untrusted integrations must use `AuthenticatedRuntimeGateway`; the lower-level
 runtime object is an internal reference-kernel and test surface. Passing tests
 proves behavior only inside the local process-leased experiment. The ephemeral
 demo signer is not a production identity provider and does not prove
-infrastructure, connector, database-recovery or tenant security.
+infrastructure, networked connector, database-recovery or tenant security.

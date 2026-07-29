@@ -21,7 +21,7 @@ function validateActor(actor) {
   assertPlainObject(actor, "event actor");
   const type = requiredString(actor.type, "event actor type", {
     max: 32,
-    pattern: /^(human|agent|system)$/
+    pattern: /^(human|agent|connector|system)$/
   });
   const id = requiredString(actor.id, "event actor id", {
     max: 160,

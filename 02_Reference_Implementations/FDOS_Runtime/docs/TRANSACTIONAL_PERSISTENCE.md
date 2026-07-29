@@ -89,9 +89,9 @@ an already expired approval, expiry and failure evidence commit with that
 Invocation while no grant event is written.
 
 The rollback-and-retry behavior for unexpected failures assumes that no
-external effect exists. Connectors remain disabled until an outbox,
-idempotency key and uncertain-outcome workflow are separately implemented and
-approved.
+external effect exists. The dry-run Outbox now joins intent, claim and outcome
+events to authenticated transactions, but its contracts prohibit network
+access and external effects. A real adapter still requires separate approval.
 
 SQLite commit acknowledgement can itself fail. The adapter attempts rollback
 and reloads visible state. It reports `rolled-back` only if rollback completed;
@@ -179,7 +179,7 @@ remain unvalidated.
 - no backup, point-in-time recovery or restore test;
 - no explicit schema-upgrade or downgrade runner;
 - no multi-host or distributed transaction;
-- no external-effect transaction or outbox;
+- no external-effect transaction, broker or real connector;
 - no database authorization separate from the host account;
 - no storage quota, retention or privacy-deletion process;
 - no load, latency or contention benchmark;

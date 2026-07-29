@@ -44,6 +44,11 @@ import {
   createActionIntent,
   verifyActionIntent
 } from "../domain/action-intent.js";
+import { ConnectorRegistry } from "../domain/connector-contract.js";
+import {
+  createDeliveryIntent,
+  normalizeDeliveryOutcome
+} from "../domain/delivery-intent.js";
 import { PolicyEngine } from "../domain/policy-engine.js";
 import {
   PILOT_ROLE_DEFINITIONS,
@@ -57,6 +62,18 @@ const MAX_INPUT_BYTES = 64 * 1024;
 const MAX_RESULT_BYTES = 128 * 1024;
 const MAX_MEMORY_BYTES = 32 * 1024;
 const MAX_SOURCE_EVIDENCE_BYTES = 32 * 1024;
+const CONNECTOR_WORKER_OPERATIONS = new Set([
+  "outbox.claim",
+  "outbox.record-outcome"
+]);
+const OUTBOX_STATUSES = Object.freeze([
+  "cancelled",
+  "claimed",
+  "failed",
+  "prepared",
+  "simulated",
+  "uncertain"
+]);
 const RUNTIME_CONSTRUCTION_TOKEN = Symbol("fdos-runtime-construction");
 
 function byteLengthOfJson(value) {
@@ -159,6 +176,34 @@ function taskEvidence(task) {
     attempt: task.attempt,
     actionIntentDigest: task.actionIntent.digest,
     resultDigest: task.resultDigest
+  };
+}
+
+function deliveryEvidence(delivery) {
+  const outcomeEvidence = delivery.lastOutcome?.evidence || null;
+  return {
+    deliveryId: delivery.id,
+    taskId: delivery.intent.task.id,
+    actionIntentDigest: delivery.intent.task.actionIntentDigest,
+    connectorId: delivery.intent.connector.id,
+    contractVersion: delivery.intent.connector.contractVersion,
+    contractDigest: delivery.intent.connector.contractDigest,
+    operationId: delivery.intent.operation.id,
+    intentDigest: delivery.intent.digest,
+    status: delivery.status,
+    attempt: delivery.attempt,
+    outcomeType: delivery.lastOutcome?.type || null,
+    resultDigest:
+      outcomeEvidence?.resultDigest ||
+      delivery.resolution?.resultDigest ||
+      null,
+    outcomeEvidenceDigest:
+      outcomeEvidence?.evidenceDigest ||
+      outcomeEvidence?.messageDigest ||
+      null,
+    resolutionEvidenceDigest:
+      delivery.resolution?.evidenceDigest || null,
+    externalEffect: outcomeEvidence?.externalEffect || null
   };
 }
 
@@ -280,6 +325,7 @@ export class FdosRuntime {
   #actionCatalog;
   #roleRegistry;
   #agentRegistry;
+  #connectorRegistry;
   #workflowRegistry;
   #policy;
   #state;
@@ -297,6 +343,8 @@ export class FdosRuntime {
     roleDefinitions = PILOT_ROLE_DEFINITIONS,
     agentDefinitions = PILOT_AGENT_DEFINITIONS,
     actionDefinitions = [],
+    connectorContractDefinitions = [],
+    connectorInstanceDefinitions = [],
     workflowDefinitions = [],
     runtimeLeaseOptions = {},
     invocationVerifier = null,
@@ -307,6 +355,11 @@ export class FdosRuntime {
     const agentRegistry = new AgentRegistry({
       roleRegistry,
       definitions: agentDefinitions
+    });
+    const connectorRegistry = new ConnectorRegistry({
+      actionCatalog,
+      contractDefinitions: connectorContractDefinitions,
+      instanceDefinitions: connectorInstanceDefinitions
     });
     const workflowRegistry = new WorkflowRegistry({
       actionCatalog,
@@ -344,6 +397,7 @@ export class FdosRuntime {
         actionCatalog,
         roleRegistry,
         agentRegistry,
+        connectorRegistry,
         workflowRegistry,
         runtimeLease,
         leaseOwnership,
@@ -366,6 +420,7 @@ export class FdosRuntime {
     actionCatalog,
     roleRegistry,
     agentRegistry,
+    connectorRegistry,
     workflowRegistry,
     runtimeLease,
     leaseOwnership,
@@ -382,6 +437,7 @@ export class FdosRuntime {
     this.#actionCatalog = actionCatalog;
     this.#roleRegistry = roleRegistry;
     this.#agentRegistry = agentRegistry;
+    this.#connectorRegistry = connectorRegistry;
     this.#workflowRegistry = workflowRegistry;
     this.#policy = new PolicyEngine({ actionCatalog, roleRegistry });
     this.#state = createRuntimeState();
@@ -424,6 +480,14 @@ export class FdosRuntime {
 
   listAgentInstances() {
     return this.#agentRegistry.list();
+  }
+
+  listConnectorContracts() {
+    return this.#connectorRegistry.listContracts();
+  }
+
+  listConnectorInstances() {
+    return this.#connectorRegistry.listInstances();
   }
 
   async mutate(operation) {
@@ -504,19 +568,32 @@ export class FdosRuntime {
         command
       });
       verifyInvocationReceipt(receipt);
+      if (
+        receipt.principal.type === "connector" &&
+        !CONNECTOR_WORKER_OPERATIONS.has(command.type)
+      ) {
+        throw new AuthorizationError(
+          `Connector principals cannot invoke ${command.type}.`
+        );
+      }
       if (this.#state.acceptedInvocations.has(receipt.invocationId)) {
         throw new ConflictError(
           `Invocation ${receipt.invocationId} was already consumed.`
         );
       }
-      const actor = normalizeActor(
-        {
-          ...receipt.principal,
-          invocationId: receipt.invocationId,
-          correlationId: receipt.correlationId
-        },
-        this.#agentRegistry
-      );
+      const actorSource = {
+        ...receipt.principal,
+        invocationId: receipt.invocationId,
+        correlationId: receipt.correlationId
+      };
+      const actor =
+        receipt.principal.type === "connector"
+          ? immutableJson({
+              ...this.#connectorRegistry.resolveActor(receipt.principal),
+              invocationId: receipt.invocationId,
+              correlationId: receipt.correlationId
+            })
+          : normalizeActor(actorSource, this.#agentRegistry);
       const acceptedAt = receipt.verifiedAt;
       await this.append(
         "identity.invocation.accepted",
@@ -529,6 +606,102 @@ export class FdosRuntime {
       );
       return immutableJson({ actor, receipt });
     });
+  }
+
+  assertAuthenticatedOperation(actor, operation) {
+    if (
+      !this.#eventLog.status().transactional ||
+      !this.#eventLog.inTransaction()
+    ) {
+      throw new PolicyError(
+        "Connector outbox commands require an authenticated transaction."
+      );
+    }
+    if (!actor?.invocationId || !actor?.correlationId) {
+      throw new AuthorizationError(
+        "Connector outbox commands require Invocation attribution."
+      );
+    }
+    const accepted = this.#state.acceptedInvocations.get(
+      actor.invocationId
+    );
+    if (
+      !accepted ||
+      accepted.operation !== operation ||
+      accepted.correlationId !== actor.correlationId ||
+      accepted.principal.type !== actor.type ||
+      accepted.principal.id !== actor.id
+    ) {
+      throw new AuthorizationError(
+        "Connector outbox command attribution is invalid."
+      );
+    }
+    return accepted;
+  }
+
+  authenticatedConnectorActor(actor, operation) {
+    const connector = this.#connectorRegistry.resolveActor(actor);
+    const normalized = immutableJson({
+      ...connector,
+      invocationId: assertId(
+        actor?.invocationId,
+        "connector actor invocation id"
+      ),
+      correlationId: assertId(
+        actor?.correlationId,
+        "connector actor correlation id"
+      )
+    });
+    this.assertAuthenticatedOperation(normalized, operation);
+    return normalized;
+  }
+
+  assertCurrentConnectorBinding(delivery) {
+    const resolved = this.#connectorRegistry.resolveOperation(
+      delivery.intent.connector.id,
+      delivery.intent.operation.id
+    );
+    if (
+      resolved.contract.digest !==
+        delivery.intent.connector.contractDigest ||
+      resolved.operation.digest !== delivery.intent.operation.digest
+    ) {
+      throw new PolicyError(
+        `Delivery ${delivery.id} has a stale connector contract binding.`
+      );
+    }
+    const normalizedParameters =
+      this.#connectorRegistry.normalizeParameters(
+        resolved.operation,
+        delivery.intent.parameters
+      );
+    if (
+      digestObject(normalizedParameters) !==
+      delivery.intent.parametersDigest
+    ) {
+      throw new IntegrityError(
+        `Delivery ${delivery.id} parameters violate the current contract.`
+      );
+    }
+    return resolved;
+  }
+
+  assertDeliveryTaskActive(delivery) {
+    const task = this.findTask(delivery.intent.task.id);
+    const run = this.findRun(task.runId);
+    if (
+      run.status !== "active" ||
+      task.status !== "in_progress" ||
+      task.claimedBy !== delivery.intent.requestedBy ||
+      task.attempt !== delivery.intent.task.attempt ||
+      task.actionIntent.digest !==
+        delivery.intent.task.actionIntentDigest
+    ) {
+      throw new PolicyError(
+        `Delivery ${delivery.id} source task is no longer active.`
+      );
+    }
+    return task;
   }
 
   async executeAuthenticatedCommand({
@@ -621,6 +794,15 @@ export class FdosRuntime {
     const approval = this.#state.approvals.get(approvalId);
     if (!approval) throw new NotFoundError(`Unknown approval: ${approvalId}.`);
     return approval;
+  }
+
+  findDelivery(deliveryId) {
+    const normalizedId = assertId(deliveryId, "connector delivery id");
+    const delivery = this.#state.outbox.get(normalizedId);
+    if (!delivery) {
+      throw new NotFoundError(`Unknown connector delivery: ${normalizedId}.`);
+    }
+    return delivery;
   }
 
   async startWorkflow({
@@ -995,6 +1177,28 @@ export class FdosRuntime {
         );
       }
       verifyActionIntent(task.actionIntent, this.#actionCatalog);
+      if (this.#connectorRegistry.hasActionType(task.actionIntent.actionType)) {
+        const deliveries = [...this.#state.outbox.values()].filter(
+          (delivery) =>
+            delivery.intent.task.id === task.id &&
+            delivery.intent.task.attempt === task.attempt &&
+            delivery.intent.task.actionIntentDigest ===
+              task.actionIntent.digest
+        );
+        if (deliveries.length !== 1) {
+          throw new PolicyError(
+            `Contracted connector task ${task.id} requires one exact delivery.`
+          );
+        }
+        if (
+          deliveries[0].status !== "simulated" ||
+          deliveries[0].intent.requestedBy !== normalizedActor.id
+        ) {
+          throw new PolicyError(
+            `Contracted connector task ${task.id} has no completed dry-run delivery.`
+          );
+        }
+      }
       assertResultContract(task, result);
       const normalizedResult = jsonClone(result);
       const completedAt = this.now().toISOString();
@@ -1073,6 +1277,12 @@ export class FdosRuntime {
     if (!tasks.every((task) => task.status === "completed")) return;
     const completedAt = this.now().toISOString();
     const evidenceBaseHeadHash = this.#eventLog.lastHash();
+    const deliveries = [...this.#state.outbox.values()]
+      .filter((delivery) => delivery.intent.task.runId === run.id)
+      .map(deliveryEvidence)
+      .sort((left, right) =>
+        left.deliveryId.localeCompare(right.deliveryId)
+      );
     const evidenceDigest = digestObject({
       schemaVersion: "1.0",
       runId: run.id,
@@ -1081,6 +1291,7 @@ export class FdosRuntime {
       tasks: tasks.map(taskEvidence).sort((left, right) =>
         left.taskId.localeCompare(right.taskId)
       ),
+      deliveries,
       evidenceBaseHeadHash
     });
     await this.append(
@@ -1130,6 +1341,17 @@ export class FdosRuntime {
       if (task.status !== "failed" || !task.failure?.retryable) {
         throw new ConflictError(`Task ${task.id} is not retryable.`);
       }
+      const activeDelivery = [...this.#state.outbox.values()].find(
+        (delivery) =>
+          delivery.intent.task.id === task.id &&
+          delivery.intent.task.attempt === task.attempt &&
+          ["claimed", "prepared", "uncertain"].includes(delivery.status)
+      );
+      if (activeDelivery) {
+        throw new PolicyError(
+          `Resolve or cancel delivery ${activeDelivery.id} before retrying task ${task.id}.`
+        );
+      }
       if (task.attempt >= task.maxAttempts) {
         throw new PolicyError(`Task ${task.id} exhausted its retry budget.`);
       }
@@ -1150,6 +1372,17 @@ export class FdosRuntime {
       const task = this.findTask(taskId);
       if (["completed", "cancelled"].includes(task.status)) {
         throw new ConflictError(`Task ${task.id} cannot be cancelled.`);
+      }
+      const activeDelivery = [...this.#state.outbox.values()].find(
+        (delivery) =>
+          delivery.intent.task.id === task.id &&
+          delivery.intent.task.attempt === task.attempt &&
+          ["claimed", "prepared", "uncertain"].includes(delivery.status)
+      );
+      if (activeDelivery) {
+        throw new PolicyError(
+          `Resolve or cancel delivery ${activeDelivery.id} before cancelling task ${task.id}.`
+        );
       }
       const cancelledAt = this.now().toISOString();
       await this.append("task.cancelled", human, task.id, {
@@ -1462,6 +1695,548 @@ export class FdosRuntime {
       .map(jsonClone);
   }
 
+  async prepareDelivery({
+    actor,
+    taskId,
+    connectorId,
+    operationId,
+    parameters,
+    idempotencyKey
+  }) {
+    return this.mutate(async () => {
+      const normalizedActor = normalizeActor(actor, this.#agentRegistry, {
+        human: false,
+        agent: true
+      });
+      this.assertAuthenticatedOperation(normalizedActor, "outbox.prepare");
+      const task = this.findTask(taskId);
+      if (
+        task.status !== "in_progress" ||
+        task.claimedBy !== normalizedActor.id
+      ) {
+        throw new ConflictError(
+          `Task ${task.id} is not claimed by ${normalizedActor.id}.`
+        );
+      }
+      const run = this.findRun(task.runId);
+      if (run.status !== "active") {
+        throw new ConflictError(
+          `Run ${run.id} cannot prepare delivery while ${run.status}.`
+        );
+      }
+      const resolvedConnector = this.#connectorRegistry.resolveOperation(
+        connectorId,
+        operationId
+      );
+      this.#roleRegistry.assertCapability(
+        normalizedActor.roleId,
+        resolvedConnector.operation.capability
+      );
+      const normalizedParameters =
+        this.#connectorRegistry.normalizeParameters(
+          resolvedConnector.operation,
+          parameters
+        );
+      const requestedAt = this.now().toISOString();
+      const intent = createDeliveryIntent({
+        actionCatalog: this.#actionCatalog,
+        resolvedConnector,
+        task,
+        parameters: normalizedParameters,
+        requestedBy: normalizedActor.id,
+        requestedAt,
+        idempotencyKey
+      });
+      const existing = [...this.#state.outbox.values()].find(
+        (candidate) =>
+          candidate.intent.idempotencyDigest === intent.idempotencyDigest
+      );
+      if (existing) {
+        if (existing.intent.requestDigest !== intent.requestDigest) {
+          throw new ConflictError(
+            "Delivery idempotency key was used with another request."
+          );
+        }
+        return immutableJson({
+          created: false,
+          delivery: jsonClone(existing)
+        });
+      }
+      const existingTaskDelivery = [...this.#state.outbox.values()].find(
+        (candidate) =>
+          candidate.intent.task.id === task.id &&
+          candidate.intent.task.attempt === task.attempt &&
+          candidate.intent.task.actionIntentDigest ===
+            task.actionIntent.digest
+      );
+      if (existingTaskDelivery) {
+        throw new ConflictError(
+          `Task ${task.id} already has delivery ${existingTaskDelivery.id}.`
+        );
+      }
+      const delivery = {
+        id: this.#idFactory("delivery"),
+        status: "prepared",
+        intent,
+        attempt: 0,
+        maxAttempts: intent.connector.maxAttempts,
+        claim: null,
+        lastOutcome: null,
+        resolution: null,
+        retryable: false,
+        createdAt: requestedAt,
+        updatedAt: requestedAt,
+        completedAt: null
+      };
+      await this.append(
+        "connector.delivery.prepared",
+        normalizedActor,
+        delivery.id,
+        { delivery }
+      );
+      return immutableJson({
+        created: true,
+        delivery: jsonClone(this.findDelivery(delivery.id))
+      });
+    });
+  }
+
+  getDelivery(deliveryId, actor) {
+    this.assertOpen();
+    const normalizedActor = normalizeActor(actor, this.#agentRegistry);
+    this.assertAuthenticatedOperation(normalizedActor, "outbox.get");
+    const delivery = this.findDelivery(deliveryId);
+    this.#roleRegistry.assertTaskRead(
+      normalizedActor,
+      this.findTask(delivery.intent.task.id)
+    );
+    return jsonClone(delivery);
+  }
+
+  listOutbox(actor, status = null) {
+    this.assertOpen();
+    const normalizedActor = normalizeActor(actor, this.#agentRegistry);
+    this.assertAuthenticatedOperation(normalizedActor, "outbox.list");
+    const normalizedStatus =
+      status === null
+        ? null
+        : enumValue(status, "outbox status", OUTBOX_STATUSES);
+    return [...this.#state.outbox.values()]
+      .filter(
+        (delivery) =>
+          !normalizedStatus || delivery.status === normalizedStatus
+      )
+      .filter((delivery) => {
+        if (normalizedActor.type === "human") return true;
+        const task = this.findTask(delivery.intent.task.id);
+        return (
+          task.ownerRoleId === normalizedActor.roleId ||
+          this.#roleRegistry.hasCapability(
+            normalizedActor.roleId,
+            "task:read:any"
+          )
+        );
+      })
+      .map(jsonClone);
+  }
+
+  async claimDelivery({
+    actor,
+    deliveryId,
+    leaseSeconds
+  }) {
+    return this.mutate(async () => {
+      const connector = this.authenticatedConnectorActor(
+        actor,
+        "outbox.claim"
+      );
+      if (
+        !Number.isSafeInteger(leaseSeconds) ||
+        leaseSeconds < 5 ||
+        leaseSeconds > 300
+      ) {
+        throw new ValidationError(
+          "Connector claim lease must be 5–300 seconds."
+        );
+      }
+      const delivery = this.findDelivery(deliveryId);
+      if (delivery.intent.connector.id !== connector.id) {
+        throw new AuthorizationError(
+          `Connector ${connector.id} cannot claim delivery ${delivery.id}.`
+        );
+      }
+      this.assertCurrentConnectorBinding(delivery);
+      const now = this.now();
+      if (delivery.status === "claimed") {
+        if (new Date(delivery.claim.expiresAt) <= now) {
+          const detectedAt = now.toISOString();
+          const outcome = {
+            ...normalizeDeliveryOutcome("uncertain", {
+              externalEffect: "none",
+              reasonCode: "CLAIM_LEASE_EXPIRED",
+              evidenceDigest: digestObject({
+                deliveryId: delivery.id,
+                claimId: delivery.claim.id,
+                expiredAt: delivery.claim.expiresAt,
+                detectedAt
+              })
+            }),
+            recordedBy: connector.id,
+            recordedAt: detectedAt
+          };
+          await this.append(
+            "connector.delivery.claim-expired",
+            connector,
+            delivery.id,
+            {
+              deliveryId: delivery.id,
+              claimId: delivery.claim.id,
+              expiredAt: delivery.claim.expiresAt,
+              detectedAt,
+              outcome
+            }
+          );
+          throw new ConflictError(
+            `Delivery ${delivery.id} entered uncertain review after lease expiry.`
+          );
+        }
+        throw new ConflictError(
+          `Delivery ${delivery.id} already has an active claim.`
+        );
+      }
+      if (delivery.status !== "prepared") {
+        throw new ConflictError(
+          `Delivery ${delivery.id} cannot be claimed from ${delivery.status}.`
+        );
+      }
+      this.assertDeliveryTaskActive(delivery);
+      if (delivery.attempt >= delivery.maxAttempts) {
+        throw new PolicyError(
+          `Delivery ${delivery.id} exhausted its attempt budget.`
+        );
+      }
+      const claimedAt = now.toISOString();
+      const claim = {
+        id: this.#idFactory("claim"),
+        connectorId: connector.id,
+        attempt: delivery.attempt + 1,
+        claimedAt,
+        expiresAt: new Date(
+          now.getTime() + leaseSeconds * 1_000
+        ).toISOString()
+      };
+      await this.append(
+        "connector.delivery.claimed",
+        connector,
+        delivery.id,
+        {
+          deliveryId: delivery.id,
+          claim
+        }
+      );
+      return jsonClone(this.findDelivery(delivery.id));
+    });
+  }
+
+  async recordDeliveryOutcome({
+    actor,
+    deliveryId,
+    claimId,
+    outcome,
+    evidence
+  }) {
+    return this.mutate(async () => {
+      const connector = this.authenticatedConnectorActor(
+        actor,
+        "outbox.record-outcome"
+      );
+      const delivery = this.findDelivery(deliveryId);
+      if (delivery.intent.connector.id !== connector.id) {
+        throw new AuthorizationError(
+          `Connector ${connector.id} cannot report delivery ${delivery.id}.`
+        );
+      }
+      this.assertCurrentConnectorBinding(delivery);
+      if (delivery.status !== "claimed") {
+        throw new ConflictError(
+          `Delivery ${delivery.id} has no active claim.`
+        );
+      }
+      const normalizedClaimId = assertId(
+        claimId,
+        "connector delivery claim id"
+      );
+      if (
+        delivery.claim.id !== normalizedClaimId ||
+        delivery.claim.connectorId !== connector.id
+      ) {
+        throw new AuthorizationError(
+          `Connector claim does not own delivery ${delivery.id}.`
+        );
+      }
+      const now = this.now();
+      if (new Date(delivery.claim.expiresAt) <= now) {
+        const detectedAt = now.toISOString();
+        const uncertainOutcome = {
+          ...normalizeDeliveryOutcome("uncertain", {
+            externalEffect: "none",
+            reasonCode: "OUTCOME_AFTER_LEASE",
+            evidenceDigest: digestObject({
+              deliveryId: delivery.id,
+              claimId: delivery.claim.id,
+              expiredAt: delivery.claim.expiresAt,
+              detectedAt
+            })
+          }),
+          recordedBy: connector.id,
+          recordedAt: detectedAt
+        };
+        await this.append(
+          "connector.delivery.claim-expired",
+          connector,
+          delivery.id,
+          {
+            deliveryId: delivery.id,
+            claimId: delivery.claim.id,
+            expiredAt: delivery.claim.expiresAt,
+            detectedAt,
+            outcome: uncertainOutcome
+          }
+        );
+        throw new ConflictError(
+          `Delivery ${delivery.id} entered uncertain review after lease expiry.`
+        );
+      }
+      const recordedAt = now.toISOString();
+      const normalizedOutcome = {
+        ...normalizeDeliveryOutcome(outcome, evidence),
+        recordedBy: connector.id,
+        recordedAt
+      };
+      await this.append(
+        "connector.delivery.outcome-recorded",
+        connector,
+        delivery.id,
+        {
+          deliveryId: delivery.id,
+          claimId: normalizedClaimId,
+          outcome: normalizedOutcome
+        }
+      );
+      return jsonClone(this.findDelivery(delivery.id));
+    });
+  }
+
+  async reconcileExpiredDelivery({ actor, deliveryId }) {
+    return this.mutate(async () => {
+      const human = requireHuman(actor, this.#agentRegistry);
+      this.assertAuthenticatedOperation(
+        human,
+        "outbox.reconcile-expired"
+      );
+      const delivery = this.findDelivery(deliveryId);
+      if (delivery.status !== "claimed") {
+        throw new ConflictError(
+          `Delivery ${delivery.id} has no claim to reconcile.`
+        );
+      }
+      const now = this.now();
+      if (new Date(delivery.claim.expiresAt) > now) {
+        throw new ConflictError(
+          `Delivery ${delivery.id} claim has not expired.`
+        );
+      }
+      const detectedAt = now.toISOString();
+      const outcome = {
+        ...normalizeDeliveryOutcome("uncertain", {
+          externalEffect: "none",
+          reasonCode: "CLAIM_LEASE_RECONCILED",
+          evidenceDigest: digestObject({
+            deliveryId: delivery.id,
+            claimId: delivery.claim.id,
+            expiredAt: delivery.claim.expiresAt,
+            detectedAt
+          })
+        }),
+        recordedBy: delivery.claim.connectorId,
+        recordedAt: detectedAt
+      };
+      await this.append(
+        "connector.delivery.claim-expired",
+        attributedSystemActor(human),
+        delivery.id,
+        {
+          deliveryId: delivery.id,
+          claimId: delivery.claim.id,
+          expiredAt: delivery.claim.expiresAt,
+          detectedAt,
+          outcome
+        }
+      );
+      return jsonClone(this.findDelivery(delivery.id));
+    });
+  }
+
+  async retryDelivery({ actor, deliveryId, reason }) {
+    return this.mutate(async () => {
+      const human = requireHuman(actor, this.#agentRegistry);
+      this.assertAuthenticatedOperation(human, "outbox.retry");
+      const delivery = this.findDelivery(deliveryId);
+      if (delivery.status !== "failed" || !delivery.retryable) {
+        throw new ConflictError(
+          `Delivery ${delivery.id} is not retryable.`
+        );
+      }
+      this.assertCurrentConnectorBinding(delivery);
+      this.assertDeliveryTaskActive(delivery);
+      if (delivery.attempt >= delivery.maxAttempts) {
+        throw new PolicyError(
+          `Delivery ${delivery.id} exhausted its attempt budget.`
+        );
+      }
+      const authorizedAt = this.now().toISOString();
+      await this.append(
+        "connector.delivery.retry-authorized",
+        human,
+        delivery.id,
+        {
+          deliveryId: delivery.id,
+          reason: requiredString(reason, "delivery retry reason", {
+            max: 2_000
+          }),
+          authorizedBy: human.id,
+          authorizedAt
+        }
+      );
+      return jsonClone(this.findDelivery(delivery.id));
+    });
+  }
+
+  async cancelDelivery({ actor, deliveryId, reason }) {
+    return this.mutate(async () => {
+      const human = requireHuman(actor, this.#agentRegistry);
+      this.assertAuthenticatedOperation(human, "outbox.cancel");
+      const delivery = this.findDelivery(deliveryId);
+      if (!["prepared", "failed"].includes(delivery.status)) {
+        throw new ConflictError(
+          `Delivery ${delivery.id} cannot be cancelled from ${delivery.status}.`
+        );
+      }
+      const cancelledAt = this.now().toISOString();
+      await this.append(
+        "connector.delivery.cancelled",
+        human,
+        delivery.id,
+        {
+          deliveryId: delivery.id,
+          reason: requiredString(reason, "delivery cancellation reason", {
+            max: 2_000
+          }),
+          cancelledBy: human.id,
+          cancelledAt
+        }
+      );
+      return jsonClone(this.findDelivery(delivery.id));
+    });
+  }
+
+  async resolveUncertainDelivery({
+    actor,
+    deliveryId,
+    decision,
+    reason,
+    evidenceDigest,
+    resultDigest,
+    retryable
+  }) {
+    return this.mutate(async () => {
+      const human = requireHuman(actor, this.#agentRegistry);
+      this.assertAuthenticatedOperation(
+        human,
+        "outbox.resolve-uncertain"
+      );
+      const delivery = this.findDelivery(deliveryId);
+      if (delivery.status !== "uncertain") {
+        throw new ConflictError(
+          `Delivery ${delivery.id} is not awaiting uncertainty review.`
+        );
+      }
+      const normalizedDecision = enumValue(
+        decision,
+        "delivery uncertainty decision",
+        ["cancelled", "confirmed_simulated", "failed"]
+      );
+      const normalizedEvidenceDigest = requiredString(
+        evidenceDigest,
+        "delivery resolution evidence digest",
+        {
+          max: 71,
+          pattern: /^sha256:[0-9a-f]{64}$/
+        }
+      );
+      let normalizedResultDigest = null;
+      let normalizedRetryable = false;
+      if (normalizedDecision === "confirmed_simulated") {
+        normalizedResultDigest = requiredString(
+          resultDigest,
+          "confirmed simulated result digest",
+          {
+            max: 71,
+            pattern: /^sha256:[0-9a-f]{64}$/
+          }
+        );
+        if (retryable !== undefined) {
+          throw new ValidationError(
+            "Confirmed simulation resolution cannot be retryable."
+          );
+        }
+      } else if (normalizedDecision === "failed") {
+        if (typeof retryable !== "boolean") {
+          throw new ValidationError(
+            "Failed uncertainty resolution requires retryable."
+          );
+        }
+        if (resultDigest !== undefined) {
+          throw new ValidationError(
+            "Failed uncertainty resolution cannot include a result digest."
+          );
+        }
+        normalizedRetryable = retryable;
+      } else if (
+        resultDigest !== undefined ||
+        retryable !== undefined
+      ) {
+        throw new ValidationError(
+          "Cancelled uncertainty resolution has unexpected fields."
+        );
+      }
+      const resolvedAt = this.now().toISOString();
+      const resolution = {
+        decision: normalizedDecision,
+        reason: requiredString(
+          reason,
+          "delivery uncertainty resolution reason",
+          { max: 2_000 }
+        ),
+        evidenceDigest: normalizedEvidenceDigest,
+        resultDigest: normalizedResultDigest,
+        retryable: normalizedRetryable,
+        resolvedBy: human.id,
+        resolvedAt
+      };
+      await this.append(
+        "connector.delivery.uncertainty-resolved",
+        human,
+        delivery.id,
+        {
+          deliveryId: delivery.id,
+          resolution
+        }
+      );
+      return jsonClone(this.findDelivery(delivery.id));
+    });
+  }
+
   async proposeMemory({
     actor,
     scope,
@@ -1618,7 +2393,10 @@ export class FdosRuntime {
     let subjects = null;
     if (runId) {
       const run = this.findRun(runId);
-      subjects = new Set([run.id, ...run.taskIds]);
+      const deliveryIds = [...this.#state.outbox.values()]
+        .filter((delivery) => delivery.intent.task.runId === run.id)
+        .map((delivery) => delivery.id);
+      subjects = new Set([run.id, ...run.taskIds, ...deliveryIds]);
     }
     return this.#eventLog
       .all()
@@ -1642,7 +2420,17 @@ export class FdosRuntime {
       throw new ConflictError(`Run ${run.id} is not completed.`);
     }
     const integrity = this.#eventLog.verify();
-    const subjects = new Set([run.id, ...run.taskIds]);
+    const deliveries = [...this.#state.outbox.values()]
+      .filter((delivery) => delivery.intent.task.runId === run.id)
+      .map(deliveryEvidence)
+      .sort((left, right) =>
+        left.deliveryId.localeCompare(right.deliveryId)
+      );
+    const subjects = new Set([
+      run.id,
+      ...run.taskIds,
+      ...deliveries.map((delivery) => delivery.deliveryId)
+    ]);
     const eventReferences = this.#eventLog
       .all()
       .filter((event) => subjects.has(event.subject))
@@ -1675,6 +2463,7 @@ export class FdosRuntime {
       tasks: run.taskIds
         .map((taskId) => taskEvidence(this.findTask(taskId)))
         .sort((left, right) => left.taskId.localeCompare(right.taskId)),
+      deliveries,
       eventReferences,
       audit: {
         algorithm: "sha256",
@@ -1690,7 +2479,7 @@ export class FdosRuntime {
           : this.#invocationVerifier
             ? "experimental Ed25519 invocation trust root and non-transactional persistence"
             : "caller-asserted identity and non-transactional persistence",
-        "no external connector execution",
+        "no networked connector execution; dry-run Outbox only",
         "no production-security claim"
       ]
     };
@@ -1708,10 +2497,15 @@ export class FdosRuntime {
   status() {
     const runs = [...this.#state.runs.values()];
     const tasks = [...this.#state.tasks.values()];
+    const deliveries = [...this.#state.outbox.values()];
     return {
       validationLevel: "Level 1 — Experimental",
       productionReady: false,
       externalActionsEnabled: false,
+      connectorDryRunEnabled:
+        this.#connectorRegistry.listInstances().length > 0,
+      connectorNetworkAccessEnabled: false,
+      connectorExternalEffectsEnabled: false,
       authenticatedInvocationVerifierConfigured:
         this.#invocationVerifier !== null,
       runtimeLeaseHeld: !this.#closed,
@@ -1728,6 +2522,27 @@ export class FdosRuntime {
         ready: tasks.filter((task) => task.status === "ready").length,
         inProgress: tasks.filter((task) => task.status === "in_progress").length,
         completed: tasks.filter((task) => task.status === "completed").length
+      },
+      outbox: {
+        total: deliveries.length,
+        prepared: deliveries.filter(
+          (delivery) => delivery.status === "prepared"
+        ).length,
+        claimed: deliveries.filter(
+          (delivery) => delivery.status === "claimed"
+        ).length,
+        simulated: deliveries.filter(
+          (delivery) => delivery.status === "simulated"
+        ).length,
+        failed: deliveries.filter(
+          (delivery) => delivery.status === "failed"
+        ).length,
+        uncertain: deliveries.filter(
+          (delivery) => delivery.status === "uncertain"
+        ).length,
+        cancelled: deliveries.filter(
+          (delivery) => delivery.status === "cancelled"
+        ).length
       },
       audit: this.verifyIntegrity()
     };

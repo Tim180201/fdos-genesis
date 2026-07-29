@@ -8,6 +8,8 @@
   before any model provider or connector.
 - Added ADR-0045 authorizing a local transactional authenticated-command
   experiment without promoting persistence into FDOS Core.
+- Added ADR-0046 for a dry-run Connector Contract and durable Outbox
+  experiment without enabling a networked connector.
 - Added the runtime experiment boundary for A0–A4 action governance, data
   scopes, repository ownership and production limitations.
 - Added `02_Reference_Implementations/FDOS_Runtime/` with:
@@ -37,19 +39,31 @@
   - transaction-aware hash-chain and metadata verification;
   - crash recovery and stale/out-of-context write denial;
   - fail-closed persistence-format selection without implicit JSONL migration;
+  - content-addressed dry-run Connector Contracts and registered Connector
+    Instances;
+  - immutable task-bound Delivery Intents and durable idempotent Outbox
+    preparation;
+  - connector claim leases, fencing identifiers and bounded attempts;
+  - digest-only simulated outcomes and typed failed/uncertain outcomes;
+  - Human Governance expired-claim reconciliation, retry, cancellation and
+    uncertainty resolution;
+  - stale-contract, concurrent-claim and Connector principal isolation;
   - append-only hash-chained audit events;
-  - content-minimized evidence export.
+  - content-minimized task and delivery evidence export.
 - Added the Chief of Staff, Operations and Marketing software-change-readiness
   pilot under `03_Projects/Company_OS_Pilot/`.
 - Added an initial 49-test three-role slice, expanded it to 63 tests for
   reference intake/provenance/runtime ownership, and then to 79 tests for the
   authenticated Invocation boundary and gateway lifecycle. The transactional
-  slice expands the complete suite to 92 tests.
+  slice expanded the suite to 92 tests; the Connector Outbox slice expands it
+  to 106 tests.
 - Recorded 90.83% line, 77.73% branch and 90.48% function coverage for the
   authenticated candidate.
 - Recorded 90.16% line, 78.04% branch and 90.56% function coverage for the
   transactional candidate; finalization-fault injection remains explicitly
   out of scope.
+- Recorded 90.38% line, 78.67% branch and 91.17% function coverage for the
+  Connector Outbox candidate.
 - Added Evidence Item `EV-FDOS-RUNTIME-PILOT-001` and its SHA-256 source
   manifest.
 - Added Evidence Item `EV-FDOS-REFERENCE-INTAKE-002` and its SHA-256 source
@@ -59,6 +73,8 @@
   source manifest and Validation Report 003.
 - Added Evidence Item `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004`, its SHA-256
   source manifest and Validation Report 004.
+- Added Evidence Item `EV-FDOS-CONNECTOR-OUTBOX-005`, its SHA-256 source
+  manifest and Validation Report 005.
 - Added Knowledge Candidate KP-006 for exact Action Intent approval binding.
 - Added Knowledge Candidates KP-007 for exact external-source binding and
   KP-008 for exclusive ownership before transactional persistence.
@@ -66,6 +82,8 @@
   authorization.
 - Added Knowledge Candidate KP-010 for one durable transaction joining
   authenticated command state.
+- Added Knowledge Candidate KP-011 for durable external-work intent and
+  explicit uncertainty before retry.
 - Applied KP-001 Role-versus-Agent-Instance separation in the experiment
   without changing its candidate status.
 - No FDOS Core capability, canonical object or release version was added.

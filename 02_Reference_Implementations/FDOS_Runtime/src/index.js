@@ -9,6 +9,17 @@ export {
   executionModeFor,
   verifyActionIntent
 } from "./domain/action-intent.js";
+export {
+  connectorActor,
+  ConnectorRegistry,
+  connectorIdPattern
+} from "./domain/connector-contract.js";
+export {
+  createDeliveryIntent,
+  normalizeDeliveryOutcome,
+  verifyDeliveryIntent,
+  verifyDeliveryOutcome
+} from "./domain/delivery-intent.js";
 export { PolicyEngine } from "./domain/policy-engine.js";
 export {
   agentActor,
@@ -68,10 +79,18 @@ export {
   executeAuthenticatedSoftwareChangeReadinessDemo
 } from "./pilot/authenticated-demo.js";
 export {
+  executeConnectorOutboxDryRunDemo
+} from "./pilot/connector-outbox-demo.js";
+export {
   openAuthenticatedPilotRuntime,
   openPilotRuntime,
   SOFTWARE_CHANGE_READINESS_WORKFLOW
 } from "./pilot/software-change-readiness.js";
+export {
+  CONNECTOR_OUTBOX_DRY_RUN_WORKFLOW,
+  PILOT_CONNECTOR_CONTRACT_DEFINITIONS,
+  PILOT_CONNECTOR_INSTANCE_DEFINITIONS
+} from "./pilot/connector-contracts.js";
 export {
   openPilotReferenceSource,
   PILOT_REFERENCE_POLICIES

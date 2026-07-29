@@ -35,6 +35,10 @@ system with a small pilot:
 - shared transaction attribution for Invocation acceptance and internal events;
 - crash rollback and transaction-aware restart verification;
 - fail-closed persistence selection without implicit JSONL migration;
+- dry-run Connector Contract and active Connector Instance registry;
+- immutable task-bound Delivery Intents and durable Outbox;
+- idempotent preparation, claim leases and fencing IDs;
+- Human Governance retry, cancellation and uncertainty resolution;
 - tamper-evident audit events;
 - automated tests and evidence export.
 
@@ -44,11 +48,11 @@ system with a small pilot:
 - product-repository writes;
 - production operation;
 - real model calls;
-- real Slack, Teams, email, CRM or MCP connectors;
+- networked Slack, Teams, email, CRM, GitHub or MCP connectors;
 - production identity provider, key custody or revocation;
 - exposure of the lower-level runtime to untrusted callers;
-- distributed replay protection, worker fencing or transactions;
-- external-effect transaction, outbox or uncertain-outcome recovery;
+- distributed replay protection, multi-process worker fencing or transactions;
+- external-effect transaction or service-side idempotency;
 - database migration, backup, restore or encryption;
 - production support for the evolving synchronous `node:sqlite` dependency;
 - writes, builds or tests in TapTime or Company AI;
@@ -67,7 +71,11 @@ The pilot is technically complete when:
    approval replay, persistence tampering and partial crash writes are
    rejected;
 6. an evidence record documents results and limitations;
-7. no change occurred outside the FDOS repository.
+7. the connector dry-run demonstrates one task-bound delivery, one fenced
+   claim and one digest-only simulated outcome;
+8. lease expiry enters durable uncertainty and cannot auto-retry;
+9. no network or external effect occurs;
+10. no change occurred outside the FDOS repository.
 
 ## Reference Assessment
 

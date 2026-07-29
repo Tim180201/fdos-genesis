@@ -64,6 +64,14 @@ authenticated gateway and is prohibited.
 | Event transaction metadata is altered | Canonical event/column comparison plus transaction count, range and head verification |
 | Persistence format changes silently | Non-empty format conflict; explicit migration required |
 | Source evidence becomes memory automatically | Candidate state plus Human Governance review |
+| Agent invents connector authority | Active task ownership, closed Connector Contract and exact capability binding |
+| Connector reads unrelated runtime state | Connector principals limited to claim and outcome commands |
+| Two workers claim one delivery | Serialized claim transition, bounded lease and fencing claim ID |
+| Contract changes after preparation | Exact contract and operation digests; stale binding denied |
+| Duplicate preparation | Scoped durable idempotency digest; changed request conflicts |
+| Claim outcome is unknown | Durable uncertain state; no automatic retry; human evidence resolution |
+| Connector response leaks raw data | Closed outcome shapes containing typed fields and digests only |
+| Dry-run accidentally performs an effect | Contract requires network false, external effects false and outcome `externalEffect: none` |
 
 ## Data Classification
 
@@ -101,8 +109,9 @@ whole local transaction and rehydrate state. A finalization failure reloads
 visible state and reports confirmed rollback or an uncertain outcome. The
 runtime must stop and reopen before a retry decision.
 
-This rollback policy does not authorize external effects. A connector needs an
-outbox and uncertain-outcome procedure first.
+This rollback policy does not authorize external effects. The new Outbox
+provides durable intent and uncertainty semantics only; its contracts enforce
+dry-run, no network and no external effect.
 
 ## Known Gaps
 
@@ -117,10 +126,10 @@ outbox and uncertain-outcome procedure first.
 - the synchronous `node:sqlite` API can block the event loop and remains an
   evolving dependency;
 - process lease and SQLite are not distributed fencing;
-- no distributed transaction, queue or outbox;
+- no distributed transaction, broker or multi-process outbox worker;
 - local Git and its operating-system account are trusted;
 - reference evidence is content-addressed but not independently signed;
-- no connector sandbox;
+- no real connector sandbox, network egress control or secret vault;
 - no denial-of-service protection;
 - no production retention or privacy-deletion process.
 

@@ -36,6 +36,11 @@ promotion and not a production approval.
 | Atomic authenticated command boundary | Tested | Level 1 — Experimental | `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004` | Pending | Not ready |
 | Crash rollback and transaction rehydration | Tested | Level 1 — Experimental | `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004` | Pending | Not ready |
 | Fail-closed persistence-format selection | Tested | Level 1 — Experimental | `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004` | Pending | Not ready |
+| Dry-run Connector Contract Registry | Tested | Level 1 — Experimental | `EV-FDOS-CONNECTOR-OUTBOX-005` | Pending | Not ready |
+| Immutable Delivery Intent and durable Outbox | Tested | Level 1 — Experimental | `EV-FDOS-CONNECTOR-OUTBOX-005` | Pending | Not ready |
+| Connector claim lease and fencing state | Tested locally | Level 1 — Experimental | `EV-FDOS-CONNECTOR-OUTBOX-005` | Pending | Not distributed |
+| Human uncertainty resolution | Tested in dry-run | Level 1 — Experimental | `EV-FDOS-CONNECTOR-OUTBOX-005` | Pending | Not service-validated |
+| Content-minimized delivery evidence | Tested in dry-run | Level 1 — Experimental | `EV-FDOS-CONNECTOR-OUTBOX-005` | Pending | Not independently signed |
 | TapTime/Company AI adoption assessment | Tested as documentation/evidence | Level 1 — Experimental | exact reference manifests | Pending | Not applicable |
 
 ## Promotion Rule

@@ -59,6 +59,24 @@ async function dispatch(runtime, command, actor) {
       return runtime.readMemory({ ...payload, actor });
     case "memory.list-candidates":
       return runtime.listMemoryCandidates(actor);
+    case "outbox.prepare":
+      return runtime.prepareDelivery({ ...payload, actor });
+    case "outbox.get":
+      return runtime.getDelivery(payload.deliveryId, actor);
+    case "outbox.list":
+      return runtime.listOutbox(actor, payload.status ?? null);
+    case "outbox.claim":
+      return runtime.claimDelivery({ ...payload, actor });
+    case "outbox.record-outcome":
+      return runtime.recordDeliveryOutcome({ ...payload, actor });
+    case "outbox.reconcile-expired":
+      return runtime.reconcileExpiredDelivery({ ...payload, actor });
+    case "outbox.retry":
+      return runtime.retryDelivery({ ...payload, actor });
+    case "outbox.cancel":
+      return runtime.cancelDelivery({ ...payload, actor });
+    case "outbox.resolve-uncertain":
+      return runtime.resolveUncertainDelivery({ ...payload, actor });
     case "audit.read":
       return runtime.auditTrail(actor, {
         runId: payload.runId || null

@@ -2,10 +2,15 @@ import { digestObject, jsonClone } from "../kernel/canonical-json.js";
 import { IntegrityError } from "../kernel/errors.js";
 import { assertId } from "../kernel/ids.js";
 import {
+  assertPlainObject,
   isoDate,
   requiredString
 } from "../kernel/validation.js";
 import { verifyInvocationReceipt } from "../identity/invocation.js";
+import {
+  verifyDeliveryIntent,
+  verifyDeliveryOutcome
+} from "../domain/delivery-intent.js";
 
 export function createRuntimeState() {
   return {
@@ -13,6 +18,7 @@ export function createRuntimeState() {
     tasks: new Map(),
     approvals: new Map(),
     memoryCandidates: new Map(),
+    outbox: new Map(),
     acceptedInvocations: new Map()
   };
 }
@@ -45,6 +51,174 @@ function requireMemoryCandidate(state, candidateId) {
     );
   }
   return candidate;
+}
+
+function requireDelivery(state, deliveryId) {
+  const delivery = state.outbox.get(deliveryId);
+  if (!delivery) {
+    throw new IntegrityError(
+      `Event references missing connector delivery ${deliveryId}.`
+    );
+  }
+  return delivery;
+}
+
+function exactKeys(value, expected, field) {
+  assertPlainObject(value, field);
+  const actual = Object.keys(value).sort();
+  const normalizedExpected = [...expected].sort();
+  if (
+    actual.length !== normalizedExpected.length ||
+    actual.some((key, index) => key !== normalizedExpected[index])
+  ) {
+    throw new IntegrityError(`${field} has an unexpected shape.`);
+  }
+}
+
+function verifyPreparedDelivery(delivery, state, event) {
+  exactKeys(
+    delivery,
+    [
+      "attempt",
+      "claim",
+      "completedAt",
+      "createdAt",
+      "id",
+      "intent",
+      "lastOutcome",
+      "maxAttempts",
+      "resolution",
+      "retryable",
+      "status",
+      "updatedAt"
+    ],
+    "prepared connector delivery"
+  );
+  const id = assertId(delivery.id, "connector delivery id");
+  if (!id.startsWith("delivery_") || event.subject !== id) {
+    throw new IntegrityError(
+      "Connector delivery identifier or event subject is invalid."
+    );
+  }
+  verifyDeliveryIntent(delivery.intent);
+  if (
+    delivery.status !== "prepared" ||
+    delivery.attempt !== 0 ||
+    delivery.maxAttempts !== delivery.intent.connector.maxAttempts ||
+    delivery.claim !== null ||
+    delivery.lastOutcome !== null ||
+    delivery.resolution !== null ||
+    delivery.retryable !== false ||
+    delivery.completedAt !== null ||
+    delivery.createdAt !== delivery.intent.requestedAt ||
+    delivery.updatedAt !== delivery.createdAt ||
+    delivery.intent.requestedBy !== event.actor.id
+  ) {
+    throw new IntegrityError(
+      "Prepared connector delivery state is inconsistent."
+    );
+  }
+  isoDate(delivery.createdAt, "delivery createdAt");
+  const task = requireTask(state, delivery.intent.task.id);
+  if (
+    task.runId !== delivery.intent.task.runId ||
+    task.attempt !== delivery.intent.task.attempt ||
+    task.actionIntent.digest !==
+      delivery.intent.task.actionIntentDigest ||
+    task.ownerRoleId !== delivery.intent.task.ownerRoleId
+  ) {
+    throw new IntegrityError(
+      "Connector delivery no longer binds its source task."
+    );
+  }
+}
+
+function verifyClaim(claim, delivery, actor) {
+  exactKeys(
+    claim,
+    ["attempt", "claimedAt", "connectorId", "expiresAt", "id"],
+    "connector delivery claim"
+  );
+  const id = assertId(claim.id, "connector delivery claim id");
+  const claimedAt = isoDate(claim.claimedAt, "delivery claimedAt");
+  const expiresAt = isoDate(claim.expiresAt, "delivery claim expiresAt");
+  if (
+    !id.startsWith("claim_") ||
+    claim.connectorId !== delivery.intent.connector.id ||
+    claim.connectorId !== actor.id ||
+    claim.attempt !== delivery.attempt + 1 ||
+    claim.attempt > delivery.maxAttempts ||
+    Date.parse(expiresAt) <= Date.parse(claimedAt)
+  ) {
+    throw new IntegrityError("Connector delivery claim is inconsistent.");
+  }
+}
+
+function verifyResolution(resolution, actor) {
+  exactKeys(
+    resolution,
+    [
+      "decision",
+      "evidenceDigest",
+      "reason",
+      "resolvedAt",
+      "resolvedBy",
+      "resultDigest",
+      "retryable"
+    ],
+    "delivery uncertainty resolution"
+  );
+  if (
+    !["cancelled", "confirmed_simulated", "failed"].includes(
+      resolution.decision
+    ) ||
+    resolution.resolvedBy !== actor.id ||
+    actor.type !== "human" ||
+    typeof resolution.retryable !== "boolean"
+  ) {
+    throw new IntegrityError(
+      "Delivery uncertainty resolution is inconsistent."
+    );
+  }
+  requiredString(resolution.reason, "delivery resolution reason", {
+    max: 2_000
+  });
+  requiredString(
+    resolution.evidenceDigest,
+    "delivery resolution evidence digest",
+    {
+      max: 71,
+      pattern: /^sha256:[0-9a-f]{64}$/
+    }
+  );
+  isoDate(resolution.resolvedAt, "delivery resolvedAt");
+  if (resolution.decision === "confirmed_simulated") {
+    requiredString(
+      resolution.resultDigest,
+      "delivery resolution result digest",
+      {
+        max: 71,
+        pattern: /^sha256:[0-9a-f]{64}$/
+      }
+    );
+    if (resolution.retryable) {
+      throw new IntegrityError(
+        "Confirmed simulation resolution cannot be retryable."
+      );
+    }
+  } else if (resolution.resultDigest !== null) {
+    throw new IntegrityError(
+      "Non-simulated resolution contains a result digest."
+    );
+  }
+  if (
+    resolution.decision !== "failed" &&
+    resolution.retryable
+  ) {
+    throw new IntegrityError(
+      "Only a failed uncertainty resolution can be retryable."
+    );
+  }
 }
 
 function verifyDefinitionSnapshot(definition) {
@@ -340,6 +514,262 @@ export function applyRuntimeEvent(state, event) {
       const approval = requireApproval(state, payload.approvalId);
       approval.status = "consumed";
       approval.consumedAt = payload.consumedAt;
+      return;
+    }
+
+    case "connector.delivery.prepared": {
+      exactKeys(
+        payload,
+        ["delivery"],
+        "connector delivery prepared payload"
+      );
+      verifyPreparedDelivery(payload.delivery, state, event);
+      const delivery = jsonClone(payload.delivery);
+      if (state.outbox.has(delivery.id)) {
+        throw new IntegrityError(
+          `Duplicate connector delivery ${delivery.id}.`
+        );
+      }
+      for (const existing of state.outbox.values()) {
+        if (
+          existing.intent.idempotencyDigest ===
+          delivery.intent.idempotencyDigest
+        ) {
+          throw new IntegrityError(
+            "Duplicate connector delivery idempotency binding."
+          );
+        }
+      }
+      state.outbox.set(delivery.id, delivery);
+      return;
+    }
+
+    case "connector.delivery.claimed": {
+      exactKeys(
+        payload,
+        ["claim", "deliveryId"],
+        "connector delivery claimed payload"
+      );
+      const delivery = requireDelivery(state, payload.deliveryId);
+      if (
+        event.subject !== delivery.id ||
+        delivery.status !== "prepared" ||
+        event.actor.type !== "connector"
+      ) {
+        throw new IntegrityError(
+          "Connector delivery cannot enter claimed state."
+        );
+      }
+      verifyClaim(payload.claim, delivery, event.actor);
+      const claim = jsonClone(payload.claim);
+      delivery.status = "claimed";
+      delivery.attempt = claim.attempt;
+      delivery.claim = claim;
+      delivery.retryable = false;
+      delivery.resolution = null;
+      delivery.updatedAt = claim.claimedAt;
+      return;
+    }
+
+    case "connector.delivery.outcome-recorded": {
+      exactKeys(
+        payload,
+        ["claimId", "deliveryId", "outcome"],
+        "connector delivery outcome payload"
+      );
+      const delivery = requireDelivery(state, payload.deliveryId);
+      if (
+        event.subject !== delivery.id ||
+        delivery.status !== "claimed" ||
+        event.actor.type !== "connector" ||
+        payload.claimId !== delivery.claim.id
+      ) {
+        throw new IntegrityError(
+          "Connector delivery outcome has no matching active claim."
+        );
+      }
+      const outcome = verifyDeliveryOutcome(payload.outcome);
+      if (
+        outcome.recordedBy !== event.actor.id ||
+        event.actor.id !== delivery.claim.connectorId ||
+        Date.parse(outcome.recordedAt) >
+          Date.parse(delivery.claim.expiresAt)
+      ) {
+        throw new IntegrityError(
+          "Connector delivery outcome violates claim ownership or lease."
+        );
+      }
+      delivery.status = outcome.type;
+      delivery.lastOutcome = jsonClone(outcome);
+      delivery.claim = null;
+      delivery.retryable =
+        outcome.type === "failed" && outcome.evidence.retryable;
+      delivery.updatedAt = outcome.recordedAt;
+      delivery.completedAt =
+        outcome.type === "simulated" ? outcome.recordedAt : null;
+      return;
+    }
+
+    case "connector.delivery.claim-expired": {
+      exactKeys(
+        payload,
+        [
+          "claimId",
+          "deliveryId",
+          "detectedAt",
+          "expiredAt",
+          "outcome"
+        ],
+        "connector delivery claim-expiry payload"
+      );
+      const delivery = requireDelivery(state, payload.deliveryId);
+      if (
+        event.subject !== delivery.id ||
+        delivery.status !== "claimed" ||
+        payload.claimId !== delivery.claim.id ||
+        payload.expiredAt !== delivery.claim.expiresAt
+      ) {
+        throw new IntegrityError(
+          "Connector claim-expiry event is inconsistent."
+        );
+      }
+      const detectedAt = isoDate(
+        payload.detectedAt,
+        "delivery claim expiry detectedAt"
+      );
+      if (Date.parse(detectedAt) < Date.parse(payload.expiredAt)) {
+        throw new IntegrityError(
+          "Connector claim expiry was detected before lease expiry."
+        );
+      }
+      const outcome = verifyDeliveryOutcome(payload.outcome);
+      const authorizedDetector =
+        (event.actor.type === "connector" &&
+          event.actor.id === delivery.claim.connectorId) ||
+        (event.actor.type === "system" &&
+          event.actor.id === "fdos-runtime");
+      if (
+        !authorizedDetector ||
+        outcome.type !== "uncertain" ||
+        outcome.recordedBy !== delivery.claim.connectorId ||
+        outcome.recordedAt !== detectedAt
+      ) {
+        throw new IntegrityError(
+          "Expired connector claim requires an uncertain outcome."
+        );
+      }
+      delivery.status = "uncertain";
+      delivery.lastOutcome = jsonClone(outcome);
+      delivery.claim = null;
+      delivery.retryable = false;
+      delivery.updatedAt = detectedAt;
+      return;
+    }
+
+    case "connector.delivery.retry-authorized": {
+      exactKeys(
+        payload,
+        [
+          "authorizedAt",
+          "authorizedBy",
+          "deliveryId",
+          "reason"
+        ],
+        "connector delivery retry payload"
+      );
+      const delivery = requireDelivery(state, payload.deliveryId);
+      if (
+        event.subject !== delivery.id ||
+        delivery.status !== "failed" ||
+        !delivery.retryable ||
+        delivery.attempt >= delivery.maxAttempts ||
+        event.actor.type !== "human" ||
+        payload.authorizedBy !== event.actor.id
+      ) {
+        throw new IntegrityError(
+          "Connector delivery retry authorization is invalid."
+        );
+      }
+      requiredString(payload.reason, "delivery retry reason", {
+        max: 2_000
+      });
+      const authorizedAt = isoDate(
+        payload.authorizedAt,
+        "delivery retry authorizedAt"
+      );
+      delivery.status = "prepared";
+      delivery.retryable = false;
+      delivery.updatedAt = authorizedAt;
+      return;
+    }
+
+    case "connector.delivery.cancelled": {
+      exactKeys(
+        payload,
+        [
+          "cancelledAt",
+          "cancelledBy",
+          "deliveryId",
+          "reason"
+        ],
+        "connector delivery cancellation payload"
+      );
+      const delivery = requireDelivery(state, payload.deliveryId);
+      if (
+        event.subject !== delivery.id ||
+        !["prepared", "failed"].includes(delivery.status) ||
+        event.actor.type !== "human" ||
+        payload.cancelledBy !== event.actor.id
+      ) {
+        throw new IntegrityError(
+          "Connector delivery cancellation is invalid."
+        );
+      }
+      requiredString(payload.reason, "delivery cancellation reason", {
+        max: 2_000
+      });
+      const cancelledAt = isoDate(
+        payload.cancelledAt,
+        "delivery cancelledAt"
+      );
+      delivery.status = "cancelled";
+      delivery.claim = null;
+      delivery.retryable = false;
+      delivery.updatedAt = cancelledAt;
+      delivery.completedAt = cancelledAt;
+      return;
+    }
+
+    case "connector.delivery.uncertainty-resolved": {
+      exactKeys(
+        payload,
+        ["deliveryId", "resolution"],
+        "connector delivery resolution payload"
+      );
+      const delivery = requireDelivery(state, payload.deliveryId);
+      if (
+        event.subject !== delivery.id ||
+        delivery.status !== "uncertain"
+      ) {
+        throw new IntegrityError(
+          "Connector delivery is not awaiting uncertainty resolution."
+        );
+      }
+      verifyResolution(payload.resolution, event.actor);
+      const resolution = jsonClone(payload.resolution);
+      delivery.resolution = resolution;
+      delivery.status =
+        resolution.decision === "confirmed_simulated"
+          ? "simulated"
+          : resolution.decision;
+      delivery.retryable =
+        resolution.decision === "failed" && resolution.retryable;
+      delivery.updatedAt = resolution.resolvedAt;
+      delivery.completedAt = ["cancelled", "confirmed_simulated"].includes(
+        resolution.decision
+      )
+        ? resolution.resolvedAt
+        : null;
       return;
     }
 

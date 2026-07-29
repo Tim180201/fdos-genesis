@@ -58,6 +58,7 @@ export const PILOT_ROLE_DEFINITIONS = Object.freeze([
       "memory:company:read",
       "memory:department:operations:read",
       "memory:department:operations:propose",
+      "connector:read:reference",
       "connector:write:reversible"
     ],
     memoryReadScopes: ["company", "department:operations"],

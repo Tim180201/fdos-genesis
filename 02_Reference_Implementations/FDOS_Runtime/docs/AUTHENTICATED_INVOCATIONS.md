@@ -104,10 +104,11 @@ outcome. The caller must stop, reopen and inspect audit/replay state; it may
 not infer rollback from the error.
 
 This distinction is safe only because the experiment has no external effect.
-Before a connector is enabled, FDOS needs an outbox, idempotency and an
-uncertain-outcome review path.
+The dry-run Connector Contract and Outbox now provide idempotent preparation,
+claim fencing and uncertainty review, while still enforcing no network and no
+external effect.
 
-See `TRANSACTIONAL_PERSISTENCE.md`.
+See `TRANSACTIONAL_PERSISTENCE.md` and `CONNECTOR_OUTBOX.md`.
 
 ## Audit Minimization
 
@@ -136,13 +137,15 @@ transaction ID.
 
 The experimental verifier can parse human, agent and connector principals.
 
-The current runtime accepts only:
+The current runtime accepts:
 
 - humans;
-- active registered Agent Instances.
+- active registered Agent Instances;
+- active registered Connector Instances only for `outbox.claim` and
+  `outbox.record-outcome`.
 
-Connector principals remain denied. They require a separate connector identity
-and capability model in a later evidence slice.
+Connector principals remain denied for workflows, tasks, approvals, memory,
+general Outbox reads, audit and evidence export.
 
 ## Command Policy
 
@@ -155,9 +158,11 @@ Current command families cover:
 - task read, claim, completion, failure, retry, cancellation and handoff;
 - approval request, decision and listing;
 - memory proposal, review and read;
+- dry-run Outbox preparation, inspection, claim, outcome, retry,
+  cancellation and uncertainty resolution;
 - audit read and evidence export.
 
-No command enables an external connector or A3/A4 execution.
+No command enables networked connector execution or A3/A4 execution.
 
 ## Known Limits
 
@@ -173,3 +178,5 @@ No command enables an external connector or A3/A4 execution.
 - Direct use of the internal runtime bypasses the gateway and is prohibited for
   untrusted integrations by architecture, not by a language sandbox.
 - Host compromise can still rewrite local files and trust configuration.
+- Connector identities are local experimental registrations without
+  production workload attestation, revocation or process isolation.
