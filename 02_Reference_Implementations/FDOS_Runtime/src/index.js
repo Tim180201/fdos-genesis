@@ -30,6 +30,7 @@ export {
   FdosError,
   IntegrityError,
   NotFoundError,
+  PersistenceError,
   PolicyError,
   ValidationError
 } from "./kernel/errors.js";
@@ -41,6 +42,7 @@ export {
 } from "./kernel/canonical-json.js";
 export { EventLog } from "./kernel/event-log.js";
 export { RuntimeDirectoryLease } from "./kernel/runtime-lease.js";
+export { SqliteEventStore } from "./kernel/sqlite-event-store.js";
 export {
   INVOCATION_OPERATIONS,
   InvocationVerifier,

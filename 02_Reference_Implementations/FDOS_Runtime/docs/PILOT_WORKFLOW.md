@@ -55,6 +55,8 @@ specific agent instance that claimed or completed each role-owned task.
 - every gateway command is bound to a verified one-time Invocation;
 - agent roles are derived from registered Agent Instances;
 - one correlation ID links the authenticated pilot;
+- each accepted Invocation and its internal effects share one local
+  transaction;
 - no step executes before its dependencies;
 - each output satisfies its declared contract;
 - unauthorized roles cannot read specialist-private results;
@@ -68,7 +70,8 @@ specific agent instance that claimed or completed each role-owned task.
 public trust descriptor to the runtime and completes the four steps through
 `AuthenticatedRuntimeGateway`.
 
-The deterministic flow accepts 14 signed Invocations and ends with 29 audit
-events. The exported bundle contains the 28 events present at export time; the
-final authenticated memory read is recorded immediately afterward. These
-counts are regression assertions, not production identity evidence.
+The deterministic flow accepts 14 signed Invocations in 14 committed
+transactions and ends with 29 audit events. The exported bundle contains the
+28 events present at export time; the final authenticated memory read is
+recorded immediately afterward. These counts are regression assertions, not
+production identity or database evidence.

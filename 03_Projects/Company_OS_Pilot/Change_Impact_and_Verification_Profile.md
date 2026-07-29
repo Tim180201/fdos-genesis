@@ -41,44 +41,47 @@ V4 and V5 cannot be claimed for an uncommitted local experiment.
 Baseline commit/tree:
 
 - FDOS commit:
-  `60a66b171bf4134607b2014c79f18d0c2e62dd86`
+  `5eb93c831f070a201a1e1763a944b2ea728df519`
 - FDOS tree:
-  `aae3f92260537c26a11344c3942034e355412b87`
-- the authenticated-invocation slice is evaluated as the change from that
-  published baseline;
+  `c7921ca0ef36f2c36cdd7c3d4e0f6aeb597ffd79`
+- the transactional-persistence slice is evaluated as the change from that
+  authenticated-invocation baseline;
 - external references are bound separately in
   `Reference_Adoption_Assessment.md`.
 
 Changed boundaries:
 
-- signed Invocation Context creation and verification;
-- public-key trust-store configuration and bounded key rotation;
-- exact principal, organization, audience, operation, command and time binding;
-- persistent one-time Invocation consumption;
-- authenticated command dispatch and lower-level runtime isolation rule;
-- Agent Registry role derivation;
-- Invocation/correlation attribution in audit and exported evidence;
-- authenticated pilot, tests, governance, risks, knowledge and evidence.
+- synchronous local SQLite event and transaction schema;
+- authenticated Invocation-plus-command transaction orchestration;
+- recognized business-failure evidence and fatal rollback semantics;
+- transaction identity in canonical events and evidence references;
+- event-chain and transaction-metadata rehydration checks;
+- crash recovery, stale-context and out-of-context append controls;
+- persistence auto-detection and implicit-migration denial;
+- Node.js runtime requirement and dependency-maturity boundary;
+- pilot, tests, governance, risks, knowledge and evidence.
 
 Risk class: R3.
 
 Rationale:
 
-- identity establishes the premise for every later authorization decision;
-- replay handling and event rehydration affect durable execution semantics;
-- gateway bypass and trust-root bootstrap are security boundaries;
-- accepted identity metadata affects audit and evidence contracts.
+- persistence determines whether replay and business state can diverge;
+- rollback and recognized-failure classification affect durable execution
+  semantics;
+- schema, migration and runtime dependency choices are security and recovery
+  boundaries;
+- transaction identity changes audit and evidence contracts.
 
 Selected verification and result:
 
 - V0: exact FDOS status/diff, `git diff --check`, navigation, unsupported-claim
   review and source-manifest verification passed;
-- V1: 16 focused authenticated-invocation tests and syntax checks passed;
-- V2: signature/claim/command tamper, time window, wrong organization/audience,
-  unknown key, role injection, connector identity, request smuggling, failed
-  command, sequential/concurrent/restart replay, handoff, retry/cancellation
-  and A2 approval paths passed;
-- V3: complete 79-test runtime regression, coverage, authenticated deterministic
+- V1: 29 focused SQLite/authenticated-command tests and syntax checks passed;
+- V2: commit, empty/nested-context denial, savepoint rollback, process exit,
+  fatal rollback, recognized business failure, approval expiry, restart,
+  replay, event tamper, transaction-metadata tamper and format-selection paths
+  passed;
+- V3: complete 92-test runtime regression, coverage, authenticated deterministic
   demo and final scope review passed;
 - V4: not claimed; no independent exact-commit CI evidence is attached;
 - V5: not applicable and not authorized; no physical or external operation.
@@ -98,8 +101,9 @@ Evidence carried forward:
   49-test three-role slice;
 - `EV-FDOS-REFERENCE-INTAKE-002` remains the evidence record for reference
   intake and single-writer persistence;
-- authenticated-invocation behavior is bound separately in
-  `EV-FDOS-AUTHENTICATED-INVOCATION-003`.
+- `EV-FDOS-AUTHENTICATED-INVOCATION-003` remains the identity-boundary record;
+- transactional behavior is bound separately in
+  `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004`.
 
 ## Required Completion Report
 

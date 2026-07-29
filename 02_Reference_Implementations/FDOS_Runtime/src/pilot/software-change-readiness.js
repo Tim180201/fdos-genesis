@@ -115,6 +115,7 @@ export async function openPilotRuntime(options = {}) {
 
 export async function openAuthenticatedPilotRuntime({
   invocationVerifier,
+  persistence = "sqlite",
   ...options
 } = {}) {
   if (typeof invocationVerifier?.verify !== "function") {
@@ -122,9 +123,15 @@ export async function openAuthenticatedPilotRuntime({
       "Authenticated pilot runtime requires an invocation verifier."
     );
   }
+  if (persistence !== "sqlite") {
+    throw new ValidationError(
+      "Authenticated pilot runtime requires SQLite persistence."
+    );
+  }
   const runtime = await openPilotRuntime({
     ...options,
-    invocationVerifier
+    invocationVerifier,
+    persistence
   });
   try {
     return new AuthenticatedRuntimeGateway(runtime);

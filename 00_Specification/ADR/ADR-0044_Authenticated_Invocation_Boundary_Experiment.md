@@ -11,6 +11,9 @@ Validation Level: Level 1 — Experimental
 Related Decision:
 `ADR-0043_FDOS_Runtime_Level_1_Experiment.md`
 
+Follow-up Decision:
+`ADR-0045_Transactional_Authenticated_Command_Experiment.md`
+
 ## Decision
 
 The FDOS Runtime experiment shall add an authenticated command boundary before
@@ -76,6 +79,10 @@ must obtain a new Invocation for any retry.
 The Level 1 JSONL store cannot make acceptance and all command events one
 database transaction. This limitation is accepted only for the experiment and
 becomes a required target for the transactional persistence slice.
+
+This paragraph records the Technical Slice 3 baseline. ADR-0045 supersedes
+these local persistence semantics for the authenticated SQLite path while
+leaving production and external-side-effect limits unresolved.
 
 ## Expected Evidence
 

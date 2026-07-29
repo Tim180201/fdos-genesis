@@ -1,18 +1,18 @@
 # Company OS Pilot — Project Status
 
-Status: Technical Slice 3 Passed / Human Review Pending
+Status: Technical Slice 4 Passed / Human Review Pending
 Date: 2026-07-29  
 Validation Level: Level 1 — Experimental
 
 ## Current Goal
 
 Deliver and verify the internal-only workflow across Chief of Staff,
-Operations and Marketing with an authenticated command boundary before any
-model provider or connector is introduced.
+Operations and Marketing with authenticated commands whose Invocation
+acceptance and internal effects share one durable local transaction.
 
 ## Current Phase
 
-Level 1 authenticated-invocation evidence review.
+Level 1 transactional authenticated-command evidence review.
 
 ## Exit Criteria
 
@@ -28,15 +28,24 @@ Level 1 authenticated-invocation evidence review.
 - [x] Human Governance authorized the authenticated-invocation slice;
 - [x] signed command, scope, time and replay controls implemented;
 - [x] authenticated pilot completed without an external action;
-- [ ] Human Governance reviewed Technical Slice 3 evidence.
+- [x] Human Governance authorized the transactional-persistence slice;
+- [x] authenticated Invocation acceptance and internal effects joined locally;
+- [x] crash, rollback, restart, tamper and format-selection behavior tested;
+- [x] transactional persistence ADR, operations guide and evidence prepared;
+- [ ] Human Governance reviewed Technical Slices 3 and 4 evidence.
 
 ## Verified Result
 
-- 79 of 79 tests passed;
+- 92 of 92 tests passed;
 - four workflow tasks completed;
 - Chief of Staff, Operations and Marketing participated;
-- 14 signed invocations accepted and correlated;
+- 14 signed invocations accepted in 14 committed local transactions;
 - 29 authenticated pilot audit events verified;
+- every Invocation-attributed pilot event shared its acceptance transaction;
+- process exit and unexpected implementation failure left no partial events;
+- recognized business failure consumed its Invocation with typed evidence;
+- event-content and transaction-metadata tampering were rejected;
+- non-empty JSONL was not migrated implicitly;
 - sequential, concurrent and post-restart replay rejected;
 - signature, command, organization, audience and time tampering rejected;
 - 947 TapTime and 97 Company AI tracked entries were manifest-bound;
@@ -46,6 +55,7 @@ Level 1 authenticated-invocation evidence review.
 
 See `Validation_Report.md`,
 `Validation_Report_003_Authenticated_Invocation.md`,
+`Validation_Report_004_Transactional_Persistence.md`,
 `Reference_Adoption_Assessment.md` and the evidence records under
 `../../04_Evidence/fdos-runtime/`.
 

@@ -31,12 +31,19 @@ A filesystem lease is a Level 1 safety control. It does not provide
 transactions across multiple events, distributed consensus, fencing tokens,
 tenant isolation or hostile-host protection.
 
+## Experimental Follow-Up
+
+Technical Slice 4 added a local SQLite transaction for authenticated commands.
+The lease remains necessary because the adapter does not provide distributed
+worker fencing or protect against a non-cooperating host process.
+
 ## Evidence
 
 - Company AI `src/run-lease.js` at commit `feb1000ea362…`
 - `04_Evidence/fdos-runtime/EV-FDOS-REFERENCE-INTAKE-002.md`
+- `04_Evidence/fdos-runtime/EV-FDOS-TRANSACTIONAL-PERSISTENCE-004.md`
 
 ## Next Validation
 
-Replace the local store with a transactional adapter and validate concurrent
-worker claims, fencing, crash recovery and idempotent completion.
+Validate concurrent worker claims, fencing, durable outbox behavior and
+idempotent completion across multiple processes.

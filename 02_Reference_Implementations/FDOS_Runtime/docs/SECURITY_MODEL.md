@@ -19,6 +19,7 @@ The Level 1 runtime assumes:
 
 - one trusted local operating-system account;
 - one process holding the exact runtime-directory lease;
+- one local SQLite database opened by that process;
 - trusted bootstrap registration of the Invocation Verifier public keys;
 - safe in-memory custody of the ephemeral local demo signing key;
 - the host and Node.js runtime are not compromised.
@@ -43,6 +44,7 @@ authenticated gateway and is prohibited.
 | Principal or command is altered | Ed25519 signature and exact canonical command digest |
 | Invocation crosses organization | Exact organization and audience binding |
 | Invocation is replayed | Persistent one-time Invocation ID consumption |
+| Process exits between acceptance and internal effects | One local SQLite command transaction; uncommitted events roll back |
 | Agent claims another role | Signed ID only; Agent Registry derives the immutable role assignment |
 | Expired invocation is used | Short validity window with fail-closed time checks |
 | Cross-department disclosure | Scope-specific read policy |
@@ -59,6 +61,8 @@ authenticated gateway and is prohibited.
 | Mutable reference worktree becomes evidence | Exact commit/tree/blob binding and stable-status check |
 | Untracked source content enters context | Never read; count only |
 | Two local runtime writers | Exclusive runtime-directory lease |
+| Event transaction metadata is altered | Canonical event/column comparison plus transaction count, range and head verification |
+| Persistence format changes silently | Non-empty format conflict; explicit migration required |
 | Source evidence becomes memory automatically | Candidate state plus Human Governance review |
 
 ## Data Classification
@@ -90,17 +94,30 @@ Approval does not authorize:
 Integrity, authorization, classification and approval errors fail closed. The
 runtime never downgrades the action or silently continues.
 
+Recognized business failures consume the Invocation and commit typed,
+content-minimized failure evidence with any deliberate internal transition.
+Integrity and unexpected implementation failures before commit roll back the
+whole local transaction and rehydrate state. A finalization failure reloads
+visible state and reports confirmed rollback or an uncertain outcome. The
+runtime must stop and reopen before a retry decision.
+
+This rollback policy does not authorize external effects. A connector needs an
+outbox and uncertain-outcome procedure first.
+
 ## Known Gaps
 
 - the ephemeral local signer does not prove a real human or workload identity;
 - public-key bootstrap and host process remain trusted;
 - there is no online key revocation or identity-provider federation;
 - internal direct-runtime access can bypass the authenticated gateway;
-- invocation acceptance and command execution are not one transaction;
+- the transaction covers only local SQLite state, not an external system;
 - filesystem access by the host account bypasses runtime read policy;
 - no encryption at rest;
-- process lease is not a transactional or distributed event store;
-- no distributed transaction or queue;
+- no schema migration, backup/restore or disaster-recovery procedure;
+- the synchronous `node:sqlite` API can block the event loop and remains an
+  evolving dependency;
+- process lease and SQLite are not distributed fencing;
+- no distributed transaction, queue or outbox;
 - local Git and its operating-system account are trusted;
 - reference evidence is content-addressed but not independently signed;
 - no connector sandbox;

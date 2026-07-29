@@ -1,3 +1,6 @@
+import { AsyncLocalStorage } from "node:async_hooks";
+import { lstat } from "node:fs/promises";
+import path from "node:path";
 import {
   canonicalJson,
   digestObject,
@@ -9,12 +12,14 @@ import {
   ConflictError,
   IntegrityError,
   NotFoundError,
+  PersistenceError,
   PolicyError,
   ValidationError
 } from "../kernel/errors.js";
 import { EventLog } from "../kernel/event-log.js";
 import { assertId, createId } from "../kernel/ids.js";
 import { RuntimeDirectoryLease } from "../kernel/runtime-lease.js";
+import { SqliteEventStore } from "../kernel/sqlite-event-store.js";
 import { verifyReferenceDocumentEvidence } from "../integrations/git-reference-source.js";
 import {
   invocationSubject,
@@ -179,6 +184,84 @@ function normalizeSourceEvidence(value) {
   return normalized;
 }
 
+function recordableCommandFailure(error) {
+  return (
+    error instanceof ValidationError ||
+    error instanceof AuthorizationError ||
+    error instanceof ConflictError ||
+    error instanceof NotFoundError ||
+    error instanceof PolicyError
+  );
+}
+
+function commandFailureEvidence(error, receipt, failedAt) {
+  return {
+    invocationId: receipt.invocationId,
+    operation: receipt.operation,
+    commandDigest: receipt.commandDigest,
+    errorCode: requiredString(error.code, "command failure code", {
+      max: 64,
+      pattern: /^[A-Z][A-Z0-9_]{2,63}$/
+    }),
+    errorType: requiredString(error.name, "command failure type", {
+      max: 80,
+      pattern: /^[A-Z][a-zA-Z0-9]{2,79}$/
+    }),
+    messageDigest: digestObject({
+      message: String(error.message || "command failed")
+    }),
+    failedAt
+  };
+}
+
+async function fileHasBytes(directory, fileName) {
+  const filePath = path.join(path.resolve(directory), fileName);
+  try {
+    const fileStat = await lstat(filePath);
+    if (fileStat.isSymbolicLink() || !fileStat.isFile()) {
+      throw new IntegrityError(
+        `Runtime persistence path is not a regular file: ${fileName}.`
+      );
+    }
+    return fileStat.size > 0;
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
+}
+
+async function selectPersistence(directory, requested) {
+  const persistence = requiredString(
+    requested,
+    "runtime persistence",
+    {
+      max: 16,
+      pattern: /^(auto|jsonl|sqlite)$/
+    }
+  );
+  const [hasJsonl, hasSqlite] = await Promise.all([
+    fileHasBytes(directory, "events.jsonl"),
+    fileHasBytes(directory, "events.sqlite")
+  ]);
+  if (hasJsonl && hasSqlite) {
+    throw new ConflictError(
+      "Runtime directory contains two non-empty persistence formats."
+    );
+  }
+  if (persistence === "auto") {
+    return hasSqlite ? "sqlite" : "jsonl";
+  }
+  if (
+    (persistence === "sqlite" && hasJsonl) ||
+    (persistence === "jsonl" && hasSqlite)
+  ) {
+    throw new ConflictError(
+      "Explicit migration is required before changing persistence format."
+    );
+  }
+  return persistence;
+}
+
 export function verifyEvidenceBundle(bundle) {
   assertPlainObject(bundle, "evidence bundle");
   const unsigned = jsonClone(bundle);
@@ -201,6 +284,7 @@ export class FdosRuntime {
   #policy;
   #state;
   #mutations;
+  #mutationContext;
   #runtimeLease;
   #leaseOwnership;
   #invocationVerifier;
@@ -215,7 +299,8 @@ export class FdosRuntime {
     actionDefinitions = [],
     workflowDefinitions = [],
     runtimeLeaseOptions = {},
-    invocationVerifier = null
+    invocationVerifier = null,
+    persistence = "jsonl"
   }) {
     const actionCatalog = new ActionCatalog(actionDefinitions);
     const roleRegistry = new RoleRegistry(roleDefinitions);
@@ -233,12 +318,24 @@ export class FdosRuntime {
       runtimeLeaseOptions
     );
     const leaseOwnership = await runtimeLease.acquire();
+    let eventLog = null;
     try {
-      const eventLog = await EventLog.open({
+      const selectedPersistence = await selectPersistence(
         directory,
-        clock,
-        idFactory
-      });
+        persistence
+      );
+      eventLog =
+        selectedPersistence === "sqlite"
+          ? await SqliteEventStore.open({
+              directory,
+              clock,
+              idFactory
+            })
+          : await EventLog.open({
+              directory,
+              clock,
+              idFactory
+            });
       const runtime = new FdosRuntime({
         constructionToken: RUNTIME_CONSTRUCTION_TOKEN,
         eventLog,
@@ -255,6 +352,7 @@ export class FdosRuntime {
       runtime.rehydrate();
       return runtime;
     } catch (error) {
+      await eventLog?.close().catch(() => {});
       await runtimeLease.release(leaseOwnership.id).catch(() => {});
       throw error;
     }
@@ -288,6 +386,7 @@ export class FdosRuntime {
     this.#policy = new PolicyEngine({ actionCatalog, roleRegistry });
     this.#state = createRuntimeState();
     this.#mutations = Promise.resolve();
+    this.#mutationContext = new AsyncLocalStorage();
     this.#runtimeLease = runtimeLease;
     this.#leaseOwnership = leaseOwnership;
     if (
@@ -328,10 +427,16 @@ export class FdosRuntime {
   }
 
   async mutate(operation) {
-    const result = this.#mutations.then(() => {
+    if (this.#mutationContext.getStore() === this) {
       this.assertOpen();
       return operation();
-    });
+    }
+    const result = this.#mutations.then(() =>
+      this.#mutationContext.run(this, () => {
+        this.assertOpen();
+        return operation();
+      })
+    );
     this.#mutations = result.catch(() => undefined);
     return result;
   }
@@ -345,6 +450,7 @@ export class FdosRuntime {
   async close() {
     const result = this.#mutations.then(async () => {
       if (this.#closed) return false;
+      await this.#eventLog.close();
       this.#closed = true;
       const released = await this.#runtimeLease.release(
         this.#leaseOwnership.id
@@ -386,6 +492,14 @@ export class FdosRuntime {
           "Authenticated invocation verification is not configured."
         );
       }
+      if (
+        this.#eventLog.status().transactional &&
+        !this.#eventLog.inTransaction()
+      ) {
+        throw new PolicyError(
+          "Authenticated invocation must enter a persistence transaction."
+        );
+      }
       const receipt = this.#invocationVerifier.verify(invocation, {
         command
       });
@@ -415,6 +529,80 @@ export class FdosRuntime {
       );
       return immutableJson({ actor, receipt });
     });
+  }
+
+  async executeAuthenticatedCommand({
+    invocation,
+    command,
+    executor
+  }) {
+    if (typeof executor !== "function") {
+      throw new ValidationError(
+        "Authenticated command requires an executor."
+      );
+    }
+    let result;
+    let commandError = null;
+    await this.mutate(async () => {
+      const persistence = this.#eventLog.status();
+      if (
+        !persistence.transactional ||
+        typeof this.#eventLog.transaction !== "function"
+      ) {
+        throw new PolicyError(
+          "Authenticated commands require transactional persistence."
+        );
+      }
+      try {
+        await this.#eventLog.transaction(async (transaction) => {
+          const accepted = await this.acceptAuthenticatedInvocation({
+            invocation,
+            command
+          });
+          const outcome = await transaction.savepoint(async () => {
+            try {
+              return {
+                succeeded: true,
+                value: await executor(accepted.actor)
+              };
+            } catch (error) {
+              if (
+                error instanceof IntegrityError ||
+                error instanceof PersistenceError ||
+                !recordableCommandFailure(error)
+              ) {
+                throw error;
+              }
+              return {
+                succeeded: false,
+                error
+              };
+            }
+          });
+          if (outcome.succeeded) {
+            result = outcome.value;
+          } else {
+            commandError = outcome.error;
+            const failedAt = this.now().toISOString();
+            await this.append(
+              "identity.invocation.execution-failed",
+              accepted.actor,
+              invocationSubject(command, accepted.receipt.invocationId),
+              commandFailureEvidence(
+                commandError,
+                accepted.receipt,
+                failedAt
+              )
+            );
+          }
+        });
+      } catch (error) {
+        this.rehydrate();
+        throw error;
+      }
+    });
+    if (commandError) throw commandError;
+    return result;
   }
 
   findRun(runId) {
@@ -1153,10 +1341,15 @@ export class FdosRuntime {
           ["requested", "granted"].includes(candidate.status) &&
           !activeApproval(candidate, now)
       )) {
-        await this.append("approval.expired", systemActor, task.id, {
-          approvalId: approval.id,
-          expiredAt: now.toISOString()
-        });
+        await this.append(
+          "approval.expired",
+          attributedSystemActor(normalizedActor),
+          task.id,
+          {
+            approvalId: approval.id,
+            expiredAt: now.toISOString()
+          }
+        );
       }
       const existing = matching.find((approval) => activeApproval(approval, now));
       if (existing) {
@@ -1221,10 +1414,15 @@ export class FdosRuntime {
       }
       const now = this.now();
       if (!activeApproval(approval, now)) {
-        await this.append("approval.expired", systemActor, task.id, {
-          approvalId: approval.id,
-          expiredAt: now.toISOString()
-        });
+        await this.append(
+          "approval.expired",
+          attributedSystemActor(human),
+          task.id,
+          {
+            approvalId: approval.id,
+            expiredAt: now.toISOString()
+          }
+        );
         throw new PolicyError(`Approval ${approval.id} has expired.`);
       }
       const decidedAt = now.toISOString();
@@ -1455,6 +1653,7 @@ export class FdosRuntime {
         subject: event.subject,
         invocationId: event.actor.invocationId || null,
         correlationId: event.actor.correlationId || null,
+        transactionId: event.transactionId || null,
         previousHash: event.previousHash,
         hash: event.hash
       }));
@@ -1481,12 +1680,16 @@ export class FdosRuntime {
         algorithm: "sha256",
         eventCount: integrity.eventCount,
         headHash: integrity.headHash,
-        verified: integrity.valid
+        verified: integrity.valid,
+        persistence: this.#eventLog.status()
       },
       limitations: [
-        this.#invocationVerifier
-          ? "experimental Ed25519 invocation trust root and non-transactional persistence"
-          : "caller-asserted identity and non-transactional persistence",
+        this.#invocationVerifier &&
+        this.#eventLog.status().transactional
+          ? "experimental Ed25519 trust root and local SQLite transaction boundary"
+          : this.#invocationVerifier
+            ? "experimental Ed25519 invocation trust root and non-transactional persistence"
+            : "caller-asserted identity and non-transactional persistence",
         "no external connector execution",
         "no production-security claim"
       ]
@@ -1513,6 +1716,7 @@ export class FdosRuntime {
         this.#invocationVerifier !== null,
       runtimeLeaseHeld: !this.#closed,
       acceptedInvocations: this.#state.acceptedInvocations.size,
+      persistence: this.#eventLog.status(),
       runs: {
         total: runs.length,
         active: runs.filter((run) => run.status === "active").length,

@@ -34,7 +34,8 @@ FDOS Runtime
   └── Evidence Projection
         │
         ▼
-Hash-Chained Event Log
+Transactional SQLite Event Store
+  └── Hash-Chained Transaction Groups
         │
         ▼
 Exclusive Runtime Directory Lease
@@ -48,11 +49,16 @@ Every material transition is appended as an event. Runtime state is rebuilt
 from verified events when the process opens.
 
 This provides traceability and deterministic recovery within the limits of one
-local process.
+local process and one file-backed database.
 
 The local store has one exclusive process owner. The lease prevents a second
 cooperating runtime from rehydrating stale state and appending a competing
-sequence. It does not make a multi-event transition transactional.
+sequence.
+
+Authenticated commands use one SQLite transaction for Invocation acceptance
+and all resulting internal events. Transaction identity is included in each
+event hash. On open, the runtime verifies both the global event chain and each
+transaction's count, sequence range and head hash.
 
 ### Authenticated invocation boundary
 
@@ -61,9 +67,17 @@ configured public-key verifier checks the Ed25519 signature, issuer, audience,
 organization, principal, exact operation, canonical command digest and
 validity window.
 
-The runtime consumes the Invocation ID in the event log before dispatch.
-Replays therefore remain denied after restart. A failed business command also
-consumes its Invocation ID.
+The runtime consumes the Invocation ID inside the same local transaction as
+dispatch. Replays therefore remain denied after restart. A recognized business
+failure also consumes its Invocation ID and records content-minimized failure
+evidence in that transaction.
+
+Integrity and unexpected implementation failures before commit roll back both
+acceptance and internal effects. A finalization failure reloads authoritative
+state and reports confirmed rollback or an uncertain outcome. Retrying the
+same Invocation is permitted only after diagnosis and a clean reopen resolves
+replay state. This is safe in the current experiment because connectors and
+all external effects remain disabled.
 
 The local demo signer is intentionally separate from the gateway object. The
 runtime receives only a public trust descriptor. Production still requires an
@@ -161,27 +175,38 @@ accepted/consumed ──any replay──> denied
 
 ## Persistence
 
-Events are stored as JSON Lines with:
+Authenticated events are stored in SQLite with:
 
 - monotonic sequence number,
 - event identifier,
 - timestamp,
 - actor,
 - Invocation and correlation attribution where authenticated,
+- transaction identifier,
 - subject,
 - payload,
 - previous event hash,
 - current event hash.
 
-The runtime verifies the complete chain before rehydration. File permissions
-are restricted to the local account where supported.
+The runtime also records transaction start/commit metadata, event count,
+sequence range and transaction head hash. It verifies database identity,
+canonical event content, the complete chain and transaction metadata before
+rehydration. File permissions are restricted to the local account.
+
+The legacy JSONL adapter remains available only for lower-level compatibility
+tests. Authenticated operation requires SQLite, and no non-empty store is
+migrated implicitly.
+
+See `TRANSACTIONAL_PERSISTENCE.md`.
 
 ## Future Extension Points
 
 These are not implemented:
 
 - production identity-provider federation and revocation;
-- transactional database event store;
+- supported production database and schema migration service;
+- distributed fencing and transactional worker claims;
+- connector outbox and uncertain-outcome recovery;
 - message bus and durable queues;
 - model-provider adapter;
 - connector registry and isolated executors;

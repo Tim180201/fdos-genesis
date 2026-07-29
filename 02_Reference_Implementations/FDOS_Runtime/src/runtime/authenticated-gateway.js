@@ -79,11 +79,16 @@ export class AuthenticatedRuntimeGateway {
   constructor(runtime) {
     if (
       !runtime ||
-      typeof runtime.acceptAuthenticatedInvocation !== "function" ||
+      typeof runtime.executeAuthenticatedCommand !== "function" ||
       typeof runtime.close !== "function"
     ) {
       throw new ValidationError(
         "Authenticated gateway requires an identity-enabled FDOS runtime."
+      );
+    }
+    if (!runtime.status().persistence?.transactional) {
+      throw new ValidationError(
+        "Authenticated gateway requires transactional persistence."
       );
     }
     this.#runtime = runtime;
@@ -94,13 +99,14 @@ export class AuthenticatedRuntimeGateway {
     exactRequestShape(request);
     const command = normalizeInvocationCommand(request.command);
     const invocation = immutableJson(request.invocation);
-    const operation = this.#pending.then(async () => {
-      const accepted = await this.#runtime.acceptAuthenticatedInvocation({
+    const operation = this.#pending.then(() =>
+      this.#runtime.executeAuthenticatedCommand({
         invocation,
-        command
-      });
-      return dispatch(this.#runtime, command, accepted.actor);
-    });
+        command,
+        executor: (actor) =>
+          dispatch(this.#runtime, command, actor)
+      })
+    );
     this.#pending = operation.catch(() => undefined);
     return operation;
   }

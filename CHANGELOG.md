@@ -6,6 +6,8 @@
   experiment without changing the FDOS Core.
 - Added ADR-0044 authorizing an authenticated Invocation boundary experiment
   before any model provider or connector.
+- Added ADR-0045 authorizing a local transactional authenticated-command
+  experiment without promoting persistence into FDOS Core.
 - Added the runtime experiment boundary for A0–A4 action governance, data
   scopes, repository ownership and production limitations.
 - Added `02_Reference_Implementations/FDOS_Runtime/` with:
@@ -27,15 +29,27 @@
   - persistent one-time replay protection across runtime restarts;
   - a deny-by-default authenticated command gateway;
   - Invocation/correlation attribution for resulting audit events;
+  - a strict local SQLite event and transaction schema;
+  - one transaction for authenticated Invocation acceptance and internal
+    command effects;
+  - typed, content-minimized post-acceptance failure evidence;
+  - rollback and rehydration on integrity, persistence and unexpected failure;
+  - transaction-aware hash-chain and metadata verification;
+  - crash recovery and stale/out-of-context write denial;
+  - fail-closed persistence-format selection without implicit JSONL migration;
   - append-only hash-chained audit events;
   - content-minimized evidence export.
 - Added the Chief of Staff, Operations and Marketing software-change-readiness
   pilot under `03_Projects/Company_OS_Pilot/`.
 - Added an initial 49-test three-role slice, expanded it to 63 tests for
   reference intake/provenance/runtime ownership, and then to 79 tests for the
-  authenticated Invocation boundary and gateway lifecycle.
+  authenticated Invocation boundary and gateway lifecycle. The transactional
+  slice expands the complete suite to 92 tests.
 - Recorded 90.83% line, 77.73% branch and 90.48% function coverage for the
   authenticated candidate.
+- Recorded 90.16% line, 78.04% branch and 90.56% function coverage for the
+  transactional candidate; finalization-fault injection remains explicitly
+  out of scope.
 - Added Evidence Item `EV-FDOS-RUNTIME-PILOT-001` and its SHA-256 source
   manifest.
 - Added Evidence Item `EV-FDOS-REFERENCE-INTAKE-002` and its SHA-256 source
@@ -43,11 +57,15 @@
   profile and Artifact Validation Register.
 - Added Evidence Item `EV-FDOS-AUTHENTICATED-INVOCATION-003`, its SHA-256
   source manifest and Validation Report 003.
+- Added Evidence Item `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004`, its SHA-256
+  source manifest and Validation Report 004.
 - Added Knowledge Candidate KP-006 for exact Action Intent approval binding.
 - Added Knowledge Candidates KP-007 for exact external-source binding and
   KP-008 for exclusive ownership before transactional persistence.
 - Added Knowledge Candidate KP-009 for verified Invocation identity before
   authorization.
+- Added Knowledge Candidate KP-010 for one durable transaction joining
+  authenticated command state.
 - Applied KP-001 Role-versus-Agent-Instance separation in the experiment
   without changing its candidate status.
 - No FDOS Core capability, canonical object or release version was added.

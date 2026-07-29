@@ -122,3 +122,51 @@ give the runtime verifier public trust material only.
 
 Rationale: This proves signature and claim enforcement without pretending that
 local key generation authenticates a production human or workload.
+
+## PILOT-DEC-015 — One Local Transaction per Authenticated Command
+
+Date: 2026-07-29
+
+Decision: Persist Invocation acceptance and every resulting internal command
+event in one SQLite transaction with a shared transaction ID.
+
+Rationale: Replay prevention and business state must not diverge when the
+process stops between acceptance and internal command persistence.
+
+## PILOT-DEC-016 — Typed Failure Semantics
+
+Date: 2026-07-29
+
+Decision: A recognized post-acceptance business failure consumes the
+Invocation and commits deliberate internal transitions plus content-minimized
+failure evidence. Integrity and unexpected pre-commit failures roll the whole
+local transaction back. A finalization failure reports confirmed rollback or
+an uncertain outcome and requires a clean reopen.
+
+Rationale: Approval expiry must remain durable when a late decision is denied,
+while implementation faults must not leave partial internal state.
+
+This distinction is authorized only while external effects remain disabled.
+
+## PILOT-DEC-017 — No Implicit Persistence Migration
+
+Date: 2026-07-29
+
+Decision: Detect the sole non-empty JSONL or SQLite format when explicitly
+requested, but reject format switches and dual non-empty stores. Provide no
+automatic migration in this slice.
+
+Rationale: Silent conversion would make source, target, rollback and evidence
+state ambiguous.
+
+## PILOT-DEC-018 — Node SQLite Remains an Experimental Dependency
+
+Date: 2026-07-29
+
+Decision: Use synchronous built-in `node:sqlite` for the bounded Level 1
+adapter, require Node.js 22.13 or newer and record the exact tested runtime
+version.
+
+Rationale: It avoids an added package supply-chain dependency and provides the
+needed local transaction primitive, but its evolving stability and blocking
+API prevent any production-support claim.

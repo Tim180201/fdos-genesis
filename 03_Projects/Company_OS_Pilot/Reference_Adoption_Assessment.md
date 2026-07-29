@@ -144,22 +144,22 @@ Reference Repository
 
 Runtime Store
   -> one exclusive Level 1 process owner
-  -> verified event-chain rehydration
+  -> local SQLite command transaction
+  -> verified event-chain and transaction rehydration
   -> serialized mutations
-  -> future transactional event store / worker leases
+  -> future distributed worker fencing and outbox
 ```
 
 ## Recommended Next Build Order
 
-1. Human-review the completed authenticated-invocation experiment and its
-   remaining identity/key-management limits.
-2. Replace the local event store with a transactional adapter and worker
-   claims.
-3. Add a connector contract with dry-run, idempotency and uncertain-outcome
-   review.
-4. Validate one read-only GitHub or document connector.
-5. Add a model-provider adapter with budgets and structured response contracts.
-6. Only then pilot Teams or Slack ingress; outbound actions remain separately
+1. Human-review the authenticated-invocation and transactional-persistence
+   evidence with their remaining identity, storage and recovery limits.
+2. Specify a connector contract with dry-run, durable outbox, idempotency and
+   uncertain-outcome review while keeping connector execution disabled.
+3. Validate one authenticated read-only GitHub or document connector in a
+   sandbox.
+4. Add a model-provider adapter with budgets and structured response contracts.
+5. Only then pilot Teams or Slack ingress; outbound actions remain separately
    approved.
 
 ## Governance

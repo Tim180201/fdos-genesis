@@ -32,6 +32,10 @@ promotion and not a production approval.
 | Persistent one-time Invocation ledger | Tested | Level 1 — Experimental | `EV-FDOS-AUTHENTICATED-INVOCATION-003` | Pending | Not ready |
 | Authenticated Runtime Gateway | Tested | Level 1 — Experimental | `EV-FDOS-AUTHENTICATED-INVOCATION-003` | Pending | Not ready |
 | Authenticated three-role workflow | Tested | Level 1 — Experimental | `EV-FDOS-AUTHENTICATED-INVOCATION-003` | Pending | Not ready |
+| SQLite event and transaction store | Tested | Level 1 — Experimental | `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004` | Pending | Not ready |
+| Atomic authenticated command boundary | Tested | Level 1 — Experimental | `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004` | Pending | Not ready |
+| Crash rollback and transaction rehydration | Tested | Level 1 — Experimental | `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004` | Pending | Not ready |
+| Fail-closed persistence-format selection | Tested | Level 1 — Experimental | `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004` | Pending | Not ready |
 | TapTime/Company AI adoption assessment | Tested as documentation/evidence | Level 1 — Experimental | exact reference manifests | Pending | Not applicable |
 
 ## Promotion Rule

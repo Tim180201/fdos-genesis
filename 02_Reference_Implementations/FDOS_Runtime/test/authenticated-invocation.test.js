@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import {
+  lstat,
+  mkdtemp,
+  rm,
+  writeFile
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -7,12 +12,15 @@ import {
   AuthorizationError,
   ConflictError,
   digestObject,
+  EventLog,
   executeAuthenticatedSoftwareChangeReadinessDemo,
   IntegrityError,
   InvocationVerifier,
   LocalInvocationAuthority,
   NotFoundError,
   openAuthenticatedPilotRuntime,
+  openPilotRuntime,
+  PolicyError,
   ValidationError,
   verifyInvocationReceipt
 } from "../src/index.js";
@@ -135,6 +143,49 @@ function executeAs(harness, principal, type, payload, options = {}) {
       options
     )
   );
+}
+
+async function readyAuthenticatedA2(harness) {
+  const started = await executeAs(
+    harness,
+    owner,
+    "workflow.start",
+    {
+      workflowId: A2_WORKFLOW.id,
+      version: A2_WORKFLOW.version,
+      objective: "Exercise the authenticated approval boundary."
+    }
+  );
+  const intake = started.run.tasks.find(
+    (task) => task.stepId === "intake"
+  );
+  await executeAs(
+    harness,
+    chief,
+    "task.claim",
+    { taskId: intake.id }
+  );
+  await executeAs(
+    harness,
+    chief,
+    "task.complete",
+    {
+      taskId: intake.id,
+      result: { request: "bounded sandbox write" }
+    }
+  );
+  const run = await executeAs(
+    harness,
+    owner,
+    "workflow.view",
+    { runId: started.run.id }
+  );
+  return {
+    runId: started.run.id,
+    writeTask: run.tasks.find(
+      (task) => task.stepId === "reversible-write"
+    )
+  };
 }
 
 test("signed invocation binds principal, organization, operation and command", async (t) => {
@@ -427,6 +478,169 @@ test("business failure consumes an authenticated invocation safely", async (t) =
     ConflictError
   );
   assert.equal(harness.gateway.status().acceptedInvocations, 1);
+  assert.equal(harness.gateway.status().persistence.transactionCount, 1);
+
+  const audit = await executeAs(
+    harness,
+    owner,
+    "audit.read",
+    {}
+  );
+  const accepted = audit.find(
+    (event) =>
+      event.type === "identity.invocation.accepted" &&
+      event.actor.invocationId === request.invocation.claims.invocationId
+  );
+  const failed = audit.find(
+    (event) =>
+      event.type === "identity.invocation.execution-failed" &&
+      event.actor.invocationId === request.invocation.claims.invocationId
+  );
+  assert.equal(failed.transactionId, accepted.transactionId);
+  assert.equal(failed.payload.errorCode, "NOT_FOUND");
+  assert.equal(
+    audit.some(
+      (event) =>
+        event.actor.invocationId ===
+          request.invocation.claims.invocationId &&
+        event.type.startsWith("task.")
+    ),
+    false
+  );
+});
+
+test("unexpected command failure rolls back acceptance and internal effects", async (t) => {
+  const directory = await mkdtemp(
+    path.join(os.tmpdir(), "fdos-fatal-command-")
+  );
+  const time = controlledClock();
+  const authority = LocalInvocationAuthority.create({
+    clock: time.clock
+  });
+  const verifier = new InvocationVerifier({
+    trustedKeys: [authority.trustDescriptor()],
+    clock: time.clock
+  });
+  const runtime = await openPilotRuntime({
+    directory,
+    persistence: "sqlite",
+    invocationVerifier: verifier,
+    clock: time.clock
+  });
+  t.after(async () => {
+    await runtime.close().catch(() => {});
+    await rm(directory, { recursive: true, force: true });
+  });
+  const command = {
+    type: "workflow.start",
+    payload: {
+      workflowId: "company.software-change-readiness",
+      version: "1.0.0-experimental",
+      objective: "Prove fatal rollback semantics."
+    }
+  };
+  const invocation = authority.issue({
+    principal: owner,
+    command
+  });
+  const executeWorkflow = (failAfterEffects) =>
+    runtime.executeAuthenticatedCommand({
+      invocation,
+      command,
+      executor: async (actor) => {
+        const started = await runtime.startWorkflow({
+          ...command.payload,
+          actor
+        });
+        if (failAfterEffects) {
+          throw new Error("Controlled unexpected failure.");
+        }
+        return started;
+      }
+    });
+
+  await assert.rejects(
+    () => executeWorkflow(true),
+    /Controlled unexpected failure/
+  );
+  assert.equal(runtime.status().acceptedInvocations, 0);
+  assert.equal(runtime.status().runs.total, 0);
+  assert.equal(runtime.status().audit.eventCount, 0);
+  assert.equal(runtime.status().persistence.transactionCount, 0);
+
+  const completed = await executeWorkflow(false);
+  assert.equal(completed.run.status, "active");
+  assert.equal(runtime.status().acceptedInvocations, 1);
+  assert.equal(runtime.status().runs.total, 1);
+  assert.equal(runtime.status().persistence.transactionCount, 1);
+});
+
+test("authenticated runtime never migrates JSONL and rejects dual non-empty stores", async (t) => {
+  const directory = await mkdtemp(
+    path.join(os.tmpdir(), "fdos-legacy-store-")
+  );
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const legacy = await EventLog.open({ directory });
+  await legacy.append({
+    type: "test.legacy",
+    actor: { type: "system", id: "legacy-test-system" },
+    subject: "subject_000001",
+    payload: { format: "jsonl" }
+  });
+  await legacy.close();
+
+  const authority = LocalInvocationAuthority.create();
+  const verifier = new InvocationVerifier({
+    trustedKeys: [authority.trustDescriptor()]
+  });
+  await assert.rejects(
+    () =>
+      openAuthenticatedPilotRuntime({
+        directory,
+        invocationVerifier: verifier
+      }),
+    ConflictError
+  );
+  await assert.rejects(
+    () => lstat(path.join(directory, "events.sqlite")),
+    (error) => error.code === "ENOENT"
+  );
+
+  await writeFile(
+    path.join(directory, "events.sqlite"),
+    "independent-non-empty-format",
+    { mode: 0o600 }
+  );
+  await assert.rejects(
+    () =>
+      openPilotRuntime({
+        directory,
+        persistence: "auto"
+      }),
+    ConflictError
+  );
+});
+
+test("auto persistence reopens an existing SQLite store without format migration", async (t) => {
+  const harness = await identityHarness(t);
+  await executeAs(
+    harness,
+    operations,
+    "task.list-ready",
+    {}
+  );
+  await harness.gateway.close();
+
+  const reopened = await openPilotRuntime({
+    directory: harness.directory,
+    persistence: "auto",
+    clock: harness.time.clock
+  });
+  t.after(() => reopened.close().catch(() => {}));
+  assert.equal(reopened.status().persistence.kind, "sqlite");
+  assert.equal(reopened.status().acceptedInvocations, 1);
+  assert.equal(reopened.status().persistence.transactionCount, 1);
+  await reopened.close();
 });
 
 test("connector identity and caller-supplied role claims are denied", async (t) => {
@@ -650,41 +864,7 @@ test("authenticated A2 approval is exact, human-decided and consumed once", asyn
       workflowDefinitions: [A2_WORKFLOW]
     }
   });
-  const started = await executeAs(
-    harness,
-    owner,
-    "workflow.start",
-    {
-      workflowId: A2_WORKFLOW.id,
-      version: A2_WORKFLOW.version,
-      objective: "Exercise the authenticated approval boundary."
-    }
-  );
-  const intake = started.run.tasks.find((task) => task.stepId === "intake");
-  await executeAs(
-    harness,
-    chief,
-    "task.claim",
-    { taskId: intake.id }
-  );
-  await executeAs(
-    harness,
-    chief,
-    "task.complete",
-    {
-      taskId: intake.id,
-      result: { request: "bounded sandbox write" }
-    }
-  );
-  const run = await executeAs(
-    harness,
-    owner,
-    "workflow.view",
-    { runId: started.run.id }
-  );
-  const writeTask = run.tasks.find(
-    (task) => task.stepId === "reversible-write"
-  );
+  const { writeTask } = await readyAuthenticatedA2(harness);
 
   const approval = await executeAs(
     harness,
@@ -721,6 +901,86 @@ test("authenticated A2 approval is exact, human-decided and consumed once", asyn
   assert.equal(approvals[0].taskAttempt, 1);
 });
 
+test("expired A2 decision commits expiry and failure in one invocation transaction", async (t) => {
+  const harness = await identityHarness(t, {
+    runtimeOptions: {
+      workflowDefinitions: [A2_WORKFLOW]
+    }
+  });
+  const { writeTask } = await readyAuthenticatedA2(harness);
+  const approval = await executeAs(
+    harness,
+    operations,
+    "approval.request",
+    {
+      taskId: writeTask.id,
+      reason: "Authorize one time-limited sandbox claim.",
+      ttlMinutes: 1
+    }
+  );
+  harness.time.advance(61_000);
+  const decision = signedRequest(
+    harness.authority,
+    owner,
+    {
+      type: "approval.decide",
+      payload: {
+        approvalId: approval.id,
+        decision: "granted"
+      }
+    }
+  );
+  await assert.rejects(
+    () => harness.gateway.execute(decision),
+    PolicyError
+  );
+
+  const approvals = await executeAs(
+    harness,
+    owner,
+    "approval.list",
+    { taskId: writeTask.id }
+  );
+  assert.equal(approvals[0].status, "expired");
+
+  const audit = await executeAs(
+    harness,
+    owner,
+    "audit.read",
+    {}
+  );
+  const invocationId = decision.invocation.claims.invocationId;
+  const accepted = audit.find(
+    (event) =>
+      event.type === "identity.invocation.accepted" &&
+      event.actor.invocationId === invocationId
+  );
+  const expired = audit.find(
+    (event) =>
+      event.type === "approval.expired" &&
+      event.actor.invocationId === invocationId
+  );
+  const failed = audit.find(
+    (event) =>
+      event.type === "identity.invocation.execution-failed" &&
+      event.actor.invocationId === invocationId
+  );
+  assert.ok(accepted);
+  assert.ok(expired);
+  assert.ok(failed);
+  assert.equal(expired.transactionId, accepted.transactionId);
+  assert.equal(failed.transactionId, accepted.transactionId);
+  assert.equal(failed.payload.errorCode, "POLICY_DENIED");
+  assert.equal(
+    audit.some(
+      (event) =>
+        event.type === "approval.granted" &&
+        event.actor.invocationId === invocationId
+    ),
+    false
+  );
+});
+
 test("authenticated three-role pilot completes with traceable invocations", async (t) => {
   const harness = await identityHarness(t);
   const result = await executeAuthenticatedSoftwareChangeReadinessDemo({
@@ -732,6 +992,33 @@ test("authenticated three-role pilot completes with traceable invocations", asyn
   assert.equal(result.status.acceptedInvocations, 14);
   assert.equal(result.status.audit.eventCount, 29);
   assert.equal(result.status.externalActionsEnabled, false);
+  assert.deepEqual(result.status.persistence, {
+    kind: "sqlite",
+    schemaVersion: "1.0",
+    transactional: true,
+    transactionCount: 14,
+    committedTransactionCount: 14,
+    transactionActive: false,
+    recoveryRequired: false
+  });
+  assert.ok(
+    result.evidence.eventReferences.every(
+      (event) => event.transactionId
+    )
+  );
+  const completedTask = result.evidence.eventReferences.find(
+    (event) => event.type === "task.completed" &&
+      event.subject === result.run.tasks.find(
+        (task) => task.stepId === "executive-synthesis"
+      ).id
+  );
+  const completedRun = result.evidence.eventReferences.find(
+    (event) => event.type === "workflow.run.completed"
+  );
+  assert.equal(
+    completedTask.transactionId,
+    completedRun.transactionId
+  );
   assert.ok(
     result.evidence.eventReferences.some(
       (event) =>
@@ -752,4 +1039,37 @@ test("authenticated three-role pilot completes with traceable invocations", asyn
     JSON.stringify(result),
     /BEGIN PUBLIC KEY|signature/
   );
+
+  const audit = await executeAs(
+    harness,
+    owner,
+    "audit.read",
+    {}
+  );
+  const acceptedByInvocation = new Map(
+    audit
+      .filter(
+        (event) => event.type === "identity.invocation.accepted"
+      )
+      .map((event) => [event.actor.invocationId, event])
+  );
+  for (const event of audit.filter(
+    (candidate) =>
+      candidate.type !== "identity.invocation.accepted" &&
+      candidate.actor.invocationId
+  )) {
+    const accepted = acceptedByInvocation.get(
+      event.actor.invocationId
+    );
+    assert.ok(
+      accepted,
+      `${event.type} must reference an accepted invocation`
+    );
+    assert.ok(event.transactionId);
+    assert.equal(event.transactionId, accepted.transactionId);
+    assert.equal(
+      event.actor.correlationId,
+      accepted.actor.correlationId
+    );
+  }
 });

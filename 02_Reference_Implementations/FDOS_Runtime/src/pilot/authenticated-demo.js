@@ -134,10 +134,15 @@ export async function executeAuthenticatedSoftwareChangeReadinessDemo({
       checks: [
         { name: "authenticated-invocations", status: "verified" },
         { name: "replay-protection", status: "enabled" },
+        {
+          name: "local-transaction-boundary",
+          status: "verified"
+        },
         { name: "production-change", status: "not_executed" }
       ],
       blockers: [
-        "Production identity-provider integration is intentionally absent."
+        "Production identity-provider integration is intentionally absent.",
+        "Database recovery and external-effect atomicity are not established."
       ]
     }
   );
@@ -154,7 +159,7 @@ export async function executeAuthenticatedSoftwareChangeReadinessDemo({
         "The authenticated pilot completed internal preparation and awaits human review.",
       claimsToVerify: [
         "Independent identity-provider evidence",
-        "Transactional persistence",
+        "Production persistence and recovery evidence",
         "Human publication authorization"
       ]
     }
@@ -168,13 +173,14 @@ export async function executeAuthenticatedSoftwareChangeReadinessDemo({
     taskByStep(started.run, "executive-synthesis"),
     {
       recommendation:
-        "Accept identity feasibility evidence only; do not release or publish.",
+        "Accept local identity and transaction feasibility evidence only; do not release or publish.",
       unresolvedRisks: [
         "The local signing authority is not a production identity provider.",
+        "The SQLite transaction does not include an external system.",
         "No external action has been authorized."
       ],
       approvalRequests: [
-        "Human review of identity evidence",
+        "Human review of identity and persistence evidence",
         "Separate future approval for any connector"
       ]
     }

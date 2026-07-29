@@ -8,6 +8,9 @@ Related Decision: `../ADR/ADR-0043_FDOS_Runtime_Level_1_Experiment.md`
 Related Identity Decision:
 `../ADR/ADR-0044_Authenticated_Invocation_Boundary_Experiment.md`
 
+Related Persistence Decision:
+`../ADR/ADR-0045_Transactional_Authenticated_Command_Experiment.md`
+
 ## Purpose
 
 Keep the FDOS Runtime experiment useful, reversible and constitutionally
@@ -40,6 +43,10 @@ the Agent Registry after identity verification.
 
 The local demo signing authority is experimental and may not be treated as a
 production identity provider. Connector principals remain denied.
+
+Every accepted command at this boundary requires the local SQLite adapter.
+Invocation acceptance, internal command events and typed business-failure
+evidence share one transaction ID and one commit.
 
 ## Execution Boundary
 
@@ -80,6 +87,29 @@ A future connector must have:
 - failure and retry semantics,
 - a dedicated threat review.
 
+The local SQLite transaction does not include a connector. Any connector also
+requires a transactional outbox, idempotency key and explicit
+uncertain-outcome review before activation.
+
+## Persistence Boundary
+
+- The authenticated gateway requires `events.sqlite`.
+- The runtime keeps an exclusive process lease for the store directory.
+- Database, event-chain and transaction metadata are verified before
+  rehydration.
+- A non-empty JSONL store is never migrated implicitly.
+- Two non-empty persistence formats fail closed.
+- Event-content or transaction-metadata mismatch fails closed.
+- An unexpected pre-commit failure rolls the local command transaction back
+  and rehydrates committed state.
+- A finalization failure reports confirmed rollback or an uncertain outcome;
+  callers must stop and reopen rather than assume an outcome.
+- No migration, deletion or archival action is implemented.
+
+The adapter uses synchronous `node:sqlite` and requires Node.js 22.13 or newer.
+That API remains an evolving dependency and does not establish production
+support.
+
 ## Repository Boundary
 
 Implementation work for this experiment is restricted to
@@ -103,6 +133,9 @@ It provides:
 - domain controls,
 - local Ed25519-signed Invocation Context verification,
 - persistent one-time invocation replay rejection,
+- local atomic Invocation acceptance plus internal command-event persistence,
+- crash rollback for uncommitted local command events,
+- fail-closed persistence format and transaction-metadata verification,
 - deterministic state transitions,
 - role checks,
 - approval binding,
@@ -112,10 +145,11 @@ It does not yet provide:
 
 - authenticated network identities,
 - production identity-provider federation or key revocation,
-- transactional identity acceptance plus command execution,
 - encryption key management,
-- transactional or distributed multi-process concurrency,
-- database transactions,
+- a supported production database or schema migration process,
+- backup, restore or disaster recovery,
+- distributed multi-process fencing or transactions,
+- an outbox or atomic external-side-effect delivery,
 - tenant isolation,
 - secret management,
 - connector sandboxing,
@@ -137,6 +171,11 @@ Execution must stop safely when:
 - approval expired or was already used;
 - a data scope is not authorized;
 - the event chain fails integrity verification;
+- SQLite identity, schema, canonical event content or transaction metadata is
+  invalid;
+- two non-empty persistence formats exist or a format change would require
+  implicit migration;
+- an append originates outside the active transaction context;
 - another process owns the runtime directory;
 - a reference source changes during capture or has tracked worktree drift;
 - reference evidence is missing, malformed or digest-invalid;

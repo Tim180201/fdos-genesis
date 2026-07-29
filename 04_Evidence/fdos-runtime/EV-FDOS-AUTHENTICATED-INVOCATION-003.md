@@ -206,3 +206,7 @@ TapTime and Company AI remain independent read-only references.
 This Evidence Record supports Human Governance review of Technical Slice 3.
 It authorizes no external action, deployment, FDOS Core change or knowledge
 promotion.
+
+The later local transaction experiment evaluates the atomicity gap recorded
+here in `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004`. This record remains the
+historical evidence for the Technical Slice 3 source and claims.

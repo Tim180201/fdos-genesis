@@ -80,7 +80,8 @@ async function runDemo() {
 async function verifyStore(directory) {
   if (!directory) throw new Error("verify requires a store directory.");
   const runtime = await openPilotRuntime({
-    directory: path.resolve(directory)
+    directory: path.resolve(directory),
+    persistence: "auto"
   });
   try {
     process.stdout.write(

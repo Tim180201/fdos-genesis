@@ -69,6 +69,14 @@ function validateActor(actor) {
   return { type, id, ...attribution };
 }
 
+function normalizeTransactionId(value) {
+  const transactionId = assertId(value, "event transaction id");
+  if (!transactionId.startsWith("transaction_")) {
+    throw new IntegrityError("Event transaction identifier is invalid.");
+  }
+  return transactionId;
+}
+
 function validateEvent(event, index, expectedPreviousHash) {
   assertPlainObject(event, `event line ${index + 1}`);
   if (event.schemaVersion !== EVENT_SCHEMA_VERSION) {
@@ -86,6 +94,9 @@ function validateEvent(event, index, expectedPreviousHash) {
   validateActor(event.actor);
   requiredString(event.subject, "event subject", { max: 160 });
   assertPlainObject(event.payload, "event payload");
+  if (event.transactionId !== undefined) {
+    normalizeTransactionId(event.transactionId);
+  }
 
   if (event.previousHash !== expectedPreviousHash) {
     throw new IntegrityError(`Broken event link at line ${index + 1}.`);
@@ -96,6 +107,86 @@ function validateEvent(event, index, expectedPreviousHash) {
     throw new IntegrityError(`Invalid event hash at line ${index + 1}.`);
   }
   return event.hash;
+}
+
+export function verifyAuditEventChain(events) {
+  if (!Array.isArray(events)) {
+    throw new ValidationError("Audit events must be a list.");
+  }
+  let previousHash = null;
+  let activeTransactionId = null;
+  const completedTransactions = new Set();
+  for (const [index, event] of events.entries()) {
+    previousHash = validateEvent(event, index, previousHash);
+    const transactionId = event.transactionId || null;
+    if (transactionId === activeTransactionId) continue;
+    if (activeTransactionId) {
+      completedTransactions.add(activeTransactionId);
+    }
+    if (
+      transactionId &&
+      completedTransactions.has(transactionId)
+    ) {
+      throw new IntegrityError(
+        `Transaction ${transactionId} is not contiguous.`
+      );
+    }
+    activeTransactionId = transactionId;
+  }
+  return previousHash;
+}
+
+export function createAuditEvent({
+  currentEvents,
+  clock,
+  idFactory,
+  type,
+  actor,
+  subject,
+  payload,
+  transactionId = null
+}) {
+  if (
+    !Array.isArray(currentEvents) ||
+    typeof clock !== "function" ||
+    typeof idFactory !== "function"
+  ) {
+    throw new ValidationError(
+      "Audit event creation requires events, clock and ID factory."
+    );
+  }
+  const timestampValue = clock();
+  if (
+    !(timestampValue instanceof Date) ||
+    !Number.isFinite(timestampValue.getTime())
+  ) {
+    throw new ValidationError("Event clock returned an invalid date.");
+  }
+  const normalizedTransactionId =
+    transactionId === null
+      ? null
+      : normalizeTransactionId(transactionId);
+  const unsigned = {
+    schemaVersion: EVENT_SCHEMA_VERSION,
+    sequence: currentEvents.length + 1,
+    id: idFactory("event"),
+    type: requiredString(type, "event type", {
+      max: 120,
+      pattern: /^[a-z][a-z0-9.-]+$/
+    }),
+    timestamp: timestampValue.toISOString(),
+    actor: validateActor(actor),
+    subject: requiredString(subject, "event subject", { max: 160 }),
+    payload: jsonClone(assertPlainObject(payload, "event payload")),
+    ...(normalizedTransactionId
+      ? { transactionId: normalizedTransactionId }
+      : {}),
+    previousHash: currentEvents.at(-1)?.hash || null
+  };
+  return immutableJson({
+    ...unsigned,
+    hash: digestObject(unsigned)
+  });
 }
 
 export class EventLog {
@@ -130,10 +221,7 @@ export class EventLog {
       }
     });
 
-    let previousHash = null;
-    for (const [index, event] of events.entries()) {
-      previousHash = validateEvent(event, index, previousHash);
-    }
+    verifyAuditEventChain(events);
 
     return new EventLog({
       filePath,
@@ -153,28 +241,14 @@ export class EventLog {
 
   async append({ type, actor, subject, payload }) {
     const operation = this.pending.then(async () => {
-      const timestampValue = this.clock();
-      if (!(timestampValue instanceof Date) || !Number.isFinite(timestampValue.getTime())) {
-        throw new ValidationError("Event clock returned an invalid date.");
-      }
-
-      const unsigned = {
-        schemaVersion: EVENT_SCHEMA_VERSION,
-        sequence: this.events.length + 1,
-        id: this.idFactory("event"),
-        type: requiredString(type, "event type", {
-          max: 120,
-          pattern: /^[a-z][a-z0-9.-]+$/
-        }),
-        timestamp: timestampValue.toISOString(),
-        actor: validateActor(actor),
-        subject: requiredString(subject, "event subject", { max: 160 }),
-        payload: jsonClone(assertPlainObject(payload, "event payload")),
-        previousHash: this.lastHash()
-      };
-      const event = immutableJson({
-        ...unsigned,
-        hash: digestObject(unsigned)
+      const event = createAuditEvent({
+        currentEvents: this.events,
+        clock: this.clock,
+        idFactory: this.idFactory,
+        type,
+        actor,
+        subject,
+        payload
       });
 
       const handle = await openFile(this.filePath, "a", 0o600);
@@ -208,14 +282,32 @@ export class EventLog {
   }
 
   verify() {
-    let previousHash = null;
-    for (const [index, event] of this.events.entries()) {
-      previousHash = validateEvent(event, index, previousHash);
-    }
+    verifyAuditEventChain(this.events);
     return {
       valid: true,
       eventCount: this.events.length,
       headHash: this.lastHash()
     };
+  }
+
+  status() {
+    return {
+      kind: "jsonl",
+      schemaVersion: EVENT_SCHEMA_VERSION,
+      transactional: false,
+      transactionCount: 0,
+      committedTransactionCount: 0,
+      transactionActive: false,
+      recoveryRequired: false
+    };
+  }
+
+  inTransaction() {
+    return false;
+  }
+
+  async close() {
+    await this.pending;
+    return true;
   }
 }

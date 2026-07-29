@@ -31,6 +31,12 @@ export class IntegrityError extends FdosError {
   }
 }
 
+export class PersistenceError extends FdosError {
+  constructor(message, details) {
+    super(message, { code: "PERSISTENCE_ERROR", details });
+  }
+}
+
 export class NotFoundError extends FdosError {
   constructor(message, details) {
     super(message, { code: "NOT_FOUND", details });

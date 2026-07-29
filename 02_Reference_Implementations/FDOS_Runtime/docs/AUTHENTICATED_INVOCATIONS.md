@@ -26,8 +26,8 @@ other untrusted caller must never receive that object directly.
 Local demo authority / future identity provider
   -> signed Invocation Context
   -> Invocation Verifier
-  -> persistent one-time acceptance
-  -> exact command dispatch
+  -> transactional one-time acceptance
+  -> exact command dispatch in the same local transaction
   -> existing FDOS authorization and workflow policy
 ```
 
@@ -71,10 +71,12 @@ Production work requires:
 - authentication assurance appropriate to the principal and action risk;
 - secure bootstrap configuration for the runtime trust store.
 
-## Replay and Failure Semantics
+## Replay and Transaction Semantics
 
-Before dispatch, the runtime verifies the signature and claims, derives the
-actor, and appends `identity.invocation.accepted` to the hash-chained event log.
+Inside one SQLite transaction the runtime verifies signature and claims,
+derives the actor, appends `identity.invocation.accepted` and dispatches the
+exact command. Invalid identity evidence or replay rolls that empty attempt
+back without creating a new acceptance or failure event.
 
 The Invocation ID is then consumed permanently:
 
@@ -83,10 +85,29 @@ The Invocation ID is then consumed permanently:
 - replay after runtime restart is rejected;
 - a business-command failure still consumes the Invocation ID.
 
-Consuming before execution is deliberately fail-closed. The current JSONL
-event store cannot make invocation acceptance and the resulting command events
-one database transaction. This limitation remains visible until a
-transactional event-store adapter exists.
+Every resulting Invocation-attributed event must carry the same correlation
+and transaction IDs as the acceptance event.
+
+Recognized validation, authorization, conflict, not-found and policy failures
+after acceptance commit:
+
+- Invocation acceptance;
+- deliberate internal state transitions, such as approval expiry;
+- content-minimized `identity.invocation.execution-failed` evidence.
+
+Integrity and unexpected implementation failures before commit roll back
+acceptance and all internal effects. The same Invocation may be retried only
+after diagnosis.
+
+A transaction-finalization failure reports confirmed rollback or an uncertain
+outcome. The caller must stop, reopen and inspect audit/replay state; it may
+not infer rollback from the error.
+
+This distinction is safe only because the experiment has no external effect.
+Before a connector is enabled, FDOS needs an outbox, idempotency and an
+uncertain-outcome review path.
+
+See `TRANSACTIONAL_PERSISTENCE.md`.
 
 ## Audit Minimization
 
@@ -108,7 +129,8 @@ It does not contain:
 - authentication secrets.
 
 Runtime action events carry Invocation and correlation IDs. System-generated
-events caused by an authenticated action inherit the same attribution.
+events caused by an authenticated action inherit the same attribution and
+transaction ID.
 
 ## Principal Policy
 
@@ -141,8 +163,11 @@ No command enables an external connector or A3/A4 execution.
 
 - The local signer is not proof of a real human or workload identity.
 - Runtime bootstrap still trusts the host process and supplied public keys.
-- Identity acceptance and command execution are not transactional.
+- The transaction is local and does not include an external system.
 - There is no online key revocation, hardware-backed key or federation.
+- The synchronous `node:sqlite` API remains an evolving dependency and can
+  block the event loop.
+- There is no schema migration, backup/restore or disaster-recovery procedure.
 - Organization binding is tested for one configured organization, not
   production tenant isolation.
 - Direct use of the internal runtime bypasses the gateway and is prohibited for

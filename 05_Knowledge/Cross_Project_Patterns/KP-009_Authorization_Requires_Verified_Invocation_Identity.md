@@ -37,8 +37,8 @@ fail closed.
 
 The FDOS experiment uses a local ephemeral Ed25519 authority. It does not prove
 production identity-provider integration, private-key custody, revocation,
-federation, trusted time, distributed replay protection or transactional
-command execution.
+federation, trusted time, distributed replay protection or atomic external
+execution. The later local SQLite transaction covers internal events only.
 
 ## Evidence
 
@@ -46,10 +46,11 @@ command execution.
   `03_Projects/Company_OS_Pilot/Reference_Adoption_Assessment.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-REFERENCE-INTAKE-002.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-AUTHENTICATED-INVOCATION-003.md`
+- `04_Evidence/fdos-runtime/EV-FDOS-TRANSACTIONAL-PERSISTENCE-004.md`
 
 ## Next Validation
 
-Integrate an independently managed human/workload identity provider with a
-transactional command store, key rotation and revocation. Then validate the
+Integrate an independently managed human/workload identity provider with key
+rotation and revocation. Add a durable connector outbox and then validate the
 boundary through one read-only sandboxed connector before considering any
 write capability.

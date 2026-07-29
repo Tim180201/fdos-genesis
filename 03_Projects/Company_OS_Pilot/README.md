@@ -31,6 +31,10 @@ system with a small pilot:
 - server-side Agent Registry role derivation;
 - persistent one-time Invocation consumption across restarts;
 - a deny-by-default authenticated command gateway;
+- one local SQLite transaction per authenticated command;
+- shared transaction attribution for Invocation acceptance and internal events;
+- crash rollback and transaction-aware restart verification;
+- fail-closed persistence selection without implicit JSONL migration;
 - tamper-evident audit events;
 - automated tests and evidence export.
 
@@ -43,7 +47,10 @@ system with a small pilot:
 - real Slack, Teams, email, CRM or MCP connectors;
 - production identity provider, key custody or revocation;
 - exposure of the lower-level runtime to untrusted callers;
-- distributed replay protection or transactional command execution;
+- distributed replay protection, worker fencing or transactions;
+- external-effect transaction, outbox or uncertain-outcome recovery;
+- database migration, backup, restore or encryption;
+- production support for the evolving synchronous `node:sqlite` dependency;
 - writes, builds or tests in TapTime or Company AI;
 - legal, financial, personnel, publication or deletion actions.
 
@@ -54,10 +61,13 @@ The pilot is technically complete when:
 1. the entire automated test suite passes;
 2. the authenticated deterministic demo completes all four steps;
 3. every demo command carries a verified one-time Invocation Context;
-4. unauthorized access, signature/command tampering, invocation replay,
-   approval replay and audit tampering are rejected;
-5. an evidence record documents results and limitations;
-6. no change occurred outside the FDOS repository.
+4. each accepted Invocation and its internal events share one committed
+   transaction;
+5. unauthorized access, signature/command tampering, invocation replay,
+   approval replay, persistence tampering and partial crash writes are
+   rejected;
+6. an evidence record documents results and limitations;
+7. no change occurred outside the FDOS repository.
 
 ## Reference Assessment
 

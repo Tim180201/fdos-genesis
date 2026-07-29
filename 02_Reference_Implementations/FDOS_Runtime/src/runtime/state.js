@@ -1,6 +1,10 @@
 import { digestObject, jsonClone } from "../kernel/canonical-json.js";
 import { IntegrityError } from "../kernel/errors.js";
-import { isoDate } from "../kernel/validation.js";
+import { assertId } from "../kernel/ids.js";
+import {
+  isoDate,
+  requiredString
+} from "../kernel/validation.js";
 import { verifyInvocationReceipt } from "../identity/invocation.js";
 
 export function createRuntimeState() {
@@ -54,6 +58,27 @@ function verifyDefinitionSnapshot(definition) {
 
 export function applyRuntimeEvent(state, event) {
   const payload = event.payload;
+  if (
+    event.type !== "identity.invocation.accepted" &&
+    event.actor.invocationId
+  ) {
+    const accepted = state.acceptedInvocations.get(
+      event.actor.invocationId
+    );
+    if (!accepted) {
+      throw new IntegrityError(
+        `Event references unaccepted invocation ${event.actor.invocationId}.`
+      );
+    }
+    if (
+      accepted.transactionId !== (event.transactionId || null) ||
+      accepted.correlationId !== event.actor.correlationId
+    ) {
+      throw new IntegrityError(
+        "Invocation-attributed event crosses its transaction."
+      );
+    }
+  }
 
   switch (event.type) {
     case "identity.invocation.accepted": {
@@ -94,8 +119,45 @@ export function applyRuntimeEvent(state, event) {
       }
       state.acceptedInvocations.set(receipt.invocationId, {
         ...receipt,
-        acceptedAt
+        acceptedAt,
+        transactionId: event.transactionId || null
       });
+      return;
+    }
+
+    case "identity.invocation.execution-failed": {
+      const invocationId = assertId(
+        payload.invocationId,
+        "failed invocation id"
+      );
+      const accepted = state.acceptedInvocations.get(invocationId);
+      if (!accepted) {
+        throw new IntegrityError(
+          `Failure references unaccepted invocation ${invocationId}.`
+        );
+      }
+      if (
+        invocationId !== event.actor.invocationId ||
+        payload.operation !== accepted.operation ||
+        payload.commandDigest !== accepted.commandDigest
+      ) {
+        throw new IntegrityError(
+          "Invocation failure does not match its accepted command."
+        );
+      }
+      requiredString(payload.errorCode, "command failure code", {
+        max: 64,
+        pattern: /^[A-Z][A-Z0-9_]{2,63}$/
+      });
+      requiredString(payload.errorType, "command failure type", {
+        max: 80,
+        pattern: /^[A-Z][a-zA-Z0-9]{2,79}$/
+      });
+      requiredString(payload.messageDigest, "command failure digest", {
+        max: 71,
+        pattern: /^sha256:[0-9a-f]{64}$/
+      });
+      isoDate(payload.failedAt, "command failedAt");
       return;
     }
 

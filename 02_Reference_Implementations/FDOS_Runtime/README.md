@@ -19,6 +19,10 @@ scope and under which approval.
 - Ed25519-signed, organization- and command-bound Invocation Contexts;
 - persistent one-time replay protection across runtime restarts;
 - exact authenticated-command schemas and correlation attribution;
+- local SQLite transactions joining Invocation acceptance and internal command
+  events;
+- transaction-aware hash-chain and metadata verification across restart;
+- fail-closed persistence-format selection without implicit JSONL migration;
 - capability-based authorization;
 - versioned workflow definitions and acyclic dependency validation;
 - immutable action intents with canonical SHA-256 bindings;
@@ -46,7 +50,7 @@ scope and under which approval.
 
 ## Quick Start
 
-Requirements: Node.js 20 or newer.
+Requirements: Node.js 22.13 or newer.
 
 ```bash
 cd 02_Reference_Implementations/FDOS_Runtime
@@ -56,8 +60,12 @@ npm run demo
 
 The demo creates an ephemeral local Ed25519 authority, gives the runtime only
 its public trust descriptor, executes a fully authenticated internal workflow
-below `.runtime/` and prints a content-minimized evidence bundle. It performs
-no external action.
+below `.runtime/`, commits each command as one local SQLite transaction and
+prints a content-minimized evidence bundle. It performs no external action.
+
+The built-in `node:sqlite` API is still an evolving Node.js dependency. This
+candidate records exact runtime versions and makes no production-support
+claim.
 
 Read-only reference verification is explicit and prints no document content:
 
@@ -80,6 +88,7 @@ See:
 
 - `docs/ARCHITECTURE.md`
 - `docs/AUTHENTICATED_INVOCATIONS.md`
+- `docs/TRANSACTIONAL_PERSISTENCE.md`
 - `docs/AGENT_AND_ROLE_MODEL.md`
 - `docs/SECURITY_MODEL.md`
 - `docs/PILOT_WORKFLOW.md`
@@ -91,4 +100,4 @@ Untrusted integrations must use `AuthenticatedRuntimeGateway`; the lower-level
 runtime object is an internal reference-kernel and test surface. Passing tests
 proves behavior only inside the local process-leased experiment. The ephemeral
 demo signer is not a production identity provider and does not prove
-infrastructure, connector or tenant security.
+infrastructure, connector, database-recovery or tenant security.
