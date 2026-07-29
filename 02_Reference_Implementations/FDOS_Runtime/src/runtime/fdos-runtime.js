@@ -49,6 +49,10 @@ import {
   createDeliveryIntent,
   normalizeDeliveryOutcome
 } from "../domain/delivery-intent.js";
+import {
+  PersonalityRegistry,
+  PILOT_PERSONALITY_DEFINITIONS
+} from "../domain/personality-profile.js";
 import { PolicyEngine } from "../domain/policy-engine.js";
 import {
   PILOT_ROLE_DEFINITIONS,
@@ -324,6 +328,7 @@ export class FdosRuntime {
   #idFactory;
   #actionCatalog;
   #roleRegistry;
+  #personalityRegistry;
   #agentRegistry;
   #connectorRegistry;
   #workflowRegistry;
@@ -341,6 +346,7 @@ export class FdosRuntime {
     clock = () => new Date(),
     idFactory = createId,
     roleDefinitions = PILOT_ROLE_DEFINITIONS,
+    personalityDefinitions = PILOT_PERSONALITY_DEFINITIONS,
     agentDefinitions = PILOT_AGENT_DEFINITIONS,
     actionDefinitions = [],
     connectorContractDefinitions = [],
@@ -352,8 +358,12 @@ export class FdosRuntime {
   }) {
     const actionCatalog = new ActionCatalog(actionDefinitions);
     const roleRegistry = new RoleRegistry(roleDefinitions);
+    const personalityRegistry = new PersonalityRegistry(
+      personalityDefinitions
+    );
     const agentRegistry = new AgentRegistry({
       roleRegistry,
+      personalityRegistry,
       definitions: agentDefinitions
     });
     const connectorRegistry = new ConnectorRegistry({
@@ -396,6 +406,7 @@ export class FdosRuntime {
         idFactory,
         actionCatalog,
         roleRegistry,
+        personalityRegistry,
         agentRegistry,
         connectorRegistry,
         workflowRegistry,
@@ -419,6 +430,7 @@ export class FdosRuntime {
     idFactory,
     actionCatalog,
     roleRegistry,
+    personalityRegistry,
     agentRegistry,
     connectorRegistry,
     workflowRegistry,
@@ -436,6 +448,7 @@ export class FdosRuntime {
     this.#idFactory = idFactory;
     this.#actionCatalog = actionCatalog;
     this.#roleRegistry = roleRegistry;
+    this.#personalityRegistry = personalityRegistry;
     this.#agentRegistry = agentRegistry;
     this.#connectorRegistry = connectorRegistry;
     this.#workflowRegistry = workflowRegistry;
@@ -478,8 +491,22 @@ export class FdosRuntime {
     return this.#roleRegistry.list();
   }
 
+  listPersonalityProfiles() {
+    return this.#personalityRegistry.list();
+  }
+
   listAgentInstances() {
     return this.#agentRegistry.list();
+  }
+
+  getAgentOperatingProfile(actor) {
+    this.assertOpen();
+    const normalizedActor = normalizeActor(actor, this.#agentRegistry, {
+      human: false,
+      agent: true
+    });
+    this.assertAuthenticatedOperation(normalizedActor, "agent.profile");
+    return this.#agentRegistry.getOperatingProfile(normalizedActor.id);
   }
 
   listConnectorContracts() {
@@ -614,12 +641,12 @@ export class FdosRuntime {
       !this.#eventLog.inTransaction()
     ) {
       throw new PolicyError(
-        "Connector outbox commands require an authenticated transaction."
+        "Guarded runtime commands require an authenticated transaction."
       );
     }
     if (!actor?.invocationId || !actor?.correlationId) {
       throw new AuthorizationError(
-        "Connector outbox commands require Invocation attribution."
+        "Guarded runtime commands require Invocation attribution."
       );
     }
     const accepted = this.#state.acceptedInvocations.get(
@@ -633,7 +660,7 @@ export class FdosRuntime {
       accepted.principal.id !== actor.id
     ) {
       throw new AuthorizationError(
-        "Connector outbox command attribution is invalid."
+        "Guarded runtime command attribution is invalid."
       );
     }
     return accepted;

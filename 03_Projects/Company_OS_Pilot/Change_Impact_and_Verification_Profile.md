@@ -41,49 +41,44 @@ V4 and V5 cannot be claimed for an uncommitted local experiment.
 Baseline commit/tree:
 
 - FDOS commit:
-  `359af997a3a66a52d764b4b8d261835abd200080`
+  `0533afb37ea12523e9e5c6ce0556f967ab5c0d6d`
 - FDOS tree:
-  `7885821e241b8e24c58165a8a01fb21cf7aac2c4`
-- the Connector Contract and durable-Outbox slice is evaluated as the change
-  from that transactional-persistence baseline;
+  `20e68c484d4516cbbed1dd03c05cce1ab7ff9059`
+- the governed Agent Personality Profile slice is evaluated as the change
+  from that Connector-Outbox baseline;
 - external references are bound separately in
   `Reference_Adoption_Assessment.md`.
 
 Changed boundaries:
 
-- closed Connector Contract and active Connector Instance registries;
-- A0/A1 no-network/no-effect admission rules and typed parameter schemas;
-- immutable task-bound Delivery Intent and scoped idempotency;
-- authenticated Connector principal command separation;
-- durable Outbox preparation, claim, fencing, lease and attempt state;
-- digest-only simulated, typed failed and uncertain outcomes;
-- Human Governance retry, cancellation and uncertainty resolution;
-- stale-contract, concurrent-claim and lower-level-runtime denial;
-- no-network connector dry-run workflow and CLI demo;
-- project ADR, security, risk, knowledge and evidence.
+- closed, versioned and content-addressed Personality Profile registry;
+- three distinct pilot profiles with exact compatible-role binding;
+- Agent Instance profile ID, version and digest binding;
+- fixed constitutional precedence and non-authoritative safety invariants;
+- authenticated self-only `agent.profile` command;
+- rejection of schema smuggling, invalid traits, cross-role binding, human
+  access and lower-level-runtime bypass;
+- architecture, identity, security, risk and evidence documentation.
 
-Risk class: R3.
+Risk class: R2.
 
 Rationale:
 
-- connector contracts and parameters define future external authority;
-- claim fencing and uncertainty determine whether later effects could be
-  duplicated;
-- Connector principal isolation changes authorization;
-- durable idempotency, leases and outcomes change recovery and audit
-  contracts.
+- the Operating Profile is a future model-context contract;
+- bad precedence could let personality alter higher-authority instructions;
+- the self-read operation changes the authenticated public command surface;
+- no persistence, capability or external-effect semantics change.
 
 Selected verification and result:
 
 - V0: exact FDOS status/diff, `git diff --check`, navigation, unsupported-claim
   review and source-manifest verification passed;
-- V1: connector, delivery-intent, gateway and demo syntax checks plus 14
-  focused Outbox tests passed;
-- V2: contract admission, task/role binding, parameter closure, idempotency,
-  concurrent claims, connector isolation, lease expiry, retry budget,
-  uncertainty resolution, restart, contract drift and tamper paths passed;
-- V3: complete 106-test runtime regression, coverage, authenticated
-  three-role demo, no-network Outbox demo and final scope review passed;
+- V1: personality, agent-registry, gateway and runtime syntax checks plus four
+  focused personality tests passed;
+- V2: exact schema, digest drift, trait allowlist, role compatibility,
+  self-only access, payload closure and lower-level-runtime denial passed;
+- V3: complete 110-test runtime regression, coverage and final scope review
+  passed;
 - V4: not claimed; no independent exact-commit CI evidence is attached;
 - V5: not applicable and not authorized; no physical or external operation.
 
@@ -94,6 +89,7 @@ Checks intentionally not run:
   write-producing execution;
 - no external API/model/connector test, because the contract enforces
   `networkAccess: false` and `externalEffects: false`;
+- no model personality/quality evaluation, because no model adapter exists;
 - no production, deployment, legal or physical gate.
 
 Evidence carried forward:
@@ -104,7 +100,8 @@ Evidence carried forward:
   intake and single-writer persistence;
 - `EV-FDOS-AUTHENTICATED-INVOCATION-003` remains the identity-boundary record;
 - `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004` remains the local transaction record;
-- this slice is bound separately in `EV-FDOS-CONNECTOR-OUTBOX-005`.
+- `EV-FDOS-CONNECTOR-OUTBOX-005` remains the external-work-boundary record;
+- this slice is bound separately in `EV-FDOS-AGENT-PERSONALITY-006`.
 
 ## Required Completion Report
 

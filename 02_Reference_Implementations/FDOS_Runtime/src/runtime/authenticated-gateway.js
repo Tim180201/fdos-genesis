@@ -20,6 +20,8 @@ function exactRequestShape(request) {
 async function dispatch(runtime, command, actor) {
   const payload = command.payload;
   switch (command.type) {
+    case "agent.profile":
+      return runtime.getAgentOperatingProfile(actor);
     case "workflow.start":
       return runtime.startWorkflow({ ...payload, actor });
     case "workflow.view":

@@ -16,6 +16,9 @@ within which information scope and under which approval.
 
 - separate Chief of Staff, Operations and Marketing role definitions;
 - individually attributable and revocable agent instances assigned to roles;
+- distinct versioned, content-addressed and non-authoritative Personality
+  Profiles for each pilot agent;
+- authenticated self-only Agent Operating Profile resolution;
 - Ed25519-signed, organization- and command-bound Invocation Contexts;
 - persistent one-time replay protection across runtime restarts;
 - exact authenticated-command schemas and correlation attribution;
@@ -89,8 +92,8 @@ node src/cli.js reference-snapshot company-ai /absolute/path/to/company-ai-platf
 
 - `src/kernel/` — canonical serialization, identifiers and event integrity;
 - `src/identity/` — signed Invocation Contexts and public-key verification;
-- `src/domain/` — roles, action and delivery intents, connector contracts,
-  policy and workflow definitions;
+- `src/domain/` — roles, personality profiles, action and delivery intents,
+  connector contracts, policy and workflow definitions;
 - `src/runtime/` — authenticated gateway, coordination, approvals and memory;
 - `src/integrations/` — disabled-by-default, read-only reference boundaries;
 - `src/pilot/` — the three-role reference workflow;
@@ -103,6 +106,7 @@ See:
 - `docs/TRANSACTIONAL_PERSISTENCE.md`
 - `docs/CONNECTOR_OUTBOX.md`
 - `docs/AGENT_AND_ROLE_MODEL.md`
+- `docs/AGENT_PERSONALITY_MODEL.md`
 - `docs/SECURITY_MODEL.md`
 - `docs/PILOT_WORKFLOW.md`
 - `docs/REFERENCE_INTAKE.md`

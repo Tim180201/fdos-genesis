@@ -10,10 +10,16 @@
   experiment without promoting persistence into FDOS Core.
 - Added ADR-0046 for a dry-run Connector Contract and durable Outbox
   experiment without enabling a networked connector.
+- Added ADR-0047 for governed, non-authoritative Agent Personality Profiles
+  without enabling a model provider.
 - Added the runtime experiment boundary for A0–A4 action governance, data
   scopes, repository ownership and production limitations.
 - Added `02_Reference_Implementations/FDOS_Runtime/` with:
   - separate Role Definitions and Agent Instances;
+  - distinct versioned, content-addressed Personality Profiles with closed
+    traits and style fields;
+  - fixed constitutional precedence and personality safety invariants;
+  - authenticated self-only Agent Operating Profile resolution;
   - capability and memory-scope enforcement;
   - immutable Action Intents;
   - exact, expiring and single-use A2 approvals;
@@ -56,7 +62,7 @@
   reference intake/provenance/runtime ownership, and then to 79 tests for the
   authenticated Invocation boundary and gateway lifecycle. The transactional
   slice expanded the suite to 92 tests; the Connector Outbox slice expands it
-  to 106 tests.
+  to 106 tests; the Agent Personality slice expands it to 110 tests.
 - Recorded 90.83% line, 77.73% branch and 90.48% function coverage for the
   authenticated candidate.
 - Recorded 90.16% line, 78.04% branch and 90.56% function coverage for the
@@ -64,6 +70,8 @@
   out of scope.
 - Recorded 90.38% line, 78.67% branch and 91.17% function coverage for the
   Connector Outbox candidate.
+- Recorded 90.88% line, 79.13% branch and 91.22% function coverage for the
+  Agent Personality candidate.
 - Added Evidence Item `EV-FDOS-RUNTIME-PILOT-001` and its SHA-256 source
   manifest.
 - Added Evidence Item `EV-FDOS-REFERENCE-INTAKE-002` and its SHA-256 source
@@ -75,6 +83,8 @@
   source manifest and Validation Report 004.
 - Added Evidence Item `EV-FDOS-CONNECTOR-OUTBOX-005`, its SHA-256 source
   manifest and Validation Report 005.
+- Added Evidence Item `EV-FDOS-AGENT-PERSONALITY-006`, its SHA-256 source
+  manifest and Validation Report 006.
 - Added Knowledge Candidate KP-006 for exact Action Intent approval binding.
 - Added Knowledge Candidates KP-007 for exact external-source binding and
   KP-008 for exclusive ownership before transactional persistence.

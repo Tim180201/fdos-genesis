@@ -49,7 +49,8 @@ Each Invocation Context binds:
 
 The principal contains no role claim. For an agent principal, FDOS resolves the
 registered Agent Instance and derives its current role and status from the
-Agent Registry.
+Agent Registry. Personality is also server-resolved from an exact profile
+binding but is not an identity claim and grants no authority.
 
 Unexpected envelope, claim, principal, command or receipt fields fail closed.
 
@@ -154,6 +155,7 @@ The signed command digest changes when any payload content changes.
 
 Current command families cover:
 
+- self-only Agent Operating Profile resolution;
 - workflow start and view;
 - task read, claim, completion, failure, retry, cancellation and handoff;
 - approval request, decision and listing;
@@ -180,3 +182,5 @@ No command enables networked connector execution or A3/A4 execution.
 - Host compromise can still rewrite local files and trust configuration.
 - Connector identities are local experimental registrations without
   production workload attestation, revocation or process isolation.
+- Personality Profile authentication proves exact configuration access, not
+  model behavior or safe persona expression.

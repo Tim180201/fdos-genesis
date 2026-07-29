@@ -20,6 +20,13 @@ export {
   verifyDeliveryIntent,
   verifyDeliveryOutcome
 } from "./domain/delivery-intent.js";
+export {
+  PERSONALITY_INVARIANTS,
+  PERSONALITY_PRECEDENCE,
+  PersonalityRegistry,
+  personalityIdPattern,
+  PILOT_PERSONALITY_DEFINITIONS
+} from "./domain/personality-profile.js";
 export { PolicyEngine } from "./domain/policy-engine.js";
 export {
   agentActor,

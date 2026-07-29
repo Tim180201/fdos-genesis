@@ -41,6 +41,8 @@ promotion and not a production approval.
 | Connector claim lease and fencing state | Tested locally | Level 1 — Experimental | `EV-FDOS-CONNECTOR-OUTBOX-005` | Pending | Not distributed |
 | Human uncertainty resolution | Tested in dry-run | Level 1 — Experimental | `EV-FDOS-CONNECTOR-OUTBOX-005` | Pending | Not service-validated |
 | Content-minimized delivery evidence | Tested in dry-run | Level 1 — Experimental | `EV-FDOS-CONNECTOR-OUTBOX-005` | Pending | Not independently signed |
+| Closed Personality Profile Registry | Tested | Level 1 — Experimental | `EV-FDOS-AGENT-PERSONALITY-006` | Pending | Not model-validated |
+| Agent Operating Profile self-read | Tested | Level 1 — Experimental | `EV-FDOS-AGENT-PERSONALITY-006` | Pending | Not model-validated |
 | TapTime/Company AI adoption assessment | Tested as documentation/evidence | Level 1 — Experimental | exact reference manifests | Pending | Not applicable |
 
 ## Promotion Rule

@@ -99,6 +99,10 @@ const receiptKeys = [
 ];
 
 const commandPayloadSchemas = Object.freeze({
+  "agent.profile": {
+    required: [],
+    optional: []
+  },
   "workflow.start": {
     required: ["objective", "workflowId"],
     optional: ["idempotencyKey", "input", "version"]

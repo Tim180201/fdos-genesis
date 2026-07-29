@@ -25,6 +25,7 @@ Workflow Definition Registry
         ▼
 FDOS Runtime
   ├── Role Registry
+  ├── Personality Profile Registry
   ├── Agent Instance Registry
   ├── Policy Engine
   ├── Task State Machine
@@ -110,6 +111,24 @@ retirement applies to the instance without redefining the role.
 
 Tasks are assigned to roles. Claims, results, handovers and audit events are
 attributed to the concrete agent instance.
+
+### Governed personality overlay
+
+Each pilot Agent Instance binds an exact versioned Personality Profile. The
+profile contains closed descriptive style values and no authority-bearing
+fields.
+
+FDOS resolves personality after constitutional, role, task and policy
+authority. A conflict always removes the personality preference rather than
+weakening the higher rule.
+
+The signed `agent.profile` command is self-only and returns a content-addressed
+Operating Profile combining the Agent Instance, mandatory role communication
+style, non-authoritative personality, fixed precedence and fixed safety
+invariants.
+
+No model is connected, so this slice validates configuration and access rather
+than expressed behavior.
 
 ### Definitions before runs
 

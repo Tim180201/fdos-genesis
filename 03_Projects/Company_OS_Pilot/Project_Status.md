@@ -1,18 +1,18 @@
 # Company OS Pilot — Project Status
 
-Status: Technical Slice 5 Passed / Human Review Pending
+Status: Technical Slice 6 Passed / Human Review Pending
 Date: 2026-07-29  
 Validation Level: Level 1 — Experimental
 
 ## Current Goal
 
-Deliver and verify a deny-by-default Connector Contract and durable Outbox
-that remain bound to FDOS tasks while all network access and external effects
-stay disabled.
+Deliver and verify distinct governed Personality Profiles for the three pilot
+Agent Instances without changing their roles, authority, information access or
+external-action boundary.
 
 ## Current Phase
 
-Level 1 connector-contract and durable-Outbox evidence review.
+Level 1 governed Agent Personality Profile evidence review.
 
 ## Exit Criteria
 
@@ -38,11 +38,17 @@ Level 1 connector-contract and durable-Outbox evidence review.
 - [x] connector principal restricted to claim and outcome commands;
 - [x] no-network Outbox demo completed with no external effect;
 - [x] ADR, security model, operations guide and Evidence 005 prepared;
-- [ ] Human Governance reviewed Technical Slices 3–5 evidence.
+- [x] separate role-compatible Personality Profiles implemented;
+- [x] closed profile schema excludes authority and arbitrary prompt fields;
+- [x] exact profile version and digest bound to each Agent Instance;
+- [x] authenticated self-only Operating Profile command implemented;
+- [x] fixed precedence and personality safety invariants documented;
+- [x] ADR, security model and Evidence 006 prepared;
+- [ ] Human Governance reviewed Technical Slices 3–6 evidence.
 
 ## Verified Result
 
-- 106 of 106 tests passed;
+- 110 of 110 tests passed;
 - four workflow tasks completed;
 - Chief of Staff, Operations and Marketing participated;
 - 14 signed invocations accepted in 14 committed local transactions;
@@ -68,12 +74,20 @@ Level 1 connector-contract and durable-Outbox evidence review.
 - expired claims entered durable uncertainty, could be detected without a
   live worker and could not auto-retry;
 - workflow completion evidence included a content-minimized delivery
-  projection without raw connector parameters.
+  projection without raw connector parameters;
+- Chief of Staff, Operations and Marketing resolved three distinct
+  content-addressed Personality Profiles;
+- personality schema smuggling, invalid traits and cross-role binding were
+  rejected;
+- authenticated agents could read only their own server-resolved Operating
+  Profile;
+- no model call occurred and no claim of expressed personality is made.
 
 See `Validation_Report.md`,
 `Validation_Report_003_Authenticated_Invocation.md`,
 `Validation_Report_004_Transactional_Persistence.md`,
 `Validation_Report_005_Connector_Outbox.md`,
+`Validation_Report_006_Agent_Personality.md`,
 `Reference_Adoption_Assessment.md` and the evidence records under
 `../../04_Evidence/fdos-runtime/`.
 
@@ -81,6 +95,8 @@ See `Validation_Report.md`,
 
 Disabled. A local dry-run worker path is enabled with
 `networkAccess: false` and `externalEffects: false`.
+
+Personality is configuration only. No model provider is connected.
 
 ## Reference Repository Status
 

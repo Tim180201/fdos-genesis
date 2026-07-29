@@ -29,6 +29,10 @@ system with a small pilot:
 - Ed25519-signed, short-lived Invocation Contexts;
 - exact organization, audience, principal, operation and command binding;
 - server-side Agent Registry role derivation;
+- separate, versioned Personality Profiles bound to exact Agent Instances;
+- fixed constitutional precedence and non-authoritative personality
+  invariants;
+- authenticated self-only Agent Operating Profile resolution;
 - persistent one-time Invocation consumption across restarts;
 - a deny-by-default authenticated command gateway;
 - one local SQLite transaction per authenticated command;
@@ -48,6 +52,7 @@ system with a small pilot:
 - product-repository writes;
 - production operation;
 - real model calls;
+- model-level personality expression or behavioral evaluation;
 - networked Slack, Teams, email, CRM, GitHub or MCP connectors;
 - production identity provider, key custody or revocation;
 - exposure of the lower-level runtime to untrusted callers;
@@ -75,7 +80,10 @@ The pilot is technically complete when:
    claim and one digest-only simulated outcome;
 8. lease expiry enters durable uncertainty and cannot auto-retry;
 9. no network or external effect occurs;
-10. no change occurred outside the FDOS repository.
+10. each pilot Agent Instance resolves one exact role-compatible Personality
+    Profile that contains no authority-bearing or arbitrary prompt fields;
+11. profile lookup is authenticated and self-only;
+12. no change occurred outside the FDOS repository.
 
 ## Reference Assessment
 

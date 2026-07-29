@@ -46,6 +46,9 @@ authenticated gateway and is prohibited.
 | Invocation is replayed | Persistent one-time Invocation ID consumption |
 | Process exits between acceptance and internal effects | One local SQLite command transaction; uncommitted events roll back |
 | Agent claims another role | Signed ID only; Agent Registry derives the immutable role assignment |
+| Personality changes authority | Separate closed schema; fixed lowest precedence; no capability, tool, memory or approval fields |
+| Agent reads another personality binding | `agent.profile` has no target field and resolves only the signed active instance |
+| Persona configuration becomes prompt injection | No arbitrary prompt/instruction field; unexpected fields fail closed |
 | Expired invocation is used | Short validity window with fail-closed time checks |
 | Cross-department disclosure | Scope-specific read policy |
 | Approval reused for changed action | Exact action-intent digest |
@@ -130,6 +133,8 @@ dry-run, no network and no external effect.
 - local Git and its operating-system account are trusted;
 - reference evidence is content-addressed but not independently signed;
 - no real connector sandbox, network egress control or secret vault;
+- no model-level personality, precedence or prompt-injection evaluation;
+- Operating Profile digests are not yet bound into model-output evidence;
 - no denial-of-service protection;
 - no production retention or privacy-deletion process.
 

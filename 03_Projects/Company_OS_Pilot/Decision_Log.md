@@ -202,3 +202,34 @@ permitted.
 Rationale: A local missing acknowledgement cannot distinguish lost work from a
 completed external operation. Automatic retry would risk duplicate effects in
 a future real adapter.
+
+## PILOT-DEC-022 — Personality Is Not Authority
+
+Date: 2026-07-29
+
+Decision: Model personality as a separate non-authoritative profile below
+constitutions, role, task policy and Human Governance.
+
+Rationale: Mixing persona and authority would let stylistic configuration
+change permissions, evidence standards or approval behavior.
+
+## PILOT-DEC-023 — Closed Personality Schema
+
+Date: 2026-07-29
+
+Decision: Permit only versioned content-addressed traits and bounded style
+enums. Reject arbitrary instructions, system prompts and authority-bearing
+fields.
+
+Rationale: A free-form persona is an unbounded instruction and prompt-injection
+surface whose meaning cannot be reviewed mechanically.
+
+## PILOT-DEC-024 — Authenticated Self-Profile Only
+
+Date: 2026-07-29
+
+Decision: Let an active Agent Instance resolve only its own server-bound
+Operating Profile through an exact signed command with no target-agent field.
+
+Rationale: The future model context needs an exact profile, while cross-agent
+inspection is unrelated authority and should remain an administrative concern.
