@@ -41,60 +41,64 @@ V4 and V5 cannot be claimed for an uncommitted local experiment.
 Baseline commit/tree:
 
 - FDOS commit:
-  `371551e5fbd5de55c09dd46dd9b42dd9d00a7e9c`
+  `cfc793097e2e8ac8ccd81014a4faa03180479b5f`
 - FDOS tree:
-  `215bbbb78e1ab98f608ee1ddf57012ea43871282`
-- the Darwin sandbox slice is evaluated as the change from that
-  process-separated worker baseline;
+  `b1fad6e6a0df56542add1c38207d414bb5db402f`
+- the signed worker source-artifact slice is evaluated as the change from that
+  Darwin sandbox baseline;
 - external references are bound separately in
   `Reference_Adoption_Assessment.md`.
 
 Changed boundaries:
 
-- exact network-isolation provider contract with process-only and
-  Darwin-required bindings;
-- worker protocol version 1.1 binding exact provider and policy digest;
-- fixed root-owned `/usr/bin/sandbox-exec` inspection and SHA-256 binding;
-- exact profile denying `network*` and `file-write*`;
-- child-side loopback listen/connect and filesystem write-open denial probes;
-- positive network/write flags accepted only after exact probe attestation;
-- required-mode fail-closed behavior off Darwin or on launcher failure;
-- deliberate direct-launch bypass fault and rejected child response;
+- fixed artifact identity, version, entry point and 12-file source policy;
+- trusted runtime/source directory and descriptor-based file inspection;
+- fixed file and total byte limits, UTF-8 decoding, permission checks and
+  stable metadata across each read;
+- conservative exact static ESM graph closure with comments, dynamic code,
+  package, added built-in, escaping, duplicate, unlisted and unreachable
+  source rejection;
+- deterministic per-file SHA-256 plus canonical complete artifact digest;
+- exact Ed25519 release-attestation and public-trust schemas;
+- repository-local pilot release trust with no stored private key;
+- parent artifact reconstruction and release verification before every spawn;
+- worker protocol version 1.2 binding artifact, attestation, issuer and key;
+- child reconstruction of the local source artifact and exact digest match;
+- response and result-digest binding of the child artifact observation;
+- deliberate artifact-binding mismatch fault and rejected child response;
 - preservation of the durable claim followed by human-only uncertainty after
-  sandbox failure;
-- explicit clearing of required-mode child V8 coverage-file output;
-- default process-only behavior retaining false isolation flags;
-- new `sandbox-demo` command with no networked service or external effect;
-- architecture, identity, security, risk and evidence documentation.
+  artifact mismatch;
+- source, signature, trust, schema, permission, import and symlink tamper tests;
+- artifact identity in both process-only and Darwin demo output;
+- architecture, identity, security, release, risk and evidence documentation.
 
 Risk class: R3.
 
 Rationale:
 
-- isolation reporting affects whether a future worker could be admitted near
-  a connector boundary;
-- a false positive or silent fallback would create a material security error;
-- the child still receives exact internal Delivery Intent parameters and runs
-  under the same account;
-- the selected OS interface is deprecated and platform-specific;
+- release verification controls which source may execute near a future
+  connector boundary;
+- a false signature, incomplete graph or confused artifact binding would
+  create a material supply-chain and execution-identity error;
+- the source, trust root and child still run under one mutable trusted account;
 - the experiment remains dry-run and changes no external-effect authority.
 
 Selected verification and result:
 
 - V0: exact FDOS status/diff, `git diff --check`, navigation,
   unsupported-claim review and source-manifest verification passed;
-- V1: isolation contract, provider, protocol, child, process client and CLI
-  syntax checks plus ten focused process-worker cases passed;
-- V2: launcher ownership/mode/byte inspection, profile/policy digests, exact
-  request/response binding, listen/connect/write-open denial, missing/false
-  and tampered attestations, direct-launch bypass, unchanged Outbox and
-  human-only uncertainty reconciliation passed on the recorded Darwin host;
-- V3: complete 120-test runtime regression, 90.12% line / 78.97% branch /
-  90.27% function coverage, internal/outbox/sandbox demos and final scope
+- V1: artifact domain, inspector, release, protocol, child, process client and
+  CLI syntax checks plus 15 focused artifact/process-worker cases passed;
+- V2: exact source graph, directory/file/symlink/permission checks, source and
+  signature tampering, foreign trust, unexpected fields, undeclared imports,
+  exact request/response binding, child mismatch rejection, unchanged Outbox
+  and human-only uncertainty reconciliation passed;
+- V3: complete 125-test runtime regression, 90.26% line / 79.04% branch /
+  90.82% function coverage, internal/outbox/sandbox demos and final scope
   review passed;
 - V4: not claimed; no independent exact-commit CI evidence is attached;
-- V5: not claimed and not authorized; no second platform, independent
-  security review, real service, deployment, physical or external operation
+- V5: not claimed and not authorized; no immutable build/deployment,
+  independent security review, real service, physical or external operation
   was exercised.
 
 Checks intentionally not run:
@@ -104,22 +108,27 @@ Checks intentionally not run:
   write-producing execution;
 - no external API/model/connector test, because the contract enforces
   `networkAccess: false` and `externalEffects: false`;
-- no non-Darwin execution, supported container/VM sandbox, destination
-  allowlist, filesystem-read or CPU/memory/process isolation test;
-- no independently authenticated worker, signed artifact or kernel
-  attestation test;
+- no immutable packaging, external release service, HSM/key-vault, expiry,
+  revocation, transparency log or atomic deployment test;
+- no same-account malicious race, independently authenticated worker, signed
+  response, Node.js provenance, boot-chain or remote-attestation test;
+- no supported container/VM sandbox, destination allowlist, filesystem-read or
+  CPU/memory/process isolation test;
 - no model personality/quality evaluation, because no model adapter exists;
 - no production, deployment, legal or physical gate.
 
 Failures and retries:
 
-- the first full coverage run failed the positive sandbox case because Node's
-  coverage harness attempted to write its child artifact and the no-write
-  profile correctly returned `EPERM`;
-- required mode was changed to clear the child coverage destination without
-  widening the sandbox;
-- the targeted and complete coverage runs then passed; process-only worker
-  runs continue to supply child-source coverage.
+- the first focused run correctly rejected the previously embedded release
+  after artifact-domain hardening changed a signed source byte;
+- the inspector was further hardened to use descriptor reads, final-component
+  no-follow behavior, trusted directory checks and stable metadata;
+- the ambiguous observation name `selfVerified` was replaced with the narrower
+  `localDigestMatched`;
+- only after the artifact source stabilized was a new ephemeral local key used
+  to issue the final recorded attestation; its private key was discarded;
+- targeted tests, complete static/regression checks, coverage and all demos
+  then passed.
 
 Evidence carried forward:
 
@@ -133,7 +142,8 @@ Evidence carried forward:
 - `EV-FDOS-AGENT-PERSONALITY-006` remains the non-authoritative personality
   record;
 - `EV-FDOS-PROCESS-WORKER-007` remains the process/acknowledgement record;
-- this slice is bound separately in `EV-FDOS-DARWIN-SANDBOX-008`.
+- `EV-FDOS-DARWIN-SANDBOX-008` remains the OS denial record;
+- this slice is bound separately in `EV-FDOS-WORKER-ARTIFACT-009`.
 
 ## Required Completion Report
 

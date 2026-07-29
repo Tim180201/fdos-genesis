@@ -156,6 +156,29 @@ async function runOutboxDemo({ sandbox = false } = {}) {
             .filesystemWriteIsolationEnforced,
         filesystemWriteIsolationProbe:
           result.worker.workerBoundary.filesystemWriteIsolationProbe,
+        artifact: {
+          id:
+            result.worker.workerBoundary.workerArtifact
+              .artifactId,
+          version:
+            result.worker.workerBoundary.workerArtifact
+              .artifactVersion,
+          digest:
+            result.worker.workerBoundary.workerArtifact
+              .artifactDigest,
+          attestationDigest:
+            result.worker.workerBoundary.workerArtifact
+              .attestationDigest,
+          issuerId:
+            result.worker.workerBoundary.workerArtifact
+              .issuerId,
+          keyId:
+            result.worker.workerBoundary.workerArtifact.keyId,
+          localDigestMatched:
+            result.worker.workerBoundary.workerArtifact
+              .localDigestMatched,
+          releaseAttestationVerifiedByParent: true
+        },
         requestDigest: result.worker.requestDigest,
         responseDigest: result.worker.responseDigest
       },

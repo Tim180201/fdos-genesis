@@ -151,7 +151,8 @@ Before a real read-only connector, FDOS still requires:
   allowlisting;
 - read restrictions and CPU, memory, process and time budgets;
 - independently authenticated workload identity and response provenance;
-- signed immutable worker artifacts and trusted deployment;
+- immutable worker packaging and trusted deployment beyond the
+  repository-local signed source manifest;
 - secret-vault delivery with no persistent secret leakage;
 - service-specific schemas, TLS/DNS policy, rate/cost limits and idempotency;
 - monitoring, incident response and Human Governance approval.

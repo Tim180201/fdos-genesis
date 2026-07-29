@@ -29,6 +29,18 @@ export {
   verifyNetworkIsolationBinding
 } from "./domain/network-isolation-contract.js";
 export {
+  createDryRunWorkerArtifact,
+  createWorkerArtifactBinding,
+  DRY_RUN_WORKER_ARTIFACT_FILES,
+  DRY_RUN_WORKER_ARTIFACT_ID,
+  DRY_RUN_WORKER_ARTIFACT_VERSION,
+  DRY_RUN_WORKER_ENTRYPOINT,
+  LocalWorkerArtifactAuthority,
+  normalizeDryRunWorkerArtifact,
+  normalizeWorkerArtifactBinding,
+  verifyWorkerArtifactAttestation
+} from "./domain/worker-artifact-attestation.js";
+export {
   PERSONALITY_INVARIANTS,
   PERSONALITY_PRECEDENCE,
   PersonalityRegistry,
@@ -87,6 +99,10 @@ export {
   ProcessSeparatedDryRunWorker
 } from "./integrations/process-separated-dry-run-worker.js";
 export {
+  DryRunWorkerArtifactInspector,
+  inspectDryRunWorkerArtifact
+} from "./integrations/dry-run-worker-artifact.js";
+export {
   DARWIN_NETWORK_SANDBOX_PROVIDER,
   DarwinSandboxExecNetworkWriteDeny
 } from "./integrations/darwin-sandbox-exec-network-write-deny.js";
@@ -119,6 +135,10 @@ export {
   PILOT_CONNECTOR_CONTRACT_DEFINITIONS,
   PILOT_CONNECTOR_INSTANCE_DEFINITIONS
 } from "./pilot/connector-contracts.js";
+export {
+  PILOT_DRY_RUN_WORKER_ATTESTATION,
+  PILOT_DRY_RUN_WORKER_TRUST
+} from "./pilot/dry-run-worker-release.js";
 export {
   openPilotReferenceSource,
   PILOT_REFERENCE_POLICIES

@@ -22,6 +22,8 @@ The Level 1 runtime assumes:
 - one local SQLite database opened only by that controller;
 - one short-lived child simulation process running under the same trusted
   account and Node.js installation;
+- one repository-local worker release trust descriptor and attestation whose
+  private signing key is not stored in FDOS;
 - for the optional Darwin experiment, a trusted local kernel and fixed
   root-owned `/usr/bin/sandbox-exec` launcher;
 - trusted bootstrap registration of the Invocation Verifier public keys;
@@ -83,6 +85,9 @@ authenticated gateway and is prohibited.
 | Child emits a result and then crashes | Result accepted only after clean exit code zero and empty standard error |
 | Child hangs or floods output | Parent timeout, byte limits and forced termination |
 | Child receives parent secrets or runtime authority | No runtime/database/key object; minimal non-inherited environment; standard-I/O protocol only |
+| Worker source changes before launch | Closed reachable source manifest, trusted-path checks, per-file SHA-256 and Ed25519 release verification before every spawn |
+| Child source differs from parent-verified release | Protocol 1.2 binds release identity; child reconstructs its local artifact and response/result require an exact digest match |
+| Worker release signature is mistaken for immutable deployment | Explicit mutable-source and repository-local trust status; no real connector; immutable packaging remains a promotion gate |
 | Process separation is mistaken for a sandbox | Process-only mode reports both isolation flags false; exact Darwin-required executions must pass kernel-denial probes |
 | Sandbox selection is confused with enforcement | Request binds provider/policy digest; child listen/connect/write-open probes must pass before true flags are accepted |
 | Required Darwin policy is bypassed | Test-only direct-launch fault is rejected by the child probes; no outcome is recorded |
@@ -156,8 +161,15 @@ probes still produce only a local digest-only simulation.
   reads, CPU, memory, process creation, inherited descriptors or every syscall;
 - the local denial probes are child observations, not independently signed
   kernel or workload attestation;
-- worker response and worker artifact are not independently signed or
-  workload-attested;
+- the worker source graph has a local Ed25519 release attestation, but the
+  trust anchor is in the same mutable repository and has no protected custody,
+  expiry, revocation or transparency service;
+- the source artifact is not immutable or atomically locked across parent
+  inspection, module loading and child observation;
+- the child compares its local digest after module loading and does not
+  independently verify the parent or release signature;
+- the Node.js executable, built-in modules, worker response and workload
+  identity are not independently signed or attested;
 - no real connector, production outbound allowlist or secret vault;
 - no model-level personality, precedence or prompt-injection evaluation;
 - Operating Profile digests are not yet bound into model-output evidence;

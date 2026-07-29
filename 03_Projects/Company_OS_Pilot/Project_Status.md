@@ -1,18 +1,19 @@
 # Company OS Pilot — Project Status
 
-Status: Technical Slice 8 Passed / Human Review Pending
+Status: Technical Slice 9 Passed / Human Review Pending
 Date: 2026-07-29  
 Validation Level: Level 1 — Experimental
 
 ## Current Goal
 
-Deliver and verify one exact, fail-closed Darwin network/write-denial
-experiment around the process-separated connector simulation, without
-enabling network access, a real connector or an external effect.
+Deliver and verify one exact, signed and fail-closed worker source-artifact
+boundary around the process-separated connector simulation, without claiming
+immutable deployment or enabling network access, a real connector or an
+external effect.
 
 ## Current Phase
 
-Level 1 Darwin sandbox-contract evidence review.
+Level 1 signed worker source-artifact evidence review.
 
 ## Exit Criteria
 
@@ -65,11 +66,23 @@ Level 1 Darwin sandbox-contract evidence review.
 - [x] Darwin-only and deprecated platform-interface status documented;
 - [x] filesystem-read, CPU, memory, process and same-account gaps documented;
 - [x] ADR, security model, operations guide and Evidence 008 prepared;
-- [ ] Human Governance reviewed Technical Slices 3–8 evidence.
+- [x] exact fixed worker source graph and entry point declared;
+- [x] linked, mutable, oversized, invalid and undeclared source rejected;
+- [x] deterministic per-file and complete artifact SHA-256 implemented;
+- [x] local Ed25519 worker release verified before every spawn;
+- [x] release identity bound through worker protocol 1.2;
+- [x] child-side local artifact digest match bound into response and result;
+- [x] source, signature, trust, schema and request-binding tampering rejected;
+- [x] artifact failure preserved the claim for human-only uncertainty
+      reconciliation;
+- [x] mutable-source, same-account race, local-trust and runtime gaps
+      documented;
+- [x] ADR, security model, operations guide and Evidence 009 prepared;
+- [ ] Human Governance reviewed Technical Slices 3–9 evidence.
 
 ## Verified Result
 
-- 120 of 120 tests passed;
+- 125 of 125 tests passed;
 - four workflow tasks completed;
 - Chief of Staff, Operations and Marketing participated;
 - 14 signed invocations accepted in 14 committed local transactions;
@@ -119,6 +132,19 @@ Level 1 Darwin sandbox-contract evidence review.
 - a deliberate direct-launch bypass was rejected by the child probes without
   recording an outcome;
 - the failed bypass claim reconciled only to `uncertain` after expiry;
+- one exact 12-file, 84,546-byte worker source artifact was reconstructed and
+  bound by SHA-256;
+- the configured Ed25519 release attestation verified before every normal and
+  Darwin worker launch;
+- the child reconstructed its local artifact and bound
+  `localDigestMatched: true` into the response and result digest;
+- changed source bytes, release signature, trust key, schema, imports,
+  permissions and symbolic links were rejected;
+- a deliberately changed request artifact binding caused child rejection,
+  recorded no outcome and reconciled only to `uncertain` after expiry;
+- the release private key was not stored in FDOS or passed to the child;
+- no immutable-package, independent workload or same-account race claim is
+  made;
 - no real service was contacted and no external effect occurred.
 
 See `Validation_Report.md`,
@@ -128,6 +154,7 @@ See `Validation_Report.md`,
 `Validation_Report_006_Agent_Personality.md`,
 `Validation_Report_007_Process_Separated_Worker.md`,
 `Validation_Report_008_Darwin_Sandbox.md`,
+`Validation_Report_009_Signed_Worker_Artifact.md`,
 `Reference_Adoption_Assessment.md` and the evidence records under
 `../../04_Evidence/fdos-runtime/`.
 
@@ -139,7 +166,9 @@ Disabled. A process-separated local simulation path is enabled with
 The default path reports both isolation flags false. On the recorded Darwin
 host, an optional deprecated `sandbox-exec` experiment may report network and
 filesystem-write isolation true only after exact in-child denial probes.
-Neither path authorizes a real connector.
+Both paths now require the same locally signed source artifact. That artifact
+is content-addressed but not immutable or independently deployed. Neither path
+authorizes a real connector.
 
 Personality is configuration only. No model provider is connected.
 

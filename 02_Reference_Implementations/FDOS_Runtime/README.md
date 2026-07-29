@@ -9,10 +9,13 @@ coordinate specialized AI roles as one organizational system.
 
 The current slices implement coordination, authenticated invocation, a
 no-network connector Outbox and a process-separated digest-only simulation
-worker. On Darwin, one optional experimental mode additionally denies network
-socket operations and new filesystem writes through the operating system and
-requires in-worker denial probes before accepting a result. The runtime still
-contains no autonomous model call, real connector or external execution.
+worker. The worker now launches only after an exact closed source graph passes
+local Ed25519 release verification, and its response binds a child-side local
+digest match. On Darwin, one optional experimental mode additionally denies
+network socket operations and new filesystem writes through the operating
+system and requires in-worker denial probes before accepting a result. The
+runtime still contains no autonomous model call, real connector or external
+execution.
 Callers supply all substantive work results; FDOS governs who may act, in
 which order, within which information scope and under which approval.
 
@@ -35,6 +38,12 @@ which order, within which information scope and under which approval.
 - registered Connector Instance identity with claim leases and fencing IDs;
 - an exact, expiring worker request/response protocol bound to the active
   Connector claim;
+- a fixed, closed and reachable 12-file worker source graph with directory,
+  file, permission, UTF-8, stable-read and import-policy checks;
+- canonical per-file and complete worker-artifact SHA-256 binding;
+- a repository-local Ed25519 release attestation verified before every spawn;
+- exact artifact release binding in worker protocol 1.2 plus a child-side
+  local source-digest match bound into the response and result;
 - a shell-free child process with a minimal environment, bounded input/output
   and hard timeout;
 - an optional Darwin-only, fail-closed `sandbox-exec` launch that binds the
@@ -42,7 +51,8 @@ which order, within which information scope and under which approval.
 - child-side listen, connect and filesystem write-open denial probes whose
   exact attestation is bound into the request, response and result digest;
 - clean-exit acknowledgement plus crash-before-response,
-  response-then-crash, hang and sandbox-bypass fault tests;
+  response-then-crash, hang, artifact-binding-mismatch and sandbox-bypass
+  fault tests;
 - failed retry, cancellation and uncertainty resolution under Human
   Governance;
 - content-minimized simulated, failed and uncertain connector outcomes;
@@ -91,7 +101,9 @@ prints a content-minimized evidence bundle. It performs no external action.
 The Outbox demo separately exercises contract binding, task-bound preparation,
 connector claim, process-separated digest-only simulation and authenticated
 outcome recording. It performs no network operation and records
-`externalEffect: none`.
+`externalEffect: none`. Before each launch, it reconstructs and verifies the
+signed pilot worker source artifact. The child then reports only whether its
+local artifact digest matched the verified request binding.
 
 The default process-only worker reports `networkIsolationEnforced: false`.
 Process separation alone is not a sandbox.
@@ -121,7 +133,8 @@ node src/cli.js reference-snapshot company-ai /absolute/path/to/company-ai-platf
 - `src/kernel/` — canonical serialization, identifiers and event integrity;
 - `src/identity/` — signed Invocation Contexts and public-key verification;
 - `src/domain/` — roles, personality profiles, action and delivery intents,
-  connector contracts, policy and workflow definitions;
+  connector contracts, worker release attestations, policy and workflow
+  definitions;
 - `src/runtime/` — authenticated gateway, coordination, approvals and memory;
 - `src/integrations/` — read-only reference and process-worker boundaries;
 - `src/workers/` — closed dry-run protocol and separate simulation entry
@@ -137,6 +150,7 @@ See:
 - `docs/CONNECTOR_OUTBOX.md`
 - `docs/PROCESS_SEPARATED_DRY_RUN_WORKER.md`
 - `docs/DARWIN_SANDBOXED_DRY_RUN_WORKER.md`
+- `docs/SIGNED_WORKER_SOURCE_ARTIFACT.md`
 - `docs/AGENT_AND_ROLE_MODEL.md`
 - `docs/AGENT_PERSONALITY_MODEL.md`
 - `docs/SECURITY_MODEL.md`
@@ -151,4 +165,6 @@ proves behavior only inside the local process-leased experiment. The ephemeral
 demo signer is not a production identity provider. The Darwin probe proves
 only the tested local `sandbox-exec` policy invocation; it does not prove
 portable infrastructure isolation, a networked connector, database recovery
-or tenant security.
+or tenant security. The worker release signature covers one mutable source
+manifest under a repository-local trust root; it is not immutable packaging,
+protected release-key custody or independent workload attestation.

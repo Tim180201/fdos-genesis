@@ -17,6 +17,9 @@
 - Added ADR-0049 for one optional Darwin-only network/write-denial experiment
   with exact policy binding and runtime probes, while recording the platform
   interface as deprecated and non-production.
+- Added ADR-0050 for a locally signed, closed worker source-artifact
+  experiment without claiming immutable packaging, independent deployment
+  trust or workload identity.
 - Added the runtime experiment boundary for A0–A4 action governance, data
   scopes, repository ownership and production limitations.
 - Added `02_Reference_Implementations/FDOS_Runtime/` with:
@@ -77,6 +80,15 @@
   - in-child listen, connect and filesystem write-open denial probes;
   - rejection of missing, false, tampered and deliberately bypassed required
     sandbox enforcement;
+  - a fixed, closed and reachable 12-file worker source graph;
+  - directory, file, permission, UTF-8, stable-read and import-policy checks;
+  - canonical per-file and complete source-artifact SHA-256 binding;
+  - exact Ed25519 worker release attestation with public trust only;
+  - release verification before every process-only or Darwin worker spawn;
+  - worker protocol 1.2 binding artifact, attestation, issuer and key;
+  - child-side local source-digest match bound into response and result;
+  - source, signature, trust, schema, path and import tamper rejection;
+  - deliberate child artifact-binding mismatch fault with no recorded outcome;
   - append-only hash-chained audit events;
   - content-minimized task and delivery evidence export.
 - Added the Chief of Staff, Operations and Marketing software-change-readiness
@@ -88,6 +100,7 @@
   to 106 tests; the Agent Personality slice expands it to 110 tests; the
   process-separated worker slice expands it to 116 tests.
 - The Darwin sandbox slice expands the suite to 120 tests.
+- The signed worker source-artifact slice expands the suite to 125 tests.
 - Recorded 90.83% line, 77.73% branch and 90.48% function coverage for the
   authenticated candidate.
 - Recorded 90.16% line, 78.04% branch and 90.56% function coverage for the
@@ -101,6 +114,8 @@
   process-separated worker candidate.
 - Recorded 90.12% line, 78.97% branch and 90.27% function coverage for the
   Darwin sandbox candidate.
+- Recorded 90.26% line, 79.04% branch and 90.82% function coverage for the
+  signed worker source-artifact candidate.
 - Added Evidence Item `EV-FDOS-RUNTIME-PILOT-001` and its SHA-256 source
   manifest.
 - Added Evidence Item `EV-FDOS-REFERENCE-INTAKE-002` and its SHA-256 source
@@ -118,6 +133,8 @@
   manifest and Validation Report 007.
 - Added Evidence Item `EV-FDOS-DARWIN-SANDBOX-008`, its SHA-256 source
   manifest and Validation Report 008.
+- Added Evidence Item `EV-FDOS-WORKER-ARTIFACT-009`, its SHA-256 source
+  manifest and Validation Report 009.
 - Added Knowledge Candidate KP-006 for exact Action Intent approval binding.
 - Added Knowledge Candidates KP-007 for exact external-source binding and
   KP-008 for exclusive ownership before transactional persistence.

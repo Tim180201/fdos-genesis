@@ -50,6 +50,10 @@ promotion and not a production approval.
 | Exact isolation policy and worker attestation protocol | Tested | Level 1 — Experimental | `EV-FDOS-DARWIN-SANDBOX-008` | Pending | Not independently signed |
 | Listen/connect/write-open denial probes | Tested on recorded Darwin host | Level 1 — Experimental | `EV-FDOS-DARWIN-SANDBOX-008` | Pending | Selected operations only |
 | Required-sandbox bypass rejection | Tested with fault injection | Level 1 — Experimental | `EV-FDOS-DARWIN-SANDBOX-008` | Pending | Host compromise out of scope |
+| Closed worker source graph and artifact digest | Tested | Level 1 — Experimental | `EV-FDOS-WORKER-ARTIFACT-009` | Pending | Mutable development source |
+| Ed25519 worker release attestation | Tested with local trust | Level 1 — Experimental | `EV-FDOS-WORKER-ARTIFACT-009` | Pending | No protected release service |
+| Parent/child artifact protocol binding | Tested with fault injection | Level 1 — Experimental | `EV-FDOS-WORKER-ARTIFACT-009` | Pending | Child observation occurs after module load |
+| Source/signature/trust/path tamper rejection | Tested locally | Level 1 — Experimental | `EV-FDOS-WORKER-ARTIFACT-009` | Pending | Same-account race remains |
 | TapTime/Company AI adoption assessment | Tested as documentation/evidence | Level 1 — Experimental | exact reference manifests | Pending | Not applicable |
 
 ## Promotion Rule

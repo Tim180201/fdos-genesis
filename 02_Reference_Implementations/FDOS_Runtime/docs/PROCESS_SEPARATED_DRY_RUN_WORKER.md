@@ -6,10 +6,11 @@ Validation Level: Level 1
 
 Production Status: Not Production Ready
 
-Related Decision:
+Related Decisions:
 
 - `../../../00_Specification/ADR/ADR-0048_Process_Separated_Dry_Run_Worker_Experiment.md`
 - `../../../00_Specification/ADR/ADR-0049_Darwin_Network_and_Write_Sandbox_Experiment.md`
+- `../../../00_Specification/ADR/ADR-0050_Signed_Worker_Source_Artifact_Experiment.md`
 
 ## Purpose
 
@@ -29,13 +30,16 @@ authenticated Operations command
   -> immutable Delivery Intent
   -> durable Outbox preparation
   -> authenticated Connector Instance claim
-  -> exact, expiring worker request and isolation binding
+  -> inspect closed worker source graph
+  -> verify exact Ed25519 release attestation
+  -> exact, expiring worker request, release and isolation binding
        │
        ▼
      separate Node.js child process
        -> direct process-only mode; or
        -> Darwin sandbox-exec network/write-deny mode
        -> verify exact request and no-effect contract
+       -> reconstruct and match local source artifact digest
        -> when required, prove socket and write-open denial
        -> compute digest-only simulation outcome
        -> emit one exact response
@@ -55,8 +59,15 @@ only one protocol response over standard output.
 
 `ProcessSeparatedDryRunWorker`:
 
-- launches the current absolute Node.js executable and one fixed worker file;
-- rejects a symbolic-link, non-file, empty or oversized worker entry point;
+- reconstructs the exact allowed worker source graph before every launch;
+- rejects linked, missing, non-regular, group/world-writable, oversized,
+  unstable or non-UTF-8 source;
+- rejects source comments, dynamic loading/code, packages, added built-ins,
+  duplicate/undeclared, escaping or unreachable imports;
+- verifies the complete canonical artifact against the configured Ed25519
+  pilot release attestation;
+- launches the current absolute Node.js executable and fixed worker entry
+  point only after that preflight succeeds;
 - uses `shell: false`;
 - opens only explicit standard-input, standard-output and standard-error
   pipes;
@@ -97,6 +108,8 @@ The content-addressed request binds:
 - `externalEffects: false`;
 - whether technical isolation is required plus exact provider and policy
   digest;
+- exact artifact ID, version, source digest, release-attestation digest,
+  issuer and key ID;
 - the complete verified Delivery Intent;
 - the request digest.
 
@@ -116,6 +129,8 @@ The content-addressed response binds:
   completion time and declared worker boundary rather than raw result content;
 - the declared worker boundary, including exact isolation provider, policy
   digest and denial-probe identifiers;
+- the exact artifact release binding and
+  `localDigestMatched: true` child observation;
 - the response digest.
 
 The default process-only boundary contains
@@ -140,9 +155,11 @@ Output is accepted only when all conditions hold:
 4. standard error is empty;
 5. standard output contains exactly one JSON line;
 6. the response has the exact closed shape and digest;
-7. every request, delivery, claim, connector and time binding matches.
+7. every request, delivery, claim, connector and time binding matches;
 8. any required isolation provider, policy digest and denial probes match
-   exactly.
+   exactly;
+9. the child-observed artifact identity and local digest match the
+   parent-verified release binding.
 
 A valid-looking response followed by a non-zero process exit is not accepted.
 This prevents the parent from interpreting a partially acknowledged or
@@ -155,6 +172,7 @@ The test worker supports bounded fault injection for:
 - crash before response;
 - valid response followed by crash;
 - hang until parent timeout;
+- a deliberately changed artifact digest in the otherwise exact request;
 - a deliberate sandbox-launch bypass while the request still requires the
   Darwin policy.
 
@@ -173,6 +191,8 @@ The worker:
 - cannot call the lower-level runtime because it is not passed;
 - cannot open the SQLite store through the worker protocol;
 - cannot sign an Invocation because no private key is passed;
+- cannot access a worker release private key because it is not stored or
+  passed;
 - cannot change the Delivery Intent;
 - cannot select another connector or claim;
 - cannot return raw response content;
@@ -193,7 +213,10 @@ This boundary does not establish:
 - filesystem read, CPU, memory, process-count or general syscall isolation;
 - container, VM or tenant isolation;
 - independently authenticated worker identity;
-- signed or immutable worker packaging;
+- immutable worker packaging or protected deployment trust; ADR-0050 signs
+  the mutable closed source graph only;
+- protection against a same-account source race between parent inspection,
+  module loading and child observation;
 - protection against a compromised host account or Node.js runtime;
 - secret-vault integration;
 - a real service API, DNS, TLS, rate, cost or service-idempotency control;
@@ -212,7 +235,8 @@ Before one real read-only sandbox connector, FDOS still requires:
 - a supported OS-, container- or infrastructure-enforced outbound policy;
 - filesystem read and resource restrictions;
 - production workload identity, response authentication and revocation;
-- signed, immutable worker artifact verification;
+- immutable packaged worker verification and externally protected release
+  trust;
 - secret-vault and no-secret-persistence controls;
 - service-specific request/response schemas and idempotency;
 - rate, cost, concurrency and observability budgets;

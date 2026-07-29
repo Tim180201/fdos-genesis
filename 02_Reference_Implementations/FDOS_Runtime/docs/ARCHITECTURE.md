@@ -37,8 +37,10 @@ FDOS Runtime
   └── Evidence Projection
         │
         ├── claimed Delivery Intent
-        │     -> exact expiring request + isolation binding
+        │     -> signed closed-source artifact preflight
+        │     -> exact expiring request + release/isolation binding
         │     -> separate dry-run child process
+        │     -> child local-source digest observation
         │     -> optional Darwin network/write deny profile
         │     -> verified denial probes + digest-only response
         │
@@ -184,11 +186,19 @@ After the authenticated Connector Instance claims a delivery, the demo binds
 that exact Delivery Intent, fencing claim, connector and validity window into
 a content-addressed worker request.
 
-The parent starts a fixed regular Node.js worker file with no shell, no
+Before every spawn, the parent reconstructs a fixed 12-file, closed and
+reachable ES-module graph. It rejects unsafe directories/files, dynamic or
+undeclared imports and unstable reads, computes the canonical source artifact
+and verifies an Ed25519 release attestation against configured local public
+trust. Protocol 1.2 binds the artifact and attestation digests plus exact
+issuer and key identifiers.
+
+The parent then starts the fixed Node.js worker entry point with no shell, no
 forwarded parent environment, explicit standard-I/O pipes, bounded bytes and a
 hard timeout. The child receives no gateway, runtime, database handle or
-signing key. It verifies the request and returns one digest-only simulated
-outcome.
+signing key. It verifies the request, reconstructs its local artifact and
+returns one digest-only simulated outcome only after its local source digest
+matches the request binding.
 
 The default `process-only` path adds no operating-system isolation. An optional
 Darwin experiment instead starts the worker through the fixed root-owned,
@@ -210,6 +220,13 @@ interface is deprecated, Darwin-only and leaves filesystem reads, CPU, memory,
 process creation, inherited descriptors and worker identity outside its
 claim. It is therefore Level 1 platform evidence, not the production sandbox
 design.
+
+The release signature detects a mismatched mutable source graph under the
+configured repository-local trust root. It does not make the worktree
+immutable. A same-account change between parent inspection and module loading
+remains possible, and child observation occurs after its modules load. The
+Node.js runtime, worker response and workload identity remain trusted local
+components rather than independently attested production artifacts.
 
 ## State Machines
 
@@ -288,6 +305,8 @@ See `CONNECTOR_OUTBOX.md` for the external-work boundary.
 See `PROCESS_SEPARATED_DRY_RUN_WORKER.md` for the child-process boundary.
 See `DARWIN_SANDBOXED_DRY_RUN_WORKER.md` for the platform-specific denial
 experiment and non-claims.
+See `SIGNED_WORKER_SOURCE_ARTIFACT.md` for the source release boundary and its
+mutability limits.
 
 ## Future Extension Points
 
@@ -301,7 +320,8 @@ These are not implemented:
 - model-provider adapter;
 - supported portable connector isolation, outbound allowlisting and complete
   resource budgets;
-- independently attested and signed worker identity/artifacts;
+- immutable packaged worker, externally protected release trust and
+  independently attested workload identity;
 - secrets vault;
 - policy-as-code service;
 - observability and incident operations.

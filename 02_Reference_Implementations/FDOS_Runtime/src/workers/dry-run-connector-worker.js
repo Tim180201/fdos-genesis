@@ -9,6 +9,9 @@ import {
   DARWIN_NETWORK_ISOLATION_PROVIDER,
   NO_NETWORK_ISOLATION_PROVIDER
 } from "../domain/network-isolation-contract.js";
+import {
+  inspectDryRunWorkerArtifact
+} from "../integrations/dry-run-worker-artifact.js";
 
 const MAX_INPUT_BYTES = 64 * 1024;
 const FAULT_MODES = new Set([
@@ -176,6 +179,29 @@ async function isolationAttestation(request) {
   };
 }
 
+async function workerArtifactObservation(request) {
+  const expected = request.execution.workerArtifact;
+  const observed = await inspectDryRunWorkerArtifact();
+  if (
+    observed.artifactId !== expected.artifactId ||
+    observed.artifactVersion !== expected.artifactVersion ||
+    observed.digest !== expected.artifactDigest
+  ) {
+    throw new Error(
+      "Worker artifact differs from its signed request binding."
+    );
+  }
+  return {
+    artifactId: expected.artifactId,
+    artifactVersion: expected.artifactVersion,
+    artifactDigest: observed.digest,
+    attestationDigest: expected.attestationDigest,
+    issuerId: expected.issuerId,
+    keyId: expected.keyId,
+    localDigestMatched: true
+  };
+}
+
 async function handleInput() {
   if (stopped) return;
   const faultMode =
@@ -197,6 +223,8 @@ async function handleInput() {
     }
     const now = new Date().toISOString();
     verifyDryRunWorkerRequest(request, { now });
+    const artifactObservation =
+      await workerArtifactObservation(request);
     const networkIsolationAttestation =
       await isolationAttestation(request);
 
@@ -212,7 +240,8 @@ async function handleInput() {
     const response = createDryRunWorkerResponse({
       request,
       completedAt: new Date().toISOString(),
-      networkIsolationAttestation
+      networkIsolationAttestation,
+      workerArtifactObservation: artifactObservation
     });
     process.stdout.write(`${canonicalJson(response)}\n`, () => {
       if (faultMode === "response-then-crash") {

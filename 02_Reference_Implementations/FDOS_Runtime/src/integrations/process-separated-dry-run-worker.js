@@ -1,5 +1,4 @@
 import { spawn } from "node:child_process";
-import { lstat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import {
   canonicalJson,
@@ -19,8 +18,18 @@ import {
   processOnlyNetworkIsolationBinding
 } from "../domain/network-isolation-contract.js";
 import {
+  createWorkerArtifactBinding
+} from "../domain/worker-artifact-attestation.js";
+import {
   DarwinSandboxExecNetworkWriteDeny
 } from "./darwin-sandbox-exec-network-write-deny.js";
+import {
+  inspectDryRunWorkerArtifact
+} from "./dry-run-worker-artifact.js";
+import {
+  PILOT_DRY_RUN_WORKER_ATTESTATION,
+  PILOT_DRY_RUN_WORKER_TRUST
+} from "../pilot/dry-run-worker-release.js";
 import {
   createDryRunWorkerRequest,
   verifyDryRunWorkerResponse
@@ -29,7 +38,6 @@ import {
 const WORKER_FILE = fileURLToPath(
   new URL("../workers/dry-run-connector-worker.js", import.meta.url)
 );
-const MAX_WORKER_FILE_BYTES = 128 * 1024;
 const MAX_REQUEST_BYTES = 64 * 1024;
 const MAX_STDOUT_BYTES = 16 * 1024;
 const MAX_STDERR_BYTES = 4 * 1024;
@@ -38,7 +46,8 @@ const FAULT_MODES = Object.freeze([
   "crash-before-response",
   "hang",
   "response-then-crash",
-  "sandbox-bypass"
+  "sandbox-bypass",
+  "artifact-binding-mismatch"
 ]);
 const NETWORK_ISOLATION_MODES = Object.freeze([
   "process-only",
@@ -142,6 +151,12 @@ export class ProcessSeparatedDryRunWorker {
         this.#networkIsolation ===
         "darwin-sandbox-exec-required",
       parentEnvironmentForwarded: false,
+      workerArtifactPreflightRequired: true,
+      workerArtifactReleaseTrustConfigured: true,
+      workerArtifactIssuerId:
+        PILOT_DRY_RUN_WORKER_TRUST.issuerId,
+      workerArtifactKeyId:
+        PILOT_DRY_RUN_WORKER_TRUST.keyId,
       timeoutMs: this.#timeoutMs,
       faultInjectionEnabled: this.#faultMode !== "none"
     });
@@ -170,32 +185,17 @@ export class ProcessSeparatedDryRunWorker {
     return sandboxed;
   }
 
-  async #assertWorkerFile() {
-    let file;
-    try {
-      file = await lstat(WORKER_FILE);
-    } catch (error) {
-      throw new IntegrityError(
-        "Process worker entry point is unavailable.",
-        {
-          errorType: error?.name || "Error"
-        }
-      );
-    }
-    if (
-      file.isSymbolicLink() ||
-      !file.isFile() ||
-      file.size < 1 ||
-      file.size > MAX_WORKER_FILE_BYTES
-    ) {
-      throw new IntegrityError(
-        "Process worker entry point is not an accepted regular file."
-      );
-    }
+  async #prepareWorkerArtifact() {
+    const artifact = await inspectDryRunWorkerArtifact();
+    return createWorkerArtifactBinding({
+      artifact,
+      attestation: PILOT_DRY_RUN_WORKER_ATTESTATION,
+      trustedKeys: [PILOT_DRY_RUN_WORKER_TRUST]
+    });
   }
 
   async execute({ delivery } = {}) {
-    await this.#assertWorkerFile();
+    const verifiedArtifact = await this.#prepareWorkerArtifact();
     const launch = await this.#prepareLaunch();
     const now = validClockValue(this.#clock);
     const claimExpiresAt = isoDate(
@@ -218,7 +218,18 @@ export class ProcessSeparatedDryRunWorker {
       requestId: this.#idFactory("workerrequest"),
       issuedAt: now.toISOString(),
       expiresAt,
-      networkIsolation: launch.isolation
+      networkIsolation: launch.isolation,
+      workerArtifact:
+        this.#faultMode === "artifact-binding-mismatch"
+          ? {
+              ...verifiedArtifact,
+              artifactDigest: digestObject({
+                expectedArtifactDigest:
+                  verifiedArtifact.artifactDigest,
+                fault: "artifact-binding-mismatch"
+              })
+            }
+          : verifiedArtifact
     });
     const serializedRequest = canonicalJson(request);
     if (
@@ -239,7 +250,8 @@ export class ProcessSeparatedDryRunWorker {
             cwd: fileURLToPath(new URL("../workers/", import.meta.url)),
             env: {
               FDOS_DRY_RUN_WORKER_FAULT:
-                this.#faultMode === "sandbox-bypass"
+                this.#faultMode === "sandbox-bypass" ||
+                this.#faultMode === "artifact-binding-mismatch"
                   ? "none"
                   : this.#faultMode,
               FDOS_NETWORK_ISOLATION_PROVIDER:

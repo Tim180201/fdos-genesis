@@ -23,8 +23,11 @@ import {
   normalizeNetworkIsolationBinding,
   processOnlyNetworkIsolationBinding
 } from "../domain/network-isolation-contract.js";
+import {
+  normalizeWorkerArtifactBinding
+} from "../domain/worker-artifact-attestation.js";
 
-const PROTOCOL_SCHEMA_VERSION = "1.1";
+const PROTOCOL_SCHEMA_VERSION = "1.2";
 const REQUEST_KIND = "fdos-process-worker-request";
 const RESPONSE_KIND = "fdos-process-worker-response";
 const MAX_REQUEST_TTL_MS = 5 * 60 * 1_000;
@@ -48,7 +51,8 @@ const executionKeys = Object.freeze([
   "externalEffects",
   "mode",
   "networkAccess",
-  "networkIsolation"
+  "networkIsolation",
+  "workerArtifact"
 ]);
 const responseKeys = Object.freeze([
   "claimId",
@@ -73,7 +77,8 @@ const workerBoundaryKeys = Object.freeze([
   "networkIsolationProbe",
   "networkIsolationProvider",
   "processSeparated",
-  "shell"
+  "shell",
+  "workerArtifact"
 ]);
 const isolationAttestationKeys = Object.freeze([
   "enforced",
@@ -82,6 +87,15 @@ const isolationAttestationKeys = Object.freeze([
   "policyDigest",
   "probe",
   "provider"
+]);
+const artifactObservationKeys = Object.freeze([
+  "artifactDigest",
+  "artifactId",
+  "artifactVersion",
+  "attestationDigest",
+  "issuerId",
+  "keyId",
+  "localDigestMatched"
 ]);
 
 function exactKeys(value, expected, field, ErrorType = ValidationError) {
@@ -143,6 +157,10 @@ function normalizeExecution(value, ErrorType = ValidationError) {
     externalEffects: false,
     networkIsolation: normalizeNetworkIsolationBinding(
       value.networkIsolation,
+      ErrorType
+    ),
+    workerArtifact: normalizeWorkerArtifactBinding(
+      value.workerArtifact,
       ErrorType
     )
   };
@@ -262,6 +280,10 @@ function normalizeWorkerBoundary(value, ErrorType = IntegrityError) {
   const expectedFilesystemProbe = isolation.required
     ? "dev_null_write_open_denied"
     : "not_run";
+  const workerArtifact = normalizeWorkerArtifactObservation(
+    value.workerArtifact,
+    ErrorType
+  );
   if (
     value.processSeparated !== true ||
     value.shell !== false ||
@@ -283,13 +305,60 @@ function normalizeWorkerBoundary(value, ErrorType = IntegrityError) {
     networkIsolationEnforced: isolation.required,
     networkIsolationProvider: isolation.provider,
     networkIsolationPolicyDigest: isolation.policyDigest,
-    networkIsolationProbe: expectedProbe
+    networkIsolationProbe: expectedProbe,
+    workerArtifact
   };
+}
+
+function normalizeWorkerArtifactObservation(
+  value,
+  ErrorType = IntegrityError
+) {
+  exactKeys(
+    value,
+    artifactObservationKeys,
+    "worker artifact observation",
+    ErrorType
+  );
+  if (value.localDigestMatched !== true) {
+    throw new ErrorType(
+      "Worker artifact did not match the local source digest."
+    );
+  }
+  const binding = normalizeWorkerArtifactBinding(
+    {
+      artifactId: value.artifactId,
+      artifactVersion: value.artifactVersion,
+      artifactDigest: value.artifactDigest,
+      attestationDigest: value.attestationDigest,
+      issuerId: value.issuerId,
+      keyId: value.keyId
+    },
+    ErrorType
+  );
+  return {
+    ...binding,
+    localDigestMatched: true
+  };
+}
+
+function artifactObservationMatchesBinding(observation, binding) {
+  return (
+    observation.localDigestMatched === true &&
+    observation.artifactId === binding.artifactId &&
+    observation.artifactVersion === binding.artifactVersion &&
+    observation.artifactDigest === binding.artifactDigest &&
+    observation.attestationDigest === binding.attestationDigest &&
+    observation.issuerId === binding.issuerId &&
+    observation.keyId === binding.keyId
+  );
 }
 
 function createWorkerBoundary(
   requestIsolation,
-  networkIsolationAttestation
+  networkIsolationAttestation,
+  requestArtifact,
+  workerArtifactObservation
 ) {
   const source =
     networkIsolationAttestation ??
@@ -321,7 +390,8 @@ function createWorkerBoundary(
       networkIsolationEnforced: source.enforced,
       networkIsolationProvider: source.provider,
       networkIsolationPolicyDigest: source.policyDigest,
-      networkIsolationProbe: source.probe
+      networkIsolationProbe: source.probe,
+      workerArtifact: workerArtifactObservation
     },
     ValidationError
   );
@@ -333,6 +403,16 @@ function createWorkerBoundary(
   ) {
     throw new PolicyError(
       "Worker network-isolation attestation differs from the request."
+    );
+  }
+  if (
+    !artifactObservationMatchesBinding(
+      boundary.workerArtifact,
+      requestArtifact
+    )
+  ) {
+    throw new PolicyError(
+      "Worker artifact observation differs from the request."
     );
   }
   return boundary;
@@ -440,7 +520,8 @@ export function createDryRunWorkerRequest({
   requestId,
   issuedAt,
   expiresAt,
-  networkIsolation = processOnlyNetworkIsolationBinding()
+  networkIsolation = processOnlyNetworkIsolationBinding(),
+  workerArtifact
 }) {
   assertPlainObject(delivery, "claimed connector delivery");
   if (
@@ -496,6 +577,9 @@ export function createDryRunWorkerRequest({
       externalEffects: false,
       networkIsolation: normalizeNetworkIsolationBinding(
         networkIsolation
+      ),
+      workerArtifact: normalizeWorkerArtifactBinding(
+        workerArtifact
       )
     },
     intent: jsonClone(delivery.intent)
@@ -523,7 +607,8 @@ export function verifyDryRunWorkerRequest(request, { now } = {}) {
 export function createDryRunWorkerResponse({
   request,
   completedAt,
-  networkIsolationAttestation
+  networkIsolationAttestation,
+  workerArtifactObservation
 }) {
   const normalizedRequest = normalizeRequest(request, IntegrityError);
   const normalizedCompletedAt = isoDate(
@@ -542,7 +627,9 @@ export function createDryRunWorkerResponse({
   }
   const workerBoundary = createWorkerBoundary(
     normalizedRequest.execution.networkIsolation,
-    networkIsolationAttestation
+    networkIsolationAttestation,
+    normalizedRequest.execution.workerArtifact,
+    workerArtifactObservation
   );
   const outcome = normalizeDeliveryOutcome("simulated", {
     externalEffect: "none",
@@ -589,6 +676,10 @@ export function verifyDryRunWorkerResponse(response, request) {
       normalizedRequest.execution.networkIsolation.provider ||
     normalizedResponse.workerBoundary.networkIsolationPolicyDigest !==
       normalizedRequest.execution.networkIsolation.policyDigest ||
+    !artifactObservationMatchesBinding(
+      normalizedResponse.workerBoundary.workerArtifact,
+      normalizedRequest.execution.workerArtifact
+    ) ||
     Date.parse(normalizedResponse.completedAt) <
       Date.parse(normalizedRequest.issuedAt) ||
     Date.parse(normalizedResponse.completedAt) >

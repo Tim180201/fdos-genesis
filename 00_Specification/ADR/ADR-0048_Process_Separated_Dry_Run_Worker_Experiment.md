@@ -16,9 +16,10 @@ Related Decisions:
 - `ADR-0046_Connector_Contract_and_Durable_Outbox_Experiment.md`
 - `ADR-0047_Governed_Agent_Personality_Profile_Experiment.md`
 
-Subsequent Decision:
+Subsequent Decisions:
 
 - `ADR-0049_Darwin_Network_and_Write_Sandbox_Experiment.md`
+- `ADR-0050_Signed_Worker_Source_Artifact_Experiment.md`
 
 ## Decision
 
@@ -135,8 +136,8 @@ Negative:
 - the child runs under the same trusted host account;
 - no network, filesystem, CPU or memory sandbox is enforced;
 - the worker response is digested but not independently signed;
-- the fixed worker path is checked locally but not backed by signed immutable
-  packaging;
+- ADR-0050 now signs a closed mutable source artifact, but no immutable
+  packaging or independent deployment trust exists;
 - the parent still records the child result through an experimental local
   Connector identity;
 - process boundaries increase operational and timeout complexity.

@@ -152,7 +152,8 @@ The current process worker is not itself an Invocation principal. It receives
 no local signing key and cannot call the gateway. After exact protocol and
 clean-exit verification, the trusted demo controller records the result
 through its experimental Connector principal. Production requires independent
-workload identity and response authentication for the worker.
+workload identity and response authentication for the worker. The local worker
+source release signature verifies bytes, not a principal.
 
 ## Command Policy
 
@@ -188,9 +189,11 @@ No command enables networked connector execution or A3/A4 execution.
 - Host compromise can still rewrite local files and trust configuration.
 - Connector identities are local experimental registrations without
   production workload attestation or revocation. The simulation is
-  process-separated, but its response is not independently signed. The
-  optional Darwin worker can prove local `network*` and `file-write*` denial
-  under one deprecated platform profile; it is not production workload
-  identity, portable egress isolation or complete resource isolation.
+  process-separated and its closed source graph has a repository-local release
+  signature, but its response is not independently signed and its deployment
+  is not immutable. The optional Darwin worker can prove local `network*` and
+  `file-write*` denial under one deprecated platform profile; neither control
+  establishes production workload identity, portable egress isolation or
+  complete resource isolation.
 - Personality Profile authentication proves exact configuration access, not
   model behavior or safe persona expression.

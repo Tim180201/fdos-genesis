@@ -40,6 +40,27 @@ const connector = Object.freeze({
   type: "connector",
   id: "connector:reference:primary"
 });
+const syntheticWorkerArtifact = Object.freeze({
+  artifactId: "worker:connector-dry-run",
+  artifactVersion: "1.0.0-experimental",
+  artifactDigest: digestObject({
+    artifact: "protocol-test"
+  }),
+  attestationDigest: digestObject({
+    attestation: "protocol-test"
+  }),
+  issuerId: "issuer:fdos-worker-release-test",
+  keyId: "key:fdos-worker-release-test"
+});
+
+function artifactObservation(
+  binding = syntheticWorkerArtifact
+) {
+  return {
+    ...binding,
+    localDigestMatched: true
+  };
+}
 
 function mutableClone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -171,11 +192,22 @@ test("worker protocol binds the exact claim, intent, validity window and digest-
   const expiresAt = new Date(
     harness.time.value().getTime() + 4_000
   ).toISOString();
+  assert.throws(
+    () =>
+      createDryRunWorkerRequest({
+        delivery: claimed,
+        requestId: "workerrequest_protocol_missing_artifact",
+        issuedAt,
+        expiresAt
+      }),
+    ValidationError
+  );
   const request = createDryRunWorkerRequest({
     delivery: claimed,
     requestId: "workerrequest_protocol_000001",
     issuedAt,
-    expiresAt
+    expiresAt,
+    workerArtifact: syntheticWorkerArtifact
   });
   assert.equal(
     verifyDryRunWorkerRequest(request, { now: issuedAt }),
@@ -187,7 +219,8 @@ test("worker protocol binds the exact claim, intent, validity window and digest-
   ).toISOString();
   const response = createDryRunWorkerResponse({
     request,
-    completedAt
+    completedAt,
+    workerArtifactObservation: artifactObservation()
   });
   assert.equal(verifyDryRunWorkerResponse(response, request), true);
   assert.equal(response.outcome.type, "simulated");
@@ -196,6 +229,20 @@ test("worker protocol binds the exact claim, intent, validity window and digest-
     ["externalEffect", "resultDigest"]
   );
   assert.equal(response.outcome.evidence.externalEffect, "none");
+  assert.throws(
+    () =>
+      createDryRunWorkerResponse({
+        request,
+        completedAt,
+        workerArtifactObservation: artifactObservation({
+          ...syntheticWorkerArtifact,
+          artifactDigest: digestObject({
+            artifact: "mismatched-observation"
+          })
+        })
+      }),
+    PolicyError
+  );
   assert.throws(
     () => verifyDryRunWorkerRequest(null),
     IntegrityError
@@ -245,6 +292,18 @@ test("worker protocol binds the exact claim, intent, validity window and digest-
     IntegrityError
   );
 
+  const changedArtifact = mutableClone(response);
+  changedArtifact.workerBoundary.workerArtifact.artifactDigest =
+    digestObject({ artifact: "tampered-response" });
+  assert.throws(
+    () =>
+      verifyDryRunWorkerResponse(
+        redigest(changedArtifact),
+        request
+      ),
+    IntegrityError
+  );
+
   const rawResponse = mutableClone(response);
   rawResponse.rawResult = claimed.intent.parameters;
   assert.throws(
@@ -258,7 +317,8 @@ test("worker protocol binds the exact claim, intent, validity window and digest-
         request,
         completedAt: new Date(
           Date.parse(expiresAt) + 1
-        ).toISOString()
+        ).toISOString(),
+        workerArtifactObservation: artifactObservation()
       }),
     PolicyError
   );
@@ -284,13 +344,15 @@ test("network-isolation protocol requires exact attestation binding", async (t) 
     requestId: "workerrequest_isolation_000001",
     issuedAt,
     expiresAt,
-    networkIsolation
+    networkIsolation,
+    workerArtifact: syntheticWorkerArtifact
   });
   assert.throws(
     () =>
       createDryRunWorkerResponse({
         request,
-        completedAt: issuedAt
+        completedAt: issuedAt,
+        workerArtifactObservation: artifactObservation()
       }),
     ValidationError
   );
@@ -306,7 +368,8 @@ test("network-isolation protocol requires exact attestation binding", async (t) 
           provider: DARWIN_NETWORK_ISOLATION_PROVIDER,
           policyDigest: networkIsolation.policyDigest,
           probe: "not_run"
-        }
+        },
+        workerArtifactObservation: artifactObservation()
       }),
     ValidationError
   );
@@ -321,7 +384,8 @@ test("network-isolation protocol requires exact attestation binding", async (t) 
       provider: DARWIN_NETWORK_ISOLATION_PROVIDER,
       policyDigest: networkIsolation.policyDigest,
       probe: "socket_listen_and_connect_denied"
-    }
+    },
+    workerArtifactObservation: artifactObservation()
   });
   assert.equal(verifyDryRunWorkerResponse(response, request), true);
   assert.equal(
@@ -429,6 +493,10 @@ test(
       result.workerBoundary.networkIsolationPolicyDigest,
       /^sha256:[0-9a-f]{64}$/
     );
+    assert.equal(
+      result.workerBoundary.workerArtifact.localDigestMatched,
+      true
+    );
 
     const recorded = await harness.execute(
       connector,
@@ -533,6 +601,16 @@ test("separate worker completes one authenticated outbox run with content-minimi
   assert.equal(status.networkIsolationRequired, false);
   assert.equal(status.filesystemWriteIsolationEnforced, false);
   assert.equal(status.filesystemWriteIsolationRequired, false);
+  assert.equal(status.workerArtifactPreflightRequired, true);
+  assert.equal(
+    status.workerArtifactReleaseTrustConfigured,
+    true
+  );
+  assert.match(
+    status.workerArtifactIssuerId,
+    /^issuer:/
+  );
+  assert.match(status.workerArtifactKeyId, /^key:/);
   assert.equal(
     result.workerBoundary.filesystemWriteIsolationEnforced,
     false
@@ -540,6 +618,18 @@ test("separate worker completes one authenticated outbox run with content-minimi
   assert.equal(
     result.workerBoundary.filesystemWriteIsolationProbe,
     "not_run"
+  );
+  assert.equal(
+    result.workerBoundary.workerArtifact.localDigestMatched,
+    true
+  );
+  assert.match(
+    result.workerBoundary.workerArtifact.artifactDigest,
+    /^sha256:[0-9a-f]{64}$/
+  );
+  assert.match(
+    result.workerBoundary.workerArtifact.attestationDigest,
+    /^sha256:[0-9a-f]{64}$/
   );
   assert.throws(() => {
     status.networkAccess = true;
@@ -589,6 +679,11 @@ for (const fault of [
   },
   {
     mode: "response-then-crash",
+    timeoutMs: 2_000,
+    reasonCode: "WORKER_EXIT_UNTRUSTED"
+  },
+  {
+    mode: "artifact-binding-mismatch",
     timeoutMs: 2_000,
     reasonCode: "WORKER_EXIT_UNTRUSTED"
   },

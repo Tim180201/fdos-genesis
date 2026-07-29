@@ -315,3 +315,48 @@ Human-Governance-controlled uncertainty.
 
 Rationale: Isolation failure must never be converted into success, automatic
 retry or widened authority.
+
+## PILOT-DEC-032 — Closed Source Graph Before Worker Spawn
+
+Date: 2026-07-29
+
+Decision: Reconstruct one fixed, reachable and content-addressed worker source
+graph before every process launch, rejecting unsafe paths, permissions,
+unstable reads and undeclared loading.
+
+Rationale: A fixed entry-point path does not prove which transitive source
+bytes will participate in execution.
+
+## PILOT-DEC-033 — Local Release Attestation Binds Exact Source Bytes
+
+Date: 2026-07-29
+
+Decision: Require an Ed25519 release attestation for the exact canonical
+worker artifact, configure only its public trust descriptor and omit the
+generated private key from FDOS and the child protocol.
+
+Rationale: Content addressing detects difference but does not state which
+artifact the local experiment admits as its release.
+
+## PILOT-DEC-034 — Parent Verification and Child Digest Observation Are Distinct
+
+Date: 2026-07-29
+
+Decision: Let the parent verify release trust before spawn, bind that release
+in protocol 1.2 and require the child to report only an exact local digest
+match. Do not describe the child as independently verifying the signer.
+
+Rationale: Accurate evidence must distinguish release authorization from the
+source state observed in the launched process.
+
+## PILOT-DEC-035 — Signed Mutable Source Is Not Immutable Deployment
+
+Date: 2026-07-29
+
+Decision: Keep immutable packaging, atomic deployment, protected trust,
+workload identity and same-account race protection open as separate promotion
+gates.
+
+Rationale: A signature over a development worktree detects drift but neither
+locks the source across launch nor protects a repository-local trust anchor
+from an actor already able to replace the repository.

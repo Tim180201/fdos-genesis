@@ -17,6 +17,10 @@ Related Decisions:
 - `ADR-0046_Connector_Contract_and_Durable_Outbox_Experiment.md`
 - `ADR-0048_Process_Separated_Dry_Run_Worker_Experiment.md`
 
+Subsequent Decision:
+
+- `ADR-0050_Signed_Worker_Source_Artifact_Experiment.md`
+
 ## Decision
 
 The Level 1 dry-run worker may have one optional Darwin-only launch mode that
@@ -163,7 +167,8 @@ Negative:
 - child probes cover selected operations, not every possible network or write
   path;
 - the worker and host still share one trusted account;
-- the launcher/worker/runtime are not signed immutable artifacts;
+- ADR-0050 signs the closed worker source graph, but launcher, runtime and
+  deployment remain mutable and are not independently attested;
 - the response and probe result are not independently authenticated;
 - trusted-host and privileged-attacker risks remain;
 - behavior is validated only on the recorded local host/runtime.
@@ -178,7 +183,7 @@ One real read-only connector requires a separate decision and evidence for:
 - explicit outbound destination allowlisting and DNS/TLS policy;
 - filesystem read restrictions and CPU, memory, process and time budgets;
 - independently authenticated workload identity and signed response;
-- signed immutable worker artifact and trusted deployment chain;
+- immutable packaged worker artifact and externally protected deployment chain;
 - secrets-vault controls;
 - service-specific schemas, idempotency, rate and cost policy;
 - monitoring, incident response and Human Governance approval.
