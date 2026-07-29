@@ -477,3 +477,52 @@ network replay state as separate promotion gates.
 Rationale: The mutable bootstrap self-issues the launch key. Possession of
 that key authenticates one local response but does not prove which immutable
 workload or infrastructure identity created it.
+
+## PILOT-DEC-046 — Retain a Minimized Verified Worker Receipt
+
+Date: 2026-07-29
+
+Decision: After every accepted process-worker clean exit, retain one closed
+self-digested receipt binding request, response, package, session, isolation
+and parent-verification evidence without raw parameters, challenge, public key
+or signature.
+
+Rationale: A result digest alone cannot explain after restart which transient
+verification gates passed, while retaining the full envelope would expand the
+general audit data surface unnecessarily.
+
+## PILOT-DEC-047 — Separate Generic and Verified Worker Outcomes
+
+Date: 2026-07-29
+
+Decision: Admit receipts only through the distinct signed
+`outbox.record-worker-outcome` operation. Keep the generic outcome command,
+but reject any receipt field on it.
+
+Rationale: A typed Connector outcome must not silently acquire the stronger
+meaning of a locally verified process-worker execution.
+
+## PILOT-DEC-048 — Reconstruct the Protocol Response from the Receipt
+
+Date: 2026-07-29
+
+Decision: Retain every minimized field required to rebuild the exact unsigned
+protocol 1.4 response and require its SHA-256 digest to match during initial
+admission and event replay.
+
+Rationale: A self-digest alone detects mutation but does not prove that the
+receipt's separate package, session and isolation claims describe the response
+whose digest was accepted.
+
+## PILOT-DEC-049 — Receipt Authentication Is Local, Not Independent
+
+Date: 2026-07-29
+
+Decision: Bind the receipt to the exact authenticated Connector Invocation and
+hash-chained transaction while explicitly withholding any independently
+signed workload- or audit-proof claim.
+
+Rationale: The full workload envelope is omitted and the mutable local parent
+constructs the receipt. Connector command authentication improves attribution
+and replay integrity but cannot replace external workload identity or
+independent attestation.

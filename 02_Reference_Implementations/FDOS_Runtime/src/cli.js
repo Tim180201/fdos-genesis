@@ -131,6 +131,8 @@ async function runOutboxDemo({ sandbox = false } = {}) {
         intentDigest: result.delivery.intent.digest,
         resultDigest:
           result.delivery.lastOutcome?.evidence?.resultDigest || null,
+        workerReceiptDigest:
+          result.delivery.workerReceipt?.digest || null,
         externalEffect:
           result.delivery.lastOutcome?.evidence?.externalEffect || null
       },
@@ -202,12 +204,21 @@ async function runOutboxDemo({ sandbox = false } = {}) {
         requestDigest: result.worker.requestDigest,
         responseDigest: result.worker.responseDigest,
         responseEnvelopeDigest:
-          result.worker.responseEnvelopeDigest
+          result.worker.responseEnvelopeDigest,
+        receiptDigest:
+          result.worker.workerReceipt.digest
       },
       evidence: {
         bundleDigest: result.evidence.bundleDigest,
         deliveryCount: result.evidence.deliveries.length,
-        eventReferenceCount: result.evidence.eventReferences.length
+        eventReferenceCount: result.evidence.eventReferences.length,
+        workerReceiptDigest:
+          result.evidence.deliveries[0]?.workerReceipt?.digest ||
+          null,
+        workerReceiptCommandDigest:
+          result.evidence.deliveries[0]
+            ?.workerReceiptAuthentication?.commandDigest ||
+          null
       },
       audit: {
         eventCount: result.audit.length,

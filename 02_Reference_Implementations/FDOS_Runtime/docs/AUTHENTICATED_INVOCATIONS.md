@@ -142,8 +142,8 @@ The current runtime accepts:
 
 - humans;
 - active registered Agent Instances;
-- active registered Connector Instances only for `outbox.claim` and
-  `outbox.record-outcome`.
+- active registered Connector Instances only for `outbox.claim`,
+  `outbox.record-outcome` and `outbox.record-worker-outcome`.
 
 Connector principals remain denied for workflows, tasks, approvals, memory,
 general Outbox reads, audit and evidence export.

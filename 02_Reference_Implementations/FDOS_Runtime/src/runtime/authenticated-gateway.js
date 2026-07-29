@@ -71,6 +71,11 @@ async function dispatch(runtime, command, actor) {
       return runtime.claimDelivery({ ...payload, actor });
     case "outbox.record-outcome":
       return runtime.recordDeliveryOutcome({ ...payload, actor });
+    case "outbox.record-worker-outcome":
+      return runtime.recordVerifiedWorkerOutcome({
+        ...payload,
+        actor
+      });
     case "outbox.reconcile-expired":
       return runtime.reconcileExpiredDelivery({ ...payload, actor });
     case "outbox.retry":

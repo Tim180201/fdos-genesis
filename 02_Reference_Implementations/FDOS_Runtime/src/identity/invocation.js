@@ -219,6 +219,16 @@ const commandPayloadSchemas = Object.freeze({
     ],
     optional: []
   },
+  "outbox.record-worker-outcome": {
+    required: [
+      "claimId",
+      "deliveryId",
+      "evidence",
+      "outcome",
+      "workerReceipt"
+    ],
+    optional: []
+  },
   "outbox.reconcile-expired": {
     required: ["deliveryId"],
     optional: []

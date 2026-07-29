@@ -63,6 +63,10 @@ promotion and not a production approval.
 | Canonical Ed25519 worker-response envelope | Tested with fault injection | Level 1 — Experimental | `EV-FDOS-WORKLOAD-SESSION-011` | Pending | No external attestation or transport |
 | Response/result session cross-binding | Tested with valid-signature confusion fault | Level 1 — Experimental | `EV-FDOS-WORKLOAD-SESSION-011` | Pending | Mutable parent/bootstrap remain TCB |
 | Non-exported one-use session-key boundary | Tested by API and output inspection | Level 1 — Experimental | `EV-FDOS-WORKLOAD-SESSION-011` | Pending | No secure erasure or host-memory protection |
+| Closed Verified Worker Receipt | Tested locally | Level 1 — Experimental | `EV-FDOS-WORKER-RECEIPT-012` | Pending | Local parent assertion / full envelope omitted |
+| Receipt protocol-response reconstruction | Tested with digest and shape tampering | Level 1 — Experimental | `EV-FDOS-WORKER-RECEIPT-012` | Pending | Does not reconstruct the signed envelope |
+| Authenticated receipt-backed outcome command | Tested with command separation and claim binding | Level 1 — Experimental | `EV-FDOS-WORKER-RECEIPT-012` | Pending | Connector key custody remains local |
+| Durable receipt and Invocation evidence projection | Tested across SQLite restart | Level 1 — Experimental | `EV-FDOS-WORKER-RECEIPT-012` | Pending | Not independently signed audit evidence |
 | TapTime/Company AI adoption assessment | Tested as documentation/evidence | Level 1 — Experimental | exact reference manifests | Pending | Not applicable |
 
 ## Promotion Rule

@@ -820,6 +820,30 @@ test("registered connector can claim only its delivery and record only content-m
   );
   assert.equal(harness.gateway.status().outbox.claimed, 1);
 
+  assert.throws(
+    () =>
+      harness.execute(
+        connector,
+        "outbox.record-outcome",
+        {
+          deliveryId: delivery.id,
+          claimId: claimed.claim.id,
+          outcome: "simulated",
+          evidence: {
+            externalEffect: "none",
+            resultDigest: digestObject({
+              result: "bounded"
+            })
+          },
+          workerReceipt: {
+            rawResponse: "cannot-upgrade-generic-outcome"
+          }
+        }
+      ),
+    ValidationError
+  );
+  assert.equal(harness.gateway.status().outbox.claimed, 1);
+
   const completed = await harness.execute(
     connector,
     "outbox.record-outcome",
@@ -1361,6 +1385,24 @@ test("authenticated outbox demo completes with no network or external effect", a
     result.delivery.intent.digest
   );
   assert.equal(
+    result.delivery.workerReceipt.digest,
+    result.worker.workerReceipt.digest
+  );
+  assert.equal(
+    result.evidence.deliveries[0].workerReceipt.digest,
+    result.worker.workerReceipt.digest
+  );
+  assert.equal(
+    result.evidence.deliveries[0]
+      .workerReceiptAuthentication.operation,
+    "outbox.record-worker-outcome"
+  );
+  assert.equal(
+    result.evidence.deliveries[0]
+      .workerReceiptAuthentication.principalId,
+    connector.id
+  );
+  assert.equal(
     result.evidence.eventReferences.some(
       (event) =>
         event.type === "connector.delivery.outcome-recorded" &&
@@ -1370,7 +1412,7 @@ test("authenticated outbox demo completes with no network or external effect", a
   );
   assert.doesNotMatch(
     JSON.stringify(result.evidence),
-    /repositoryId|bound-local-demo/
+    /repositoryId|bound-local-demo|publicKeyPem|signature/
   );
   assert.equal(result.worker.workerBoundary.processSeparated, true);
   assert.equal(
@@ -1384,4 +1426,33 @@ test("authenticated outbox demo completes with no network or external effect", a
   assert.equal(result.status.externalActionsEnabled, false);
   assert.equal(result.status.connectorNetworkAccessEnabled, false);
   assert.equal(result.status.connectorExternalEffectsEnabled, false);
+
+  await harness.gateway.close();
+  await harness.openGateway();
+  const rehydratedDelivery = await harness.execute(
+    owner,
+    "outbox.get",
+    { deliveryId: result.delivery.id }
+  );
+  assert.equal(rehydratedDelivery.status, "simulated");
+  assert.equal(
+    rehydratedDelivery.workerReceipt.digest,
+    result.worker.workerReceipt.digest
+  );
+  const rehydratedEvidence = await harness.execute(
+    owner,
+    "evidence.export",
+    { runId: result.run.id }
+  );
+  assert.equal(
+    rehydratedEvidence.deliveries[0]
+      .workerReceipt.digest,
+    result.worker.workerReceipt.digest
+  );
+  assert.equal(
+    rehydratedEvidence.deliveries[0]
+      .workerReceiptAuthentication.operation,
+    "outbox.record-worker-outcome"
+  );
+  assert.equal(harness.gateway.verifyIntegrity().valid, true);
 });

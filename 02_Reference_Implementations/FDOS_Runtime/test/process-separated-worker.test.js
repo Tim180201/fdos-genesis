@@ -20,7 +20,8 @@ import {
   ProcessSeparatedDryRunWorker,
   ValidationError,
   verifyDryRunWorkerRequest,
-  verifyDryRunWorkerResponse
+  verifyDryRunWorkerResponse,
+  verifyVerifiedWorkerReceipt
 } from "../src/index.js";
 import { controlledClock } from "../test-support/helpers.js";
 
@@ -561,12 +562,13 @@ test(
 
     const recorded = await harness.execute(
       connector,
-      "outbox.record-outcome",
+      "outbox.record-worker-outcome",
       {
         deliveryId: delivery.deliveryId,
         claimId: result.claimId,
         outcome: result.outcome.type,
-        evidence: result.outcome.evidence
+        evidence: result.outcome.evidence,
+        workerReceipt: result.workerReceipt
       }
     );
     assert.equal(recorded.status, "simulated");
@@ -646,6 +648,63 @@ test("separate worker completes one authenticated outbox run with content-minimi
   assert.match(
     result.responseEnvelopeDigest,
     /^sha256:[0-9a-f]{64}$/
+  );
+  assert.equal(
+    verifyVerifiedWorkerReceipt(result.workerReceipt),
+    true
+  );
+  assert.equal(
+    result.workerReceipt.response.envelopeDigest,
+    result.responseEnvelopeDigest
+  );
+  assert.equal(
+    result.workerReceipt.response.digest,
+    result.responseDigest
+  );
+  assert.equal(
+    result.workerReceipt.response.resultDigest,
+    result.outcome.evidence.resultDigest
+  );
+  assert.equal(
+    result.workerReceipt.request.deliveryIntentDigest,
+    delivery.claimed.intent.digest
+  );
+  const changedReceiptResponse = mutableClone(
+    result.workerReceipt
+  );
+  changedReceiptResponse.response.digest = digestObject({
+    response: "receipt-tamper"
+  });
+  assert.throws(
+    () =>
+      verifyVerifiedWorkerReceipt(
+        redigest(changedReceiptResponse)
+      ),
+    IntegrityError
+  );
+  const changedReceiptPackage = mutableClone(
+    result.workerReceipt
+  );
+  changedReceiptPackage.workerPackage.packageDigest =
+    digestObject({ package: "receipt-tamper" });
+  assert.throws(
+    () =>
+      verifyVerifiedWorkerReceipt(
+        redigest(changedReceiptPackage)
+      ),
+    IntegrityError
+  );
+  const falseCleanExit = mutableClone(
+    result.workerReceipt
+  );
+  falseCleanExit.verification.cleanProcessExitVerified =
+    false;
+  assert.throws(
+    () =>
+      verifyVerifiedWorkerReceipt(
+        redigest(falseCleanExit)
+      ),
+    IntegrityError
   );
   assert.equal(
     new Date(result.completedAt).toISOString(),
@@ -790,17 +849,73 @@ test("separate worker completes one authenticated outbox run with content-minimi
     status.networkAccess = true;
   }, TypeError);
 
+  const unexpectedRawField = mutableClone(
+    result.workerReceipt
+  );
+  unexpectedRawField.signature = "must-not-be-retained";
+  await assert.rejects(
+    () =>
+      harness.execute(
+        connector,
+        "outbox.record-worker-outcome",
+        {
+          deliveryId: delivery.deliveryId,
+          claimId: result.claimId,
+          outcome: result.outcome.type,
+          evidence: result.outcome.evidence,
+          workerReceipt: unexpectedRawField
+        }
+      ),
+    ValidationError
+  );
+
+  const wrongClaimAttempt = mutableClone(
+    result.workerReceipt
+  );
+  wrongClaimAttempt.request.claimAttempt += 1;
+  const redigestedWrongClaimAttempt =
+    redigest(wrongClaimAttempt);
+  await assert.rejects(
+    () =>
+      harness.execute(
+        connector,
+        "outbox.record-worker-outcome",
+        {
+          deliveryId: delivery.deliveryId,
+          claimId: result.claimId,
+          outcome: result.outcome.type,
+          evidence: result.outcome.evidence,
+          workerReceipt:
+            redigestedWrongClaimAttempt
+        }
+      ),
+    ValidationError
+  );
+
+  const stillClaimed = await harness.execute(
+    owner,
+    "outbox.get",
+    { deliveryId: delivery.deliveryId }
+  );
+  assert.equal(stillClaimed.status, "claimed");
+  assert.equal(stillClaimed.workerReceipt, null);
+
   const recorded = await harness.execute(
     connector,
-    "outbox.record-outcome",
+    "outbox.record-worker-outcome",
     {
       deliveryId: delivery.deliveryId,
       claimId: result.claimId,
       outcome: result.outcome.type,
-      evidence: result.outcome.evidence
+      evidence: result.outcome.evidence,
+      workerReceipt: result.workerReceipt
     }
   );
   assert.equal(recorded.status, "simulated");
+  assert.equal(
+    recorded.workerReceipt.digest,
+    result.workerReceipt.digest
+  );
   await harness.execute(operations, "task.complete", {
     taskId: delivery.taskId,
     result: {
@@ -820,9 +935,28 @@ test("separate worker completes one authenticated outbox run with content-minimi
     evidence.deliveries[0].resultDigest,
     result.outcome.evidence.resultDigest
   );
+  assert.equal(
+    evidence.deliveries[0].workerReceipt.digest,
+    result.workerReceipt.digest
+  );
+  assert.equal(
+    evidence.deliveries[0]
+      .workerReceiptAuthentication.operation,
+    "outbox.record-worker-outcome"
+  );
+  assert.equal(
+    evidence.deliveries[0]
+      .workerReceiptAuthentication.principalId,
+    connector.id
+  );
+  assert.match(
+    evidence.deliveries[0]
+      .workerReceiptAuthentication.commandDigest,
+    /^sha256:[0-9a-f]{64}$/
+  );
   assert.doesNotMatch(
     JSON.stringify(evidence),
-    /repositoryId|process-bound-test/
+    /repositoryId|process-bound-test|publicKeyPem|signature/
   );
 });
 

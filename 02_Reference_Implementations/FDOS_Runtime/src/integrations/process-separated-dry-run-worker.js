@@ -37,6 +37,9 @@ import {
   verifyAuthenticatedWorkerResponse,
   WORKLOAD_SESSION_MODE
 } from "../domain/workload-session-contract.js";
+import {
+  createVerifiedWorkerReceipt
+} from "../domain/verified-worker-receipt.js";
 
 const WORKER_BOOTSTRAP_FILE = fileURLToPath(
   new URL("../workers/dry-run-worker-bootstrap.js", import.meta.url)
@@ -483,6 +486,7 @@ export class ProcessSeparatedDryRunWorker {
         let authenticatedResponse;
         let response;
         let workloadSession;
+        let workerReceipt;
         try {
           authenticatedResponse = JSON.parse(source);
           if (
@@ -521,6 +525,15 @@ export class ProcessSeparatedDryRunWorker {
               "Worker response session differs from its authenticated envelope."
             );
           }
+          workerReceipt = createVerifiedWorkerReceipt({
+            request,
+            response,
+            responseEnvelopeDigest:
+              authenticatedResponse.digest,
+            workerBoundary: response.workerBoundary,
+            workloadSession,
+            claimAttempt: delivery.claim.attempt
+          });
         } catch (error) {
           reject(
             new IntegrityError(
@@ -549,7 +562,8 @@ export class ProcessSeparatedDryRunWorker {
             completedAt: response.completedAt,
             outcome: response.outcome,
             workerBoundary: response.workerBoundary,
-            workloadSession
+            workloadSession,
+            workerReceipt
           })
         );
       });

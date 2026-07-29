@@ -50,6 +50,9 @@ import {
   normalizeDeliveryOutcome
 } from "../domain/delivery-intent.js";
 import {
+  assertVerifiedWorkerReceiptBinding
+} from "../domain/verified-worker-receipt.js";
+import {
   PersonalityRegistry,
   PILOT_PERSONALITY_DEFINITIONS
 } from "../domain/personality-profile.js";
@@ -68,7 +71,8 @@ const MAX_MEMORY_BYTES = 32 * 1024;
 const MAX_SOURCE_EVIDENCE_BYTES = 32 * 1024;
 const CONNECTOR_WORKER_OPERATIONS = new Set([
   "outbox.claim",
-  "outbox.record-outcome"
+  "outbox.record-outcome",
+  "outbox.record-worker-outcome"
 ]);
 const OUTBOX_STATUSES = Object.freeze([
   "cancelled",
@@ -183,8 +187,19 @@ function taskEvidence(task) {
   };
 }
 
-function deliveryEvidence(delivery) {
+function deliveryEvidence(delivery, acceptedInvocations) {
   const outcomeEvidence = delivery.lastOutcome?.evidence || null;
+  const workerReceipt = delivery.workerReceipt || null;
+  const workerInvocation = workerReceipt
+    ? acceptedInvocations.get(
+        delivery.workerReceiptInvocationId
+      )
+    : null;
+  if (workerReceipt && !workerInvocation) {
+    throw new IntegrityError(
+      "Verified worker receipt has no authenticated invocation."
+    );
+  }
   return {
     deliveryId: delivery.id,
     taskId: delivery.intent.task.id,
@@ -207,7 +222,30 @@ function deliveryEvidence(delivery) {
       null,
     resolutionEvidenceDigest:
       delivery.resolution?.evidenceDigest || null,
-    externalEffect: outcomeEvidence?.externalEffect || null
+    externalEffect: outcomeEvidence?.externalEffect || null,
+    workerReceipt: workerReceipt
+      ? jsonClone(workerReceipt)
+      : null,
+    workerReceiptAuthentication: workerInvocation
+      ? {
+          invocationId: workerInvocation.invocationId,
+          correlationId: workerInvocation.correlationId,
+          operation: workerInvocation.operation,
+          principalId: workerInvocation.principal.id,
+          commandDigest: workerInvocation.commandDigest,
+          invocationEnvelopeDigest:
+            workerInvocation.envelopeDigest,
+          invocationReceiptDigest:
+            workerInvocation.receiptDigest,
+          issuerId: workerInvocation.issuerId,
+          keyId: workerInvocation.keyId,
+          authenticationMethod:
+            workerInvocation.authenticationMethod,
+          authenticationAssurance:
+            workerInvocation.authenticationAssurance,
+          verifiedAt: workerInvocation.verifiedAt
+        }
+      : null
   };
 }
 
@@ -1306,7 +1344,12 @@ export class FdosRuntime {
     const evidenceBaseHeadHash = this.#eventLog.lastHash();
     const deliveries = [...this.#state.outbox.values()]
       .filter((delivery) => delivery.intent.task.runId === run.id)
-      .map(deliveryEvidence)
+      .map((delivery) =>
+        deliveryEvidence(
+          delivery,
+          this.#state.acceptedInvocations
+        )
+      )
       .sort((left, right) =>
         left.deliveryId.localeCompare(right.deliveryId)
       );
@@ -1809,6 +1852,8 @@ export class FdosRuntime {
         maxAttempts: intent.connector.maxAttempts,
         claim: null,
         lastOutcome: null,
+        workerReceipt: null,
+        workerReceiptInvocationId: null,
         resolution: null,
         retryable: false,
         createdAt: requestedAt,
@@ -1965,17 +2010,38 @@ export class FdosRuntime {
     });
   }
 
-  async recordDeliveryOutcome({
-    actor,
-    deliveryId,
-    claimId,
-    outcome,
-    evidence
-  }) {
+  recordDeliveryOutcome(options) {
+    return this.#recordDeliveryOutcome(
+      options,
+      "outbox.record-outcome",
+      false
+    );
+  }
+
+  recordVerifiedWorkerOutcome(options) {
+    return this.#recordDeliveryOutcome(
+      options,
+      "outbox.record-worker-outcome",
+      true
+    );
+  }
+
+  async #recordDeliveryOutcome(
+    {
+      actor,
+      deliveryId,
+      claimId,
+      outcome,
+      evidence,
+      workerReceipt = null
+    },
+    operation,
+    workerReceiptRequired
+  ) {
     return this.mutate(async () => {
       const connector = this.authenticatedConnectorActor(
         actor,
-        "outbox.record-outcome"
+        operation
       );
       const delivery = this.findDelivery(deliveryId);
       if (delivery.intent.connector.id !== connector.id) {
@@ -2040,6 +2106,22 @@ export class FdosRuntime {
         recordedBy: connector.id,
         recordedAt
       };
+      if (!workerReceiptRequired && workerReceipt !== null) {
+        throw new ValidationError(
+          "Generic delivery outcomes cannot claim worker verification."
+        );
+      }
+      const normalizedWorkerReceipt = workerReceiptRequired
+        ? assertVerifiedWorkerReceiptBinding(
+            workerReceipt,
+            {
+              delivery,
+              claim: delivery.claim,
+              outcome: normalizedOutcome,
+              recordedAt
+            }
+          )
+        : null;
       await this.append(
         "connector.delivery.outcome-recorded",
         connector,
@@ -2047,7 +2129,13 @@ export class FdosRuntime {
         {
           deliveryId: delivery.id,
           claimId: normalizedClaimId,
-          outcome: normalizedOutcome
+          outcome: normalizedOutcome,
+          ...(normalizedWorkerReceipt
+            ? {
+                workerReceipt:
+                  normalizedWorkerReceipt
+              }
+            : {})
         }
       );
       return jsonClone(this.findDelivery(delivery.id));
@@ -2449,7 +2537,12 @@ export class FdosRuntime {
     const integrity = this.#eventLog.verify();
     const deliveries = [...this.#state.outbox.values()]
       .filter((delivery) => delivery.intent.task.runId === run.id)
-      .map(deliveryEvidence)
+      .map((delivery) =>
+        deliveryEvidence(
+          delivery,
+          this.#state.acceptedInvocations
+        )
+      )
       .sort((left, right) =>
         left.deliveryId.localeCompare(right.deliveryId)
       );

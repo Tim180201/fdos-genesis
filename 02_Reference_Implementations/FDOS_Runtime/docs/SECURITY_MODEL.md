@@ -92,6 +92,9 @@ authenticated gateway and is prohibited.
 | Child package differs from parent-verified release | Bootstrap independently repeats package, signature and trust-pin verification before module evaluation; protocol 1.4 requires an exact observation |
 | Worker response is substituted or replayed | Fresh 256-bit parent challenge, fresh one-use Ed25519 session key and exact session/request/response/package signature binding |
 | Valid signature claims another durable session | Parent cross-compares authenticated session evidence with every response-bound observation field |
+| Generic connector outcome is mistaken for verified worker execution | Distinct `outbox.record-worker-outcome` command; generic command rejects receipts; replay verifies exact Invocation operation |
+| Verified worker history loses transient checks after restart | Closed self-digested receipt reconstructs the protocol response and persists package/session/isolation checks with authenticated command metadata |
+| Receipt is moved to another claim or result | Runtime and event replay bind Delivery, claim, attempt, Connector, intent, request window and result digest |
 | Public release key is silently replaced | Verification requires the exact SHA-256 pin of the selected public trust descriptor |
 | Package signature is mistaken for immutable deployment | Explicit repository-fixture and mutable-bootstrap status; no real connector; immutable deployment storage remains a promotion gate |
 | Process separation is mistaken for a sandbox | Process-only mode reports both isolation flags false; exact Darwin-required executions must pass kernel-denial probes |
@@ -182,6 +185,11 @@ probes still produce only a local digest-only simulation.
   independently signed or attested;
 - no secure session-key erasure, host-memory confidentiality, certificate
   chain, revocation or durable network replay ledger exists;
+- the durable worker receipt omits the full envelope, public key and
+  signature; it is authenticated by the local Connector Invocation and is not
+  an independently signed or remotely attested execution proof;
+- a compromised parent, host account or Connector signing key can fabricate
+  locally consistent receipt assertions;
 - no real connector, production outbound allowlist or secret vault;
 - no model-level personality, precedence or prompt-injection evaluation;
 - Operating Profile digests are not yet bound into model-output evidence;

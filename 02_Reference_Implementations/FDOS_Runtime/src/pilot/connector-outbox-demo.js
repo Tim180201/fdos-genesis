@@ -142,12 +142,13 @@ export async function executeConnectorOutboxDryRunDemo({
     authority,
     principals.connector,
     correlationId,
-    "outbox.record-outcome",
+    "outbox.record-worker-outcome",
     {
       deliveryId: prepared.delivery.id,
       claimId: claimed.claim.id,
       outcome: workerResult.outcome.type,
-      evidence: workerResult.outcome.evidence
+      evidence: workerResult.outcome.evidence,
+      workerReceipt: workerResult.workerReceipt
     }
   );
   await invoke(

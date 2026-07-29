@@ -54,6 +54,10 @@ system with a small pilot:
 - a fresh bootstrap-generated one-use Ed25519 response key for every launch;
 - canonical session/request/response signing and exact parent-side session
   observation cross-binding;
+- one closed Verified Worker Receipt per accepted process result;
+- a distinct authenticated receipt-backed outcome command;
+- durable receipt replay validation and minimized Invocation authentication
+  evidence;
 - process-separated local connector simulation with bounded I/O and timeout;
 - optional Darwin-only network and filesystem-write denial with exact
   launcher/policy digest and in-worker denial probes;
@@ -79,6 +83,8 @@ system with a small pilot:
   externally protected release trust;
 - secure workload-session key erasure, host-memory confidentiality,
   certificate revocation or a network replay ledger;
+- independently signed retained worker receipts or offline workload-signature
+  verification;
 - external-effect transaction or service-side idempotency;
 - database migration, backup, restore or encryption;
 - production support for the evolving synchronous `node:sqlite` dependency;
@@ -128,6 +134,12 @@ The pilot is technically complete when:
     session observation fail closed without an Outbox outcome;
 22. the private session key never crosses a serialization boundary;
 23. no change occurred outside the FDOS repository.
+24. every accepted process-worker outcome records a closed receipt through the
+    distinct authenticated worker-outcome command;
+25. receipt replay reconstructs the exact protocol response and rebinds the
+    Delivery, fencing claim, attempt, intent and result;
+26. receipt and workflow evidence contain no raw parameters, challenge,
+    public key or signature.
 
 ## Reference Assessment
 

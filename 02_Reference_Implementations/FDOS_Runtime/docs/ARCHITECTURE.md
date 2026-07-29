@@ -44,6 +44,7 @@ FDOS Runtime
         │     -> fresh challenge-bound Ed25519 workload session
         │     -> optional Darwin network/write deny profile
         │     -> verified denial probes + signed digest-only response
+        │     -> durable minimized Verified Worker Receipt
         │
         ▼
 Transactional SQLite Event Store
@@ -178,6 +179,11 @@ contract/operation digests, normalized parameters and scoped idempotency.
 A signed Connector Instance can only claim its own delivery and report the
 active fencing claim outcome. Lease expiry becomes uncertain. Retry,
 cancellation and uncertainty resolution remain Human Governance actions.
+
+A generic digest-only outcome and a receipt-backed verified-worker outcome
+use separate authenticated commands. The latter reconstructs the exact
+protocol response from a closed minimized receipt, binds it to the live claim
+and persists it with the Connector Invocation authentication metadata.
 
 No contract in this slice can open a network or record an external effect.
 

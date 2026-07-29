@@ -9,6 +9,7 @@ Production Status: Not Production Ready
 Related Decision:
 
 - `../../../00_Specification/ADR/ADR-0052_Ephemeral_Workload_Session_and_Authenticated_Response_Experiment.md`
+- `../../../00_Specification/ADR/ADR-0053_Durable_Verified_Worker_Receipt_Experiment.md`
 
 ## Purpose
 
@@ -34,7 +35,8 @@ parent verifies signed worker package
   -> child emits one canonical authenticated envelope
   -> parent verifies envelope digest, session, package and signature
   -> parent verifies protocol response and exact session cross-binding
-  -> clean exit permits digest-only Outbox outcome recording
+  -> clean exit permits minimized Verified Worker Receipt construction
+  -> authenticated Connector command binds receipt to the Outbox outcome
 ```
 
 ## Challenge
@@ -158,6 +160,11 @@ authenticating one session while the durable result claims another.
 The observation is meaningful only together with parent verification of the
 full envelope. By itself it is not an attestation.
 
+The accepted observation is now retained inside a closed Verified Worker
+Receipt together with response, envelope, package, isolation and parent-check
+digests. The full challenge, public key and signature remain omitted. See
+`VERIFIED_WORKER_RECEIPT.md`.
+
 ## Protocol 1.4 Acceptance
 
 The parent accepts a result only after all existing package, request,
@@ -189,6 +196,11 @@ workloadSession.externallyAttested: false
 
 No signature or public key is copied into the stable runtime result.
 
+After clean exit, the parent constructs one self-digested receipt. The runtime
+reconstructs the exact protocol response from that receipt and binds it to the
+active Delivery, fencing claim, attempt, Connector Instance, Delivery Intent
+and result digest before the authenticated worker-outcome command may commit.
+
 ## Fault Evidence
 
 `session-challenge-mismatch` gives the real bootstrap one challenge and binds
@@ -217,6 +229,7 @@ This slice does not establish:
 - HSM, KMS, enclave or hardware-backed session keys;
 - secure memory erasure or confidentiality from the host account;
 - authenticated transport between different hosts;
+- an independently signed retained worker receipt;
 - durable nonce/replay state for a network service;
 - certificate expiry, revocation or transparency;
 - a supported portable sandbox;

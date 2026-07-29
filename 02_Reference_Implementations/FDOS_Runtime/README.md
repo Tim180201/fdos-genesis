@@ -15,7 +15,10 @@ closed source graph, Ed25519 release and pinned public trust anchor. The fixed
 entry point is then evaluated from the verified in-memory module strings. For
 every launch, the parent creates a fresh random challenge and the verified
 bootstrap creates a fresh one-use Ed25519 response key. Protocol 1.4
-authenticates the exact session, request, response and package binding. On
+authenticates the exact session, request, response and package binding. After
+clean exit, a closed Verified Worker Receipt retains the minimized request,
+response, package, session and isolation evidence through a distinct
+authenticated Connector command. On
 Darwin, one optional experimental mode additionally denies
 network socket operations and new filesystem writes through the operating
 system and requires in-worker denial probes before accepting a result. The
@@ -60,6 +63,12 @@ which order, within which information scope and under which approval.
   request and response digests;
 - exact parent cross-verification between the authenticated session and the
   minimized session observation in the response/result digest;
+- a self-digested Verified Worker Receipt that reconstructs the exact protocol
+  response without retaining parameters, challenge, public key or signature;
+- a distinct authenticated `outbox.record-worker-outcome` command that binds
+  the receipt to the active Delivery, claim, attempt, intent and result;
+- durable receipt replay validation and content-minimized Invocation
+  authentication metadata in workflow evidence;
 - a shell-free child process with a minimal environment, bounded input/output
   and hard timeout;
 - an optional Darwin-only, fail-closed `sandbox-exec` launch that binds the
@@ -123,7 +132,9 @@ outcome recording. It performs no network operation and records
 pilot worker package and pinned trust anchor. The child bootstrap repeats that
 verification before evaluating the exact package modules from memory. It then
 creates a fresh one-use response key. The parent accepts only the signed
-challenge- and package-bound response envelope.
+challenge- and package-bound response envelope, constructs its minimized
+receipt after clean exit and records it through the distinct authenticated
+worker-outcome command.
 
 The default process-only worker reports `networkIsolationEnforced: false`.
 Process separation alone is not a sandbox.
@@ -154,7 +165,8 @@ node src/cli.js reference-snapshot company-ai /absolute/path/to/company-ai-platf
 - `src/identity/` — signed Invocation Contexts and public-key verification;
 - `src/domain/` — roles, personality profiles, action and delivery intents,
   connector contracts, worker package and release contracts, policy and
-  workflow definitions, plus the ephemeral workload-session contract;
+  workflow definitions, plus the ephemeral workload-session and verified-
+  worker-receipt contracts;
 - `src/runtime/` — authenticated gateway, coordination, approvals and memory;
 - `src/integrations/` — read-only reference and process-worker boundaries;
 - `src/workers/` — verifier bootstrap, closed dry-run protocol and packaged
@@ -175,6 +187,7 @@ See:
 - `docs/SIGNED_WORKER_SOURCE_ARTIFACT.md`
 - `docs/VERIFIED_WORKER_PACKAGE.md`
 - `docs/AUTHENTICATED_WORKLOAD_SESSION.md`
+- `docs/VERIFIED_WORKER_RECEIPT.md`
 - `docs/AGENT_AND_ROLE_MODEL.md`
 - `docs/AGENT_PERSONALITY_MODEL.md`
 - `docs/SECURITY_MODEL.md`
@@ -195,3 +208,6 @@ remain mutable repository-local trusted components. It is not immutable
 deployment, protected release-key custody or independent workload
 attestation. The fresh session key authenticates possession of a key created
 by that mutable bootstrap; it is not an externally issued workload identity.
+The durable receipt is authenticated by the local Connector Invocation and
+hash-chained event history; without the omitted full envelope it is not an
+independently signed workload execution proof.

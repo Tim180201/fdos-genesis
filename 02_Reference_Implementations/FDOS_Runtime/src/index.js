@@ -21,6 +21,11 @@ export {
   verifyDeliveryOutcome
 } from "./domain/delivery-intent.js";
 export {
+  assertVerifiedWorkerReceiptBinding,
+  normalizeVerifiedWorkerReceipt,
+  verifyVerifiedWorkerReceipt
+} from "./domain/verified-worker-receipt.js";
+export {
   DARWIN_NETWORK_ISOLATION_PROVIDER,
   NO_NETWORK_ISOLATION_POLICY_DIGEST,
   NO_NETWORK_ISOLATION_PROVIDER,

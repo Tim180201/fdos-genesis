@@ -56,6 +56,7 @@ Review and validate the Level 1 Company OS Pilot:
 - `04_Evidence/fdos-runtime/EV-FDOS-WORKER-ARTIFACT-009.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-WORKER-PACKAGE-010.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-WORKLOAD-SESSION-011.md`
+- `04_Evidence/fdos-runtime/EV-FDOS-WORKER-RECEIPT-012.md`
 
 The pilot now includes exact read-only Git reference intake for TapTime and
 Company AI, Human-reviewed source provenance and an exclusive local runtime
@@ -81,7 +82,14 @@ exact session, request, response and package, and binds a minimized session
 observation into the durable result. This is local response authentication,
 not independently attested workload identity.
 
-Human Governance should review all eleven evidence records and the remaining
+Technical Slice 12 adds a closed Verified Worker Receipt after clean exit. A
+distinct authenticated Connector command binds its minimized request,
+response, package, session and isolation evidence to the active Delivery and
+claim. The receipt survives restart and enters workflow evidence without raw
+parameters, challenge, public key or signature. It is local authenticated
+audit evidence, not an independently signed workload proof.
+
+Human Governance should review all twelve evidence records and the remaining
 identity, database, recovery, model and isolation limits. The deprecated
 Darwin adapter must be replaced by a supported portable sandbox with outbound
 allowlisting, read/resource restrictions, workload identity, immutable

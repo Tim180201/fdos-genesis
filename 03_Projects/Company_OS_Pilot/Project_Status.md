@@ -1,20 +1,19 @@
 # Company OS Pilot — Project Status
 
-Status: Technical Slice 11 Passed / Human Review Pending
+Status: Technical Slice 12 Passed / Human Review Pending
 Date: 2026-07-29  
 Validation Level: Level 1 — Experimental
 
 ## Current Goal
 
-Deliver and verify one challenge-bound authenticated response from every
-ephemeral worker launch. Bind the exact session, request, response and verified
-package without claiming immutable deployment, protected key custody,
-externally attested workload identity, production isolation or enabling an
-external effect.
+Retain one exact content-minimized Verified Worker Receipt for every accepted
+process-worker result. Bind it durably to the authenticated Connector command,
+active Delivery, fencing claim, request, response, package, session, isolation
+and result without retaining raw parameters, challenge, key or signature.
 
 ## Current Phase
 
-Level 1 authenticated ephemeral workload-session evidence review.
+Level 1 durable verified-worker-receipt evidence review.
 
 ## Exit Criteria
 
@@ -114,7 +113,21 @@ Level 1 authenticated ephemeral workload-session evidence review.
 - [x] external attestation, secure erasure, memory confidentiality and replay
       ledger non-claims documented;
 - [x] ADR, security model, operations guide and Evidence 011 prepared;
-- [ ] Human Governance reviewed Technical Slices 3–11 evidence.
+- [x] closed self-digested Verified Worker Receipt implemented;
+- [x] receipt retains enough minimized structure to reconstruct the exact
+      protocol 1.4 response digest;
+- [x] generic and receipt-backed outcomes separated into exact authenticated
+      commands;
+- [x] runtime binds receipt to Delivery, claim, attempt, Connector, intent,
+      request window and result before commit;
+- [x] event replay requires the exact worker-outcome Invocation operation;
+- [x] receipt and minimized Invocation authentication survive SQLite restart
+      and enter workflow evidence;
+- [x] extra raw fields, wrong attempt and generic receipt smuggling rejected
+      without changing the active claim;
+- [x] worker package, release and protocol identities remained unchanged;
+- [x] ADR, security model, operations guide and Evidence 012 prepared;
+- [ ] Human Governance reviewed Technical Slices 3–12 evidence.
 
 ## Verified Result
 
@@ -218,6 +231,22 @@ Level 1 authenticated ephemeral workload-session evidence review.
 - the session key is self-issued by the mutable bootstrap; no external
   workload-attestation, secure-erasure or host-memory protection claim is
   made;
+- every accepted process-worker outcome retained one closed receipt binding
+  request, response, envelope, package, session, isolation and parent-check
+  digests;
+- receipt verification independently reconstructed the canonical protocol 1.4
+  response digest;
+- the signed `outbox.record-worker-outcome` command, receipt and outcome
+  committed in one authenticated SQLite transaction;
+- generic outcome commands could not carry or claim a worker receipt;
+- wrong-shape and wrong-claim-attempt receipts recorded no outcome and left
+  the delivery claimed;
+- the receipt plus exact Connector Invocation command, envelope and receipt
+  digests survived restart and entered content-minimized workflow evidence;
+- no Delivery parameters, random challenge, workload public key or signature
+  entered the receipt or evidence projection;
+- the receipt remains a local parent/Connector assertion rather than an
+  independently signed or remotely attested execution proof;
 - no real service was contacted and no external effect occurred.
 
 See `Validation_Report.md`,
@@ -230,6 +259,7 @@ See `Validation_Report.md`,
 `Validation_Report_009_Signed_Worker_Artifact.md`,
 `Validation_Report_010_Verified_Worker_Package.md`,
 `Validation_Report_011_Authenticated_Workload_Session.md`,
+`Validation_Report_012_Durable_Verified_Worker_Receipt.md`,
 `Reference_Adoption_Assessment.md` and the evidence records under
 `../../04_Evidence/fdos-runtime/`.
 
@@ -244,10 +274,13 @@ filesystem-write isolation true only after exact in-child denial probes.
 Both paths now require the same deterministic signed package. Parent and
 bootstrap verify it before the fixed entry point is evaluated from memory.
 Each launch also requires a fresh challenge-bound response signature and exact
-session-observation cross-check.
+session-observation cross-check. Every accepted result additionally requires a
+closed receipt recorded through the distinct authenticated worker-outcome
+command and replay-bound to the exact claim.
 The package file, verifier, bootstrap and pilot trust pin are not immutable or
 independently deployed. The session key is created by that mutable bootstrap
-and is not external workload identity. Neither path authorizes a real
+and is not external workload identity. The durable receipt omits the full
+envelope and is not independent workload proof. Neither path authorizes a real
 connector.
 
 Personality is configuration only. No model provider is connected.

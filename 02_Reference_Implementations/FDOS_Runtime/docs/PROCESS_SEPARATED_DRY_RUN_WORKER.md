@@ -13,6 +13,7 @@ Related Decisions:
 - `../../../00_Specification/ADR/ADR-0050_Signed_Worker_Source_Artifact_Experiment.md`
 - `../../../00_Specification/ADR/ADR-0051_Deterministic_Signed_Worker_Package_Experiment.md`
 - `../../../00_Specification/ADR/ADR-0052_Ephemeral_Workload_Session_and_Authenticated_Response_Experiment.md`
+- `../../../00_Specification/ADR/ADR-0053_Durable_Verified_Worker_Receipt_Experiment.md`
 
 ## Purpose
 
@@ -54,7 +55,8 @@ authenticated Operations command
        │
        ▼
   -> parent verifies envelope, response, session cross-binding and clean exit
-  -> authenticated Connector Instance outcome command
+  -> construct closed content-minimized Verified Worker Receipt
+  -> authenticated Connector Instance worker-outcome command
   -> durable simulated delivery
 ```
 
@@ -201,6 +203,19 @@ Output is accepted only when all conditions hold:
 A valid-looking response followed by a non-zero process exit is not accepted.
 This prevents the parent from interpreting a partially acknowledged or
 post-response crash as success.
+
+## Durable Receipt
+
+Only after every acknowledgement rule passes does the parent construct a
+Verified Worker Receipt. It retains the exact request, response, package,
+session, isolation and verification digests needed to reconstruct the
+protocol response, but omits the Delivery parameters, random challenge,
+public key, signature and raw process output.
+
+The distinct `outbox.record-worker-outcome` command signs that receipt through
+the registered Connector Invocation. Runtime admission and event replay bind
+it to the active Delivery, fencing claim, attempt, Connector, Delivery Intent
+and result digest. See `VERIFIED_WORKER_RECEIPT.md`.
 
 ## Failure and Uncertainty
 

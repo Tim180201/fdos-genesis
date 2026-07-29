@@ -6,11 +6,17 @@ import {
   isoDate,
   requiredString
 } from "../kernel/validation.js";
-import { verifyInvocationReceipt } from "../identity/invocation.js";
+import {
+  invocationCommandDigest,
+  verifyInvocationReceipt
+} from "../identity/invocation.js";
 import {
   verifyDeliveryIntent,
   verifyDeliveryOutcome
 } from "../domain/delivery-intent.js";
+import {
+  assertVerifiedWorkerReceiptBinding
+} from "../domain/verified-worker-receipt.js";
 
 export function createRuntimeState() {
   return {
@@ -76,6 +82,18 @@ function exactKeys(value, expected, field) {
 }
 
 function verifyPreparedDelivery(delivery, state, event) {
+  const hasWorkerReceipt =
+    Object.hasOwn(delivery, "workerReceipt");
+  const hasWorkerReceiptInvocationId =
+    Object.hasOwn(delivery, "workerReceiptInvocationId");
+  if (
+    hasWorkerReceipt !==
+      hasWorkerReceiptInvocationId
+  ) {
+    throw new IntegrityError(
+      "Prepared connector delivery receipt state is incomplete."
+    );
+  }
   exactKeys(
     delivery,
     [
@@ -87,6 +105,12 @@ function verifyPreparedDelivery(delivery, state, event) {
       "intent",
       "lastOutcome",
       "maxAttempts",
+      ...(hasWorkerReceipt
+        ? [
+            "workerReceipt",
+            "workerReceiptInvocationId"
+          ]
+        : []),
       "resolution",
       "retryable",
       "status",
@@ -107,6 +131,9 @@ function verifyPreparedDelivery(delivery, state, event) {
     delivery.maxAttempts !== delivery.intent.connector.maxAttempts ||
     delivery.claim !== null ||
     delivery.lastOutcome !== null ||
+    (hasWorkerReceipt &&
+      (delivery.workerReceipt !== null ||
+        delivery.workerReceiptInvocationId !== null)) ||
     delivery.resolution !== null ||
     delivery.retryable !== false ||
     delivery.completedAt !== null ||
@@ -572,26 +599,65 @@ export function applyRuntimeEvent(state, event) {
     }
 
     case "connector.delivery.outcome-recorded": {
+      const hasWorkerReceipt = Object.hasOwn(
+        payload,
+        "workerReceipt"
+      );
       exactKeys(
         payload,
-        ["claimId", "deliveryId", "outcome"],
+        [
+          "claimId",
+          "deliveryId",
+          "outcome",
+          ...(hasWorkerReceipt
+            ? ["workerReceipt"]
+            : [])
+        ],
         "connector delivery outcome payload"
       );
       const delivery = requireDelivery(state, payload.deliveryId);
+      const acceptedInvocation =
+        state.acceptedInvocations.get(
+          event.actor.invocationId
+        );
       if (
         event.subject !== delivery.id ||
         delivery.status !== "claimed" ||
         event.actor.type !== "connector" ||
-        payload.claimId !== delivery.claim.id
+        payload.claimId !== delivery.claim.id ||
+        acceptedInvocation?.operation !==
+          (hasWorkerReceipt
+            ? "outbox.record-worker-outcome"
+            : "outbox.record-outcome")
       ) {
         throw new IntegrityError(
           "Connector delivery outcome has no matching active claim."
         );
       }
       const outcome = verifyDeliveryOutcome(payload.outcome);
+      const outcomeOperation = hasWorkerReceipt
+        ? "outbox.record-worker-outcome"
+        : "outbox.record-outcome";
+      const commandDigest = invocationCommandDigest({
+        type: outcomeOperation,
+        payload: {
+          deliveryId: delivery.id,
+          claimId: payload.claimId,
+          outcome: outcome.type,
+          evidence: outcome.evidence,
+          ...(hasWorkerReceipt
+            ? {
+                workerReceipt:
+                  payload.workerReceipt
+              }
+            : {})
+        }
+      });
       if (
         outcome.recordedBy !== event.actor.id ||
         event.actor.id !== delivery.claim.connectorId ||
+        commandDigest !==
+          acceptedInvocation.commandDigest ||
         Date.parse(outcome.recordedAt) >
           Date.parse(delivery.claim.expiresAt)
       ) {
@@ -599,8 +665,27 @@ export function applyRuntimeEvent(state, event) {
           "Connector delivery outcome violates claim ownership or lease."
         );
       }
+      const workerReceipt = hasWorkerReceipt
+        ? assertVerifiedWorkerReceiptBinding(
+            payload.workerReceipt,
+            {
+              delivery,
+              claim: delivery.claim,
+              outcome,
+              recordedAt: outcome.recordedAt
+            },
+            IntegrityError
+          )
+        : null;
       delivery.status = outcome.type;
       delivery.lastOutcome = jsonClone(outcome);
+      delivery.workerReceipt = workerReceipt
+        ? jsonClone(workerReceipt)
+        : null;
+      delivery.workerReceiptInvocationId =
+        workerReceipt
+          ? event.actor.invocationId
+          : null;
       delivery.claim = null;
       delivery.retryable =
         outcome.type === "failed" && outcome.evidence.retryable;
@@ -660,6 +745,8 @@ export function applyRuntimeEvent(state, event) {
       }
       delivery.status = "uncertain";
       delivery.lastOutcome = jsonClone(outcome);
+      delivery.workerReceipt = null;
+      delivery.workerReceiptInvocationId = null;
       delivery.claim = null;
       delivery.retryable = false;
       delivery.updatedAt = detectedAt;

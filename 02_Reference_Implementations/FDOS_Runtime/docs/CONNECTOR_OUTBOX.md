@@ -29,7 +29,8 @@ claimed FDOS task
   -> authenticated connector claim with lease and fencing ID
   -> exact expiring request to a separate local dry-run process
   -> challenge-bound signed digest-only response accepted only after clean exit
-  -> content-minimized dry-run outcome
+  -> closed content-minimized Verified Worker Receipt
+  -> authenticated receipt-backed dry-run outcome
   -> success, failure or Human Governance uncertainty review
 ```
 
@@ -102,12 +103,12 @@ idempotency evidence before a real adapter is enabled.
 | Principal | Allowed outbox authority |
 |---|---|
 | Active Agent Instance | Prepare from its claimed task; inspect only task-authorized deliveries |
-| Registered Connector Instance | Claim only a delivery bound to its own instance; record only the active claim outcome |
+| Registered Connector Instance | Claim only a delivery bound to its own instance; record only the active claim outcome; use the distinct verified-worker command when presenting a receipt |
 | Human Governance | Inspect, reconcile an expired abandoned claim, authorize failed retry, cancel prepared/failed work and resolve uncertainty |
 
 Connector principals cannot read tasks, memory, approvals, general outbox
-lists or the audit trail. They can invoke only `outbox.claim` and
-`outbox.record-outcome`.
+lists or the audit trail. They can invoke only `outbox.claim`,
+`outbox.record-outcome` and `outbox.record-worker-outcome`.
 
 Every claim has:
 
@@ -147,6 +148,12 @@ The current outcome contract stores only:
 
 Raw connector responses and raw errors are rejected.
 
+The generic outcome command cannot contain a worker receipt. A successful
+process-worker path must use `outbox.record-worker-outcome`, whose exact
+payload includes a closed Verified Worker Receipt. The runtime verifies its
+Delivery, claim, attempt, Connector Instance, Delivery Intent, request window
+and result digest before the event commits.
+
 ## Process Worker
 
 The demo now sends the active claimed delivery to a separate local Node.js
@@ -169,7 +176,8 @@ by a crash is rejected.
 
 The child has no runtime object, database handle or signing key. It cannot
 claim or record a delivery. The parent records an accepted result through the
-existing authenticated Connector principal.
+existing authenticated Connector principal. The exact command, receipt and
+outcome are transactionally linked to the Connector Invocation receipt.
 
 The default process-only path is not an OS sandbox and reports network and
 filesystem-write isolation false.
@@ -190,6 +198,8 @@ See
 are in `VERIFIED_WORKER_PACKAGE.md`; the source-only predecessor remains in
 `SIGNED_WORKER_SOURCE_ARTIFACT.md`. Session authentication is specified in
 `AUTHENTICATED_WORKLOAD_SESSION.md`.
+Durable receipt schema, replay rules and non-claims are specified in
+`VERIFIED_WORKER_RECEIPT.md`.
 
 ## Transaction Semantics
 
@@ -214,9 +224,10 @@ npm run demo:sandbox
 
 The demo completes a two-task Chief of Staff and Operations workflow, prepares
 one delivery, claims it as the registered connector, runs the simulation in a
-separate child process and records the verified digest-only result. Workflow
-evidence includes a content-minimized delivery projection and does not expose
-the exact connector parameters.
+separate child process and records the verified digest-only result plus its
+minimized receipt. Workflow evidence includes the receipt, exact Connector
+Invocation authentication digests and a content-minimized delivery projection
+without the exact connector parameters, workload public key or signature.
 
 Expected invariant:
 

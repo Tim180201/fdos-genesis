@@ -41,97 +41,108 @@ V4 and V5 cannot be claimed for an uncommitted local experiment.
 Baseline commit/tree:
 
 - FDOS commit:
-  `a566463fe083816f842c389128b77e93111bd520`
+  `73e6970019e123d13f34cda43c54106fedde8e31`
 - FDOS tree:
-  `35bb09ea86ce97594dde4389d7ca41b3af75ad22`
-- the authenticated workload-session slice is evaluated as the change from
-  that verified-worker-package baseline;
-- external references are bound separately in
+  `7ff9394bba62350e61e5695e9f408b5e3bd30912`
+- the durable Verified Worker Receipt slice is evaluated as the change from
+  that authenticated workload-session baseline;
+- external references remain bound separately in
   `Reference_Adoption_Assessment.md`.
 
 Changed boundaries:
 
-- fixed package version 2, artifact version 3, entry point and 13-module
-  identities;
-- one closed workload-session, observation, signature-statement and response-
-  envelope contract;
-- canonical 32-byte base64url challenge and 64-byte Ed25519 signature rules;
-- cryptographically random parent challenge generated for every launch;
-- protocol version 1.4 request binding of challenge plus complete package,
-  artifact, attestation, trust, issuer and key identity;
-- bootstrap challenge intake and deletion before packaged code evaluates;
-- fresh Ed25519 key-pair generation only after bootstrap release verification;
-- public-key fingerprint-derived session key ID;
-- private session key retained only inside a one-use bootstrap closure;
-- complete public session binding of challenge and verified package;
-- canonical signature statement binding session, request and response digests;
-- canonical authenticated response envelope with exact envelope digest;
-- response/result-digest binding of minimized key, session, challenge and
-  package-binding digests;
-- parent verification of envelope canonicalization, session, package and
-  signature before protocol-result acceptance;
-- field-by-field parent cross-comparison of authenticated session evidence and
-  durable response observation;
-- stable result exposure of verification digests/booleans without public key,
-  signature, raw challenge or private key;
-- deliberate challenge mismatch, invalid signature and valid-signature
-  session-observation mismatch faults;
-- preservation of the durable claim followed by human-only uncertainty after
-  every new fault;
-- package rebuild/release rotation for the changed admitted source graph;
-- process-only and Darwin demo output for the authenticated session;
-- architecture, security, protocol, package, risk, decision and evidence
+- runtime package version `0.12.0-experimental`;
+- one closed, self-digested Verified Worker Receipt contract;
+- minimized request, response, process, isolation, package, release, session
+  and local parent-verification projections;
+- independent reconstruction of the canonical protocol 1.4 worker-response
+  digest from receipt fields;
+- exact 30-second local parent/runtime clock-skew ceiling;
+- new authenticated `outbox.record-worker-outcome` operation requiring a
+  receipt;
+- explicit separation from generic `outbox.record-outcome`, which rejects a
+  receipt field;
+- exact runtime binding to Delivery, fencing claim, attempt, Connector
+  Instance, Delivery Intent, request window and result digest;
+- event-replay verification of receipt schema, response digest, active claim
+  and accepted Invocation operation;
+- reconstructed delivery state retaining receipt and its Invocation ID;
+- workflow evidence projection of the complete minimized receipt plus
+  Connector Invocation command/envelope/receipt authentication digests;
+- SQLite restart verification for receipt and evidence;
+- adversarial raw-field, command-smuggling and wrong-attempt receipt paths;
+- CLI output of receipt and authenticated command digests;
+- architecture, security, process, Outbox, risk, decision and evidence
   documentation.
+
+Unchanged boundaries:
+
+- worker protocol remains version 1.4;
+- canonical worker package remains version 2 and source artifact version 3;
+- package, artifact, release attestation and trust-anchor digests are
+  unchanged;
+- the full authenticated workload envelope remains transient;
+- connector network access and external effects remain disabled;
+- uncertainty and retry authority remain Human Governance controls.
 
 Risk class: R3.
 
 Rationale:
 
-- workload-session verification controls whether one child response may become
-  durable connector outcome evidence;
-- a predictable/reused challenge, exported key, incomplete signature statement
-  or confused session binding would create a material acknowledgement and
-  execution-identity error;
-- package, parent, bootstrap, verifier, session issuer and pilot trust still
-  run under one mutable trusted account;
-- the experiment remains dry-run and changes no external-effect authority.
+- the receipt determines whether an accepted worker result can be represented
+  as durable verified-worker evidence;
+- incomplete binding could let one claim, result or generic Connector outcome
+  masquerade as another verified execution;
+- retaining raw parameters, public keys or signatures would violate the
+  content-minimization boundary;
+- receipt trust still terminates in the mutable parent and authenticated local
+  Connector principal;
+- the experiment remains no-network/no-effect and changes no external-action
+  authority.
 
 Selected verification and result:
 
 - V0: exact FDOS status/diff, `git diff --check`, navigation,
-  unsupported-claim review, private-material search, package reproducibility
-  and source-manifest verification passed;
-- V1: workload-session contract, bootstrap authority, protocol, packaged
-  worker, process client and CLI syntax checks plus 30 focused
-  artifact/package/process/session cases passed;
-- V2: canonical challenge/key/signature/envelope validation, content and
-  signature tampering, cross-challenge/package replay, second-sign denial,
-  real-child challenge/signature/session-confusion rejection, exact result
-  cross-binding, unchanged Outbox and human-only uncertainty reconciliation
-  passed;
-- V3: complete 140-test runtime regression, 91.09% line / 79.04% branch /
-  92.32% function coverage, internal/outbox/sandbox demos, deterministic
-  13-module package rebuild and final scope review passed;
+  unsupported-claim review, private-material search, package-identity
+  comparison and source-manifest verification selected;
+- V1: receipt, Invocation, gateway, process integration, runtime, state, CLI
+  and pilot syntax checks plus 29 focused Connector/worker cases passed;
+- V2: response-digest reconstruction, closed schemas, extra raw-field
+  rejection, wrong-attempt rejection, generic-command receipt rejection,
+  active-claim preservation, exact authenticated operation binding and SQLite
+  restart/evidence rehydration passed;
+- V3: complete 140-test runtime regression, 91.30% line / 78.96% branch /
+  92.72% function coverage, internal/outbox/sandbox demos and final scope
+  review passed locally;
 - V4: not claimed; no independent exact-commit CI evidence is attached;
 - V5: not claimed and not authorized; no immutable deployment, external
-  workload-identity issuer, protected session memory, independent security
+  workload/audit authority, protected Connector custody, independent security
   review, real service, physical or external operation was exercised.
+
+Receipt coverage:
+
+```text
+verified-worker-receipt.js
+line coverage:     94.26%
+branch coverage:   78.13%
+function coverage: 100.00%
+```
 
 Checks intentionally not run:
 
-- no tests/builds in TapTime or Company AI, because both are read-only
-  references and their repository instructions prohibit or do not authorize
-  write-producing execution;
+- no tests/builds in TapTime or Company AI, because both remain read-only
+  references outside the authorized mutation scope;
 - no external API/model/connector test, because the contract enforces
   `networkAccess: false` and `externalEffects: false`;
-- no container image or OCI runtime test; the installed local daemon was not
-  running and starting a host service would exceed the FDOS-repository-only
-  mutation scope;
-- no immutable object/image storage, external release or workload-identity
-  service, HSM/KMS, expiry, revocation, transparency log or atomic deployment
-  test;
-- no hostile bootstrap/verifier replacement, Node.js provenance, boot-chain,
-  process-memory inspection, secure-erasure or remote-attestation test;
+- no container image or OCI runtime test; the installed local daemon remained
+  unavailable and starting a host service would exceed the FDOS-repository-
+  only mutation scope;
+- no immutable object/image storage, external release, Connector-key or
+  workload-identity service, HSM/KMS, expiry, revocation, transparency log,
+  trusted timestamp or atomic deployment test;
+- no hostile parent/bootstrap/verifier replacement, process-memory inspection,
+  secure-erasure or remote-attestation test;
+- no offline verification of the omitted full workload envelope;
 - no supported container/VM sandbox, destination allowlist, filesystem-read or
   CPU/memory/process isolation test;
 - no model personality/quality evaluation, because no model adapter exists;
@@ -139,37 +150,59 @@ Checks intentionally not run:
 
 Failures and retries:
 
-- the first session implementation authenticated the transient envelope but
-  did not bind minimized session identity into the durable result digest;
-- the protocol was strengthened with a session observation and exact parent
-  cross-comparison before candidate validation;
-- integration tests then rejected the expected stale package because it still
-  contained the pre-observation source graph;
-- the package was rebuilt and the obsolete ephemeral release key/signature
-  discarded;
-- a separate valid-signature session-observation confusion fault was added,
-  which changed packaged bytes again; the interim package release was
-  intentionally discarded and regenerated;
-- no release or session private key was printed, stored or committed;
+- the initial receipt binding required child completion to be no later than
+  the runtime record clock; real child wall time can advance slightly beyond a
+  controlled parent/runtime test clock;
+- the rule was narrowed to keep exact request/claim windows while allowing a
+  documented maximum 30-second parent/runtime skew;
+- the first evidence projection call site passed no Invocation map during
+  workflow finalization; both completion and explicit export now use the same
+  authenticated projection;
+- two test assertions initially treated synchronous command-shape rejection as
+  asynchronous business failure; assertion modes were corrected without
+  weakening runtime behavior;
 - focused tests, complete static/regression checks, coverage and all three
-  demos then passed.
+  demos then passed;
+- no package/release or session private key was generated, changed, printed or
+  stored for this slice.
 
 Evidence carried forward:
 
-- `EV-FDOS-RUNTIME-PILOT-001` remains the evidence record for the original
-  49-test three-role slice;
-- `EV-FDOS-REFERENCE-INTAKE-002` remains the evidence record for reference
-  intake and single-writer persistence;
+- `EV-FDOS-RUNTIME-PILOT-001` remains the original three-role record;
+- `EV-FDOS-REFERENCE-INTAKE-002` remains the reference-intake record;
 - `EV-FDOS-AUTHENTICATED-INVOCATION-003` remains the identity-boundary record;
 - `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004` remains the local transaction record;
 - `EV-FDOS-CONNECTOR-OUTBOX-005` remains the external-work-boundary record;
-- `EV-FDOS-AGENT-PERSONALITY-006` remains the non-authoritative personality
-  record;
+- `EV-FDOS-AGENT-PERSONALITY-006` remains the personality record;
 - `EV-FDOS-PROCESS-WORKER-007` remains the process/acknowledgement record;
-- `EV-FDOS-DARWIN-SANDBOX-008` remains the OS denial record;
-- `EV-FDOS-WORKER-ARTIFACT-009` remains the signed mutable-source record;
+- `EV-FDOS-DARWIN-SANDBOX-008` remains the platform-denial record;
+- `EV-FDOS-WORKER-ARTIFACT-009` remains the signed-source record;
 - `EV-FDOS-WORKER-PACKAGE-010` remains the deterministic package record;
-- this slice is bound separately in `EV-FDOS-WORKLOAD-SESSION-011`.
+- `EV-FDOS-WORKLOAD-SESSION-011` remains the authenticated-session record;
+- this slice is bound separately in `EV-FDOS-WORKER-RECEIPT-012`.
+
+Remaining risks:
+
+- receipt verification is performed by the same mutable local parent that
+  creates the receipt;
+- the exact Connector command is authenticated, but Connector key custody is
+  not externally protected;
+- a compromised parent, Connector key, host or event-store owner remains
+  inside the Level 1 trusted computing base;
+- the omitted full envelope prevents offline workload-signature verification;
+- no external workload/audit identity, revocation, transparency or trusted
+  timestamp exists;
+- process-only and deprecated Darwin isolation gaps remain unchanged.
+
+Next required gate:
+
+- supported immutable container or VM deployment;
+- externally rooted workload identity and protected release/Connector custody;
+- independently verifiable signed execution receipt or separately governed
+  full-envelope retention;
+- trusted time, replay/revocation and monitoring controls;
+- portable outbound, read and resource isolation;
+- independent security review and Human Governance decision.
 
 ## Required Completion Report
 
