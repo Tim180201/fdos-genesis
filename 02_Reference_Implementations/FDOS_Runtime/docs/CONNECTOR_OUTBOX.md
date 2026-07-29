@@ -162,9 +162,19 @@ The child has no runtime object, database handle or signing key. It cannot
 claim or record a delivery. The parent records an accepted result through the
 existing authenticated Connector principal.
 
-This is not an OS sandbox. `networkIsolationEnforced` remains false, and the
-worker response is not independently signed. See
-`PROCESS_SEPARATED_DRY_RUN_WORKER.md`.
+The default process-only path is not an OS sandbox and reports network and
+filesystem-write isolation false.
+
+On Darwin only, a separate experimental mode launches through a fixed
+`sandbox-exec` profile that denies `network*` and `file-write*`. Its request
+binds the inspected launcher/policy digest, and the child must prove listen,
+connect and write-open denial before either enforcement flag can be true.
+Missing or bypassed enforcement rejects the worker and records no outcome.
+
+The interface is deprecated, the response is not independently signed and the
+profile does not isolate filesystem reads or general resources. See
+`PROCESS_SEPARATED_DRY_RUN_WORKER.md` and
+`DARWIN_SANDBOXED_DRY_RUN_WORKER.md`.
 
 ## Transaction Semantics
 
@@ -184,6 +194,7 @@ that limitation explicit by admitting only dry-run contracts.
 
 ```bash
 npm run demo:outbox
+npm run demo:sandbox
 ```
 
 The demo completes a two-task Chief of Staff and Operations workflow, prepares
@@ -195,18 +206,20 @@ the exact connector parameters.
 Expected invariant:
 
 ```text
-network access:      false
-external effect:     none
-process separated:   true
-OS network sandbox:  false
-delivery status:     simulated
+network access admitted:       false
+external effect:               none
+process separated:             true
+process-only isolation flags:  false
+Darwin sandbox demo flags:     true after exact denial probes
+delivery status:               simulated
 ```
 
 ## Promotion Gate for One Read-Only Sandbox
 
 A real read-only connector still requires:
 
-- OS-, container- or infrastructure-enforced worker isolation;
+- supported OS-, container- or infrastructure-enforced worker isolation and
+  portable outbound allowlisting;
 - independently authenticated worker identity and signed immutable artifact;
 - production workload identity and connector revocation;
 - outbound network allowlist and DNS/TLS controls;

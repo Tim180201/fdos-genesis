@@ -260,8 +260,58 @@ acknowledgement, not evidence of successful completion.
 
 Date: 2026-07-29
 
-Decision: Report `networkIsolationEnforced: false` until an OS, container or
-infrastructure control actually denies unapproved egress and resources.
+Decision: Report `networkIsolationEnforced: false` for process separation
+alone, until an OS, container or infrastructure control actually denies the
+operation claimed for that execution.
 
 Rationale: A separate process under the same host account reduces authority
 sharing but does not itself prevent network, filesystem or resource access.
+
+ADR-0049 and PILOT-DEC-028 later permit positive flags only for the narrower
+Darwin-required execution after exact runtime denial probes.
+
+## PILOT-DEC-028 — Enforcement Requires Runtime Denial Proof
+
+Date: 2026-07-29
+
+Decision: Report network or filesystem-write isolation as enforced only when
+the child observes the fixed denied listen, connect and write-open operations
+and binds those probes to the exact request provider and policy digest.
+
+Rationale: A selected launch mode, environment value or parent assertion does
+not prove that the operating system actually applied the policy.
+
+## PILOT-DEC-029 — Deprecated Darwin Provider Is Disposable Evidence
+
+Date: 2026-07-29
+
+Decision: Admit the fixed `/usr/bin/sandbox-exec` adapter only as an optional,
+Darwin-only Level 1 provider that declares deprecation and fails closed with
+no process-only fallback.
+
+Rationale: The local interface can test the isolation contract now, but its
+deprecated status and platform dependency make it unsuitable as the
+production architecture.
+
+## PILOT-DEC-030 — Deny Network and Writes Without Claiming Full Sandbox
+
+Date: 2026-07-29
+
+Decision: Bind the exact profile denying `network*` and `file-write*`, while
+explicitly excluding filesystem reads, CPU, memory, process creation,
+inherited descriptors and general syscall isolation from the claim.
+
+Rationale: Security evidence must describe the implemented policy narrowly;
+overstating one profile would recreate the process-separation ambiguity that
+ADR-0048 prevented.
+
+## PILOT-DEC-031 — Sandbox Failure Reuses Durable Uncertainty
+
+Date: 2026-07-29
+
+Decision: Missing, false, tampered or bypassed sandbox proof records no
+outcome. The delivery remains claimed and can move after expiry only to
+Human-Governance-controlled uncertainty.
+
+Rationale: Isolation failure must never be converted into success, automatic
+retry or widened authority.

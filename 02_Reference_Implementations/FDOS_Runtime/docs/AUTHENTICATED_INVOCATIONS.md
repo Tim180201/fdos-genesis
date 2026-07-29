@@ -188,7 +188,9 @@ No command enables networked connector execution or A3/A4 execution.
 - Host compromise can still rewrite local files and trust configuration.
 - Connector identities are local experimental registrations without
   production workload attestation or revocation. The simulation is
-  process-separated, but its response is not independently signed and the
-  process has no OS-enforced network or resource isolation.
+  process-separated, but its response is not independently signed. The
+  optional Darwin worker can prove local `network*` and `file-write*` denial
+  under one deprecated platform profile; it is not production workload
+  identity, portable egress isolation or complete resource isolation.
 - Personality Profile authentication proves exact configuration access, not
   model behavior or safe persona expression.

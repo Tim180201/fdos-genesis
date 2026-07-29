@@ -44,8 +44,12 @@ promotion and not a production approval.
 | Closed Personality Profile Registry | Tested | Level 1 — Experimental | `EV-FDOS-AGENT-PERSONALITY-006` | Pending | Not model-validated |
 | Agent Operating Profile self-read | Tested | Level 1 — Experimental | `EV-FDOS-AGENT-PERSONALITY-006` | Pending | Not model-validated |
 | Exact dry-run worker protocol | Tested | Level 1 — Experimental | `EV-FDOS-PROCESS-WORKER-007` | Pending | No real connector |
-| Process-separated connector simulation | Tested locally | Level 1 — Experimental | `EV-FDOS-PROCESS-WORKER-007` | Pending | Not OS-sandboxed |
+| Process-separated connector simulation | Tested locally | Level 1 — Experimental | `EV-FDOS-PROCESS-WORKER-007` | Pending | Process-only mode not sandboxed |
 | Crash/timeout acknowledgement handling | Tested with fault injection | Level 1 — Experimental | `EV-FDOS-PROCESS-WORKER-007` | Pending | Not independently attested |
+| Darwin network/write-deny provider | Tested on recorded Darwin host | Level 1 — Experimental | `EV-FDOS-DARWIN-SANDBOX-008` | Pending | Deprecated / not portable |
+| Exact isolation policy and worker attestation protocol | Tested | Level 1 — Experimental | `EV-FDOS-DARWIN-SANDBOX-008` | Pending | Not independently signed |
+| Listen/connect/write-open denial probes | Tested on recorded Darwin host | Level 1 — Experimental | `EV-FDOS-DARWIN-SANDBOX-008` | Pending | Selected operations only |
+| Required-sandbox bypass rejection | Tested with fault injection | Level 1 — Experimental | `EV-FDOS-DARWIN-SANDBOX-008` | Pending | Host compromise out of scope |
 | TapTime/Company AI adoption assessment | Tested as documentation/evidence | Level 1 — Experimental | exact reference manifests | Pending | Not applicable |
 
 ## Promotion Rule

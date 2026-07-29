@@ -48,6 +48,7 @@ Operational Mode: Project Validation
 | Evidence | `04_Evidence/fdos-runtime/EV-FDOS-CONNECTOR-OUTBOX-005.md` | Evidence Item |
 | Evidence | `04_Evidence/fdos-runtime/EV-FDOS-AGENT-PERSONALITY-006.md` | Evidence Item |
 | Evidence | `04_Evidence/fdos-runtime/EV-FDOS-PROCESS-WORKER-007.md` | Evidence Item |
+| Evidence | `04_Evidence/fdos-runtime/EV-FDOS-DARWIN-SANDBOX-008.md` | Evidence Item |
 | Knowledge | `05_Knowledge/Cross_Project_Patterns/KP-006_Approval_Must_Bind_Exact_Action_Intent.md` | Candidate |
 | Knowledge | `05_Knowledge/Cross_Project_Patterns/KP-007_External_Knowledge_Requires_Exact_Source_Binding.md` | Candidate |
 | Knowledge | `05_Knowledge/Cross_Project_Patterns/KP-008_Nontransactional_Event_Store_Requires_Exclusive_Ownership.md` | Candidate |

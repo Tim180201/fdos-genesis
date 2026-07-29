@@ -13,6 +13,9 @@ import {
 import {
   executeConnectorOutboxDryRunDemo
 } from "./pilot/connector-outbox-demo.js";
+import {
+  ProcessSeparatedDryRunWorker
+} from "./integrations/process-separated-dry-run-worker.js";
 import { openPilotReferenceSource } from "./pilot/reference-sources.js";
 import {
   openAuthenticatedPilotRuntime,
@@ -26,6 +29,7 @@ function usage() {
     "Commands:",
     "  demo                 execute the authenticated internal-only pilot",
     "  outbox-demo          execute the no-network connector outbox dry-run",
+    "  sandbox-demo         execute the Darwin network/write-denial dry-run",
     "  verify <directory>   verify and summarize an existing local store",
     "  reference-snapshot <taptime|company-ai> <repository>",
     "                       capture content-minimized, read-only Git evidence",
@@ -81,7 +85,7 @@ async function runDemo() {
   }
 }
 
-async function runOutboxDemo() {
+async function runOutboxDemo({ sandbox = false } = {}) {
   const runtimeRoot = path.resolve(".runtime");
   await mkdir(runtimeRoot, { recursive: true, mode: 0o700 });
   const directory = await mkdtemp(path.join(runtimeRoot, "outbox-demo-"));
@@ -96,12 +100,20 @@ async function runOutboxDemo() {
     invocationVerifier: verifier
   });
   try {
+    const worker = sandbox
+      ? new ProcessSeparatedDryRunWorker({
+          networkIsolation: "darwin-sandbox-exec-required"
+        })
+      : undefined;
     const result = await executeConnectorOutboxDryRunDemo({
       gateway,
-      authority
+      authority,
+      ...(worker ? { worker } : {})
     });
     const summary = {
-      mode: "Level 1 — Experimental Connector Dry-Run",
+      mode: sandbox
+        ? "Level 1 — Experimental Darwin-Sandboxed Connector Dry-Run"
+        : "Level 1 — Experimental Connector Dry-Run",
       productionReady: false,
       networkAccess: false,
       externalActionsExecuted: false,
@@ -133,6 +145,17 @@ async function runOutboxDemo() {
           result.worker.workerBoundary.externalEffects,
         networkIsolationEnforced:
           result.worker.workerBoundary.networkIsolationEnforced,
+        networkIsolationProvider:
+          result.worker.workerBoundary.networkIsolationProvider,
+        networkIsolationPolicyDigest:
+          result.worker.workerBoundary.networkIsolationPolicyDigest,
+        networkIsolationProbe:
+          result.worker.workerBoundary.networkIsolationProbe,
+        filesystemWriteIsolationEnforced:
+          result.worker.workerBoundary
+            .filesystemWriteIsolationEnforced,
+        filesystemWriteIsolationProbe:
+          result.worker.workerBoundary.filesystemWriteIsolationProbe,
         requestDigest: result.worker.requestDigest,
         responseDigest: result.worker.responseDigest
       },
@@ -203,6 +226,10 @@ async function main() {
   }
   if (command === "outbox-demo") {
     await runOutboxDemo();
+    return;
+  }
+  if (command === "sandbox-demo") {
+    await runOutboxDemo({ sandbox: true });
     return;
   }
   if (command === "verify") {

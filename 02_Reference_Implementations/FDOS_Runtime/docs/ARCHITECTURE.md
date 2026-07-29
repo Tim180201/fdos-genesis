@@ -37,9 +37,10 @@ FDOS Runtime
   └── Evidence Projection
         │
         ├── claimed Delivery Intent
-        │     -> exact expiring request
+        │     -> exact expiring request + isolation binding
         │     -> separate dry-run child process
-        │     -> verified digest-only response
+        │     -> optional Darwin network/write deny profile
+        │     -> verified denial probes + digest-only response
         │
         ▼
 Transactional SQLite Event Store
@@ -189,14 +190,26 @@ hard timeout. The child receives no gateway, runtime, database handle or
 signing key. It verifies the request and returns one digest-only simulated
 outcome.
 
+The default `process-only` path adds no operating-system isolation. An optional
+Darwin experiment instead starts the worker through the fixed root-owned,
+byte-inspected `/usr/bin/sandbox-exec` launcher with an exact profile denying
+`network*` and `file-write*`. The request binds the complete provider policy
+digest. The child must observe kernel denial for loopback listen, loopback
+connect and filesystem write-open before reporting enforcement. A deliberate
+launcher bypass is rejected by those probes.
+
 The parent accepts the result only after exact response verification and a
 clean process exit. Crash before response, response followed by crash and hang
 are rejected. Rejection leaves the durable claim unchanged; lease expiry can
 be reconciled only to uncertainty by Human Governance.
 
-This topology is process separation, not OS isolation. The runtime reports
-`networkIsolationEnforced: false`; there is no egress, filesystem or resource
-sandbox and no independently authenticated worker identity.
+Process topology alone continues to report both isolation flags false. Only a
+Darwin-required execution whose exact provider/policy binding and all denial
+probes verify may report network and filesystem-write isolation true. Apple's
+interface is deprecated, Darwin-only and leaves filesystem reads, CPU, memory,
+process creation, inherited descriptors and worker identity outside its
+claim. It is therefore Level 1 platform evidence, not the production sandbox
+design.
 
 ## State Machines
 
@@ -273,6 +286,8 @@ migrated implicitly.
 See `TRANSACTIONAL_PERSISTENCE.md`.
 See `CONNECTOR_OUTBOX.md` for the external-work boundary.
 See `PROCESS_SEPARATED_DRY_RUN_WORKER.md` for the child-process boundary.
+See `DARWIN_SANDBOXED_DRY_RUN_WORKER.md` for the platform-specific denial
+experiment and non-claims.
 
 ## Future Extension Points
 
@@ -284,7 +299,8 @@ These are not implemented:
 - real read-only connector sandbox and service-specific idempotency;
 - message bus and durable queues;
 - model-provider adapter;
-- OS-enforced connector resource isolation and network egress policy;
+- supported portable connector isolation, outbound allowlisting and complete
+  resource budgets;
 - independently attested and signed worker identity/artifacts;
 - secrets vault;
 - policy-as-code service;

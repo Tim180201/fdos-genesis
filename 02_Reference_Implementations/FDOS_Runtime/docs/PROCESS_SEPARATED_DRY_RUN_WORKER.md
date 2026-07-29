@@ -7,15 +7,20 @@ Validation Level: Level 1
 Production Status: Not Production Ready
 
 Related Decision:
-`../../../00_Specification/ADR/ADR-0048_Process_Separated_Dry_Run_Worker_Experiment.md`
+
+- `../../../00_Specification/ADR/ADR-0048_Process_Separated_Dry_Run_Worker_Experiment.md`
+- `../../../00_Specification/ADR/ADR-0049_Darwin_Network_and_Write_Sandbox_Experiment.md`
 
 ## Purpose
 
 Move the bounded connector simulation out of the FDOS controller process
 without enabling a networked connector or external effect.
 
-This slice tests process lifecycle, exact request/response binding and
-fail-closed acknowledgement handling. It is not an operating-system sandbox.
+This boundary tests process lifecycle, exact request/response binding and
+fail-closed acknowledgement handling. Process separation itself is not an
+operating-system sandbox. A separate optional Darwin mode wraps the process in
+one explicitly limited OS deny policy, described in
+`DARWIN_SANDBOXED_DRY_RUN_WORKER.md`.
 
 ## Boundary
 
@@ -24,11 +29,14 @@ authenticated Operations command
   -> immutable Delivery Intent
   -> durable Outbox preparation
   -> authenticated Connector Instance claim
-  -> exact, expiring worker request
+  -> exact, expiring worker request and isolation binding
        │
        ▼
      separate Node.js child process
+       -> direct process-only mode; or
+       -> Darwin sandbox-exec network/write-deny mode
        -> verify exact request and no-effect contract
+       -> when required, prove socket and write-open denial
        -> compute digest-only simulation outcome
        -> emit one exact response
        │
@@ -53,14 +61,26 @@ only one protocol response over standard output.
 - opens only explicit standard-input, standard-output and standard-error
   pipes;
 - does not forward the parent environment;
-- supplies only the fixed fault-test selector and locale/timezone values;
+- supplies only the fixed fault-test selector, exact isolation
+  provider/policy digest and locale/timezone values;
+- explicitly disables child V8 coverage-file output in required no-write mode
+  so test instrumentation cannot request a forbidden write at process exit;
 - uses a fixed working directory;
 - enforces a 50–5,000 ms parent-side timeout;
 - caps request, standard-output and standard-error bytes;
 - terminates a timed-out or output-overflow process with `SIGKILL`.
 
-These are application controls. They do not prevent a compromised child from
-using operating-system resources available to the same host account.
+These are application controls. In the default `process-only` mode they do not
+prevent a compromised child from using operating-system resources available
+to the same host account.
+
+The optional `darwin-sandbox-exec-required` mode launches through a fixed
+root-owned Apple binary and exact profile that denies `network*` and
+`file-write*`. The provider fails closed off Darwin or when launcher trust
+checks fail. The child must observe kernel denial for listen, connect and
+write-open probes before returning a positive execution attestation. This
+deprecated Apple interface remains a bounded experiment, not the production
+isolation design.
 
 ## Exact Protocol
 
@@ -75,6 +95,8 @@ The content-addressed request binds:
 - `mode: dry_run`;
 - `networkAccess: false`;
 - `externalEffects: false`;
+- whether technical isolation is required plus exact provider and policy
+  digest;
 - the complete verified Delivery Intent;
 - the request digest.
 
@@ -92,13 +114,21 @@ The content-addressed response binds:
 - `externalEffect: none`;
 - a result digest binding the request digest, intent/operation digests,
   completion time and declared worker boundary rather than raw result content;
-- the declared worker boundary;
+- the declared worker boundary, including exact isolation provider, policy
+  digest and denial-probe identifiers;
 - the response digest.
 
-The declared boundary contains
-`networkIsolationEnforced: false`. A worker response claiming that network
-isolation was enforced is rejected because this experiment has no such
-control.
+The default process-only boundary contains
+`networkIsolationEnforced: false` and
+`filesystemWriteIsolationEnforced: false`. A response asserting either
+control against a process-only request is rejected.
+
+The Darwin-required boundary is accepted only when it reports both controls
+as true, binds the request's exact provider/policy digest and contains the
+fixed successful denial-probe identifiers. Missing, false, substituted or
+tampered attestations fail closed. The attestation is a child observation
+bound by canonical digests; it is not an independently signed workload
+attestation.
 
 ## Acknowledgement Rule
 
@@ -111,6 +141,8 @@ Output is accepted only when all conditions hold:
 5. standard output contains exactly one JSON line;
 6. the response has the exact closed shape and digest;
 7. every request, delivery, claim, connector and time binding matches.
+8. any required isolation provider, policy digest and denial probes match
+   exactly.
 
 A valid-looking response followed by a non-zero process exit is not accepted.
 This prevents the parent from interpreting a partially acknowledged or
@@ -122,9 +154,11 @@ The test worker supports bounded fault injection for:
 
 - crash before response;
 - valid response followed by crash;
-- hang until parent timeout.
+- hang until parent timeout;
+- a deliberate sandbox-launch bypass while the request still requires the
+  Darwin policy.
 
-All three paths reject the worker result. They do not mutate Outbox state.
+All paths reject the worker result. They do not mutate Outbox state.
 The durable delivery remains `claimed` until its lease expires. Human
 Governance may then reconcile the abandoned claim to `uncertain`; it may not
 infer success, failure or retry automatically.
@@ -147,14 +181,16 @@ The worker:
 
 The parent-side demo still uses an ephemeral local authority to record the
 verified result as the registered Connector Instance. The child response
-itself is not independently signed or workload-attested.
+itself is not independently signed or workload-attested. Positive Darwin
+probe results therefore demonstrate the behavior of the launched local
+process, not an independently established worker identity.
 
 ## Explicit Non-Claims
 
-This slice does not establish:
+This boundary does not establish:
 
-- operating-system network denial or egress filtering;
-- filesystem, CPU or memory sandboxing;
+- portable, production-grade network denial or outbound allowlisting;
+- filesystem read, CPU, memory, process-count or general syscall isolation;
 - container, VM or tenant isolation;
 - independently authenticated worker identity;
 - signed or immutable worker packaging;
@@ -165,14 +201,16 @@ This slice does not establish:
 - production monitoring or incident response.
 
 `processSeparated: true` means only that the simulation ran in another local
-process. It must never be reported as `networkIsolationEnforced: true`.
+process. Only the exact Darwin-required execution that completed all denial
+probes may report the two enforced-isolation flags as true. The default mode
+must report them as false.
 
 ## Promotion Gate
 
 Before one real read-only sandbox connector, FDOS still requires:
 
-- OS-, container- or infrastructure-enforced outbound allowlisting;
-- filesystem and resource restrictions;
+- a supported OS-, container- or infrastructure-enforced outbound policy;
+- filesystem read and resource restrictions;
 - production workload identity, response authentication and revocation;
 - signed, immutable worker artifact verification;
 - secret-vault and no-secret-persistence controls;

@@ -1,18 +1,18 @@
 # Company OS Pilot — Project Status
 
-Status: Technical Slice 7 Passed / Human Review Pending
+Status: Technical Slice 8 Passed / Human Review Pending
 Date: 2026-07-29  
 Validation Level: Level 1 — Experimental
 
 ## Current Goal
 
-Deliver and verify a process-separated, exact and fail-closed connector
-simulation worker without enabling network access, an external effect or an
-operating-system sandbox claim.
+Deliver and verify one exact, fail-closed Darwin network/write-denial
+experiment around the process-separated connector simulation, without
+enabling network access, a real connector or an external effect.
 
 ## Current Phase
 
-Level 1 process-separated Connector Worker evidence review.
+Level 1 Darwin sandbox-contract evidence review.
 
 ## Exit Criteria
 
@@ -52,13 +52,24 @@ Level 1 process-separated Connector Worker evidence review.
 - [x] crash-before-response, response-then-crash and timeout paths tested;
 - [x] rejected worker execution preserves the claim for human uncertainty
       reconciliation;
-- [x] lack of OS network/resource isolation reported explicitly;
+- [x] process-only lack of OS network/resource isolation reported explicitly;
 - [x] ADR, security model, operations guide and Evidence 007 prepared;
-- [ ] Human Governance reviewed Technical Slices 3–7 evidence.
+- [x] exact provider and policy digest bound into worker protocol;
+- [x] fixed root-owned Darwin launcher inspected and content-addressed;
+- [x] loopback listen/connect and filesystem write-open denial proved inside
+      the child before positive enforcement flags;
+- [x] missing, false and tampered isolation attestations rejected;
+- [x] deliberate required-sandbox launch bypass rejected;
+- [x] sandbox failure preserved the claim for human-only uncertainty
+      reconciliation;
+- [x] Darwin-only and deprecated platform-interface status documented;
+- [x] filesystem-read, CPU, memory, process and same-account gaps documented;
+- [x] ADR, security model, operations guide and Evidence 008 prepared;
+- [ ] Human Governance reviewed Technical Slices 3–8 evidence.
 
 ## Verified Result
 
-- 116 of 116 tests passed;
+- 120 of 120 tests passed;
 - four workflow tasks completed;
 - Chief of Staff, Operations and Marketing participated;
 - 14 signed invocations accepted in 14 committed local transactions;
@@ -73,7 +84,7 @@ Level 1 process-separated Connector Worker evidence review.
 - 947 TapTime and 97 Company AI tracked entries were manifest-bound;
 - 39 allowlisted reference files were byte- and evidence-verified;
 - a second runtime owner was rejected;
-- no external action executed.
+- no external action executed;
 - one dry-run delivery prepared from a claimed Operations task;
 - exactly one registered Connector Instance claim succeeded;
 - the no-network demo completed two tasks with 12 signed Invocations, 12
@@ -100,7 +111,15 @@ Level 1 process-separated Connector Worker evidence review.
 - crash before output, valid output followed by crash and hang timeout were
   rejected without recording an outcome;
 - abandoned failed-process claims reconciled only to `uncertain` after expiry;
-- `networkIsolationEnforced` remained false and no real service was contacted.
+- process-only execution continued to report network and filesystem-write
+  isolation false;
+- one Darwin-required execution bound the inspected launcher and fixed policy,
+  observed kernel denial for listen, connect and write-open, and only then
+  reported both enforcement flags true;
+- a deliberate direct-launch bypass was rejected by the child probes without
+  recording an outcome;
+- the failed bypass claim reconciled only to `uncertain` after expiry;
+- no real service was contacted and no external effect occurred.
 
 See `Validation_Report.md`,
 `Validation_Report_003_Authenticated_Invocation.md`,
@@ -108,17 +127,19 @@ See `Validation_Report.md`,
 `Validation_Report_005_Connector_Outbox.md`,
 `Validation_Report_006_Agent_Personality.md`,
 `Validation_Report_007_Process_Separated_Worker.md`,
+`Validation_Report_008_Darwin_Sandbox.md`,
 `Reference_Adoption_Assessment.md` and the evidence records under
 `../../04_Evidence/fdos-runtime/`.
 
 ## External Action Status
 
 Disabled. A process-separated local simulation path is enabled with
-`networkAccess: false`, `externalEffects: false` and
-`networkIsolationEnforced: false`.
+`networkAccess: false` and `externalEffects: false`.
 
-Process separation is not an operating-system sandbox and authorizes no real
-connector.
+The default path reports both isolation flags false. On the recorded Darwin
+host, an optional deprecated `sandbox-exec` experiment may report network and
+filesystem-write isolation true only after exact in-child denial probes.
+Neither path authorizes a real connector.
 
 Personality is configuration only. No model provider is connected.
 

@@ -148,16 +148,18 @@ Runtime Store
   -> verified event-chain and transaction rehydration
   -> durable dry-run Outbox with serialized local claim fencing
   -> process-separated local simulation with exact acknowledgement
-  -> future OS-isolated connector and distributed worker fencing
+  -> Darwin-only network/write-denial learning adapter
+  -> future supported portable sandbox and distributed worker fencing
 ```
 
 ## Recommended Next Build Order
 
 1. Human-review the authenticated-invocation, transactional-persistence,
-   Connector Outbox, personality and process-worker evidence with all
-   remaining identity, storage, model and isolation limits.
-2. Add OS/container egress and resource isolation, workload identity, signed
-   worker artifacts and secrets controls.
+   Connector Outbox, personality, process-worker and Darwin-sandbox evidence
+   with all remaining identity, storage, model and isolation limits.
+2. Replace the deprecated learning adapter with a supported portable sandbox;
+   add outbound allowlisting, read/resource restrictions, workload identity,
+   signed worker artifacts and secrets controls.
 3. Validate one authenticated read-only GitHub or document connector in that
    sandbox.
 4. Add a model-provider adapter with budgets and structured response contracts.

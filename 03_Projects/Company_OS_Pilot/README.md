@@ -44,6 +44,8 @@ system with a small pilot:
 - idempotent preparation, claim leases and fencing IDs;
 - exact, expiring worker requests and digest-only responses;
 - process-separated local connector simulation with bounded I/O and timeout;
+- optional Darwin-only network and filesystem-write denial with exact
+  launcher/policy digest and in-worker denial probes;
 - fail-closed crash and acknowledgement handling;
 - Human Governance retry, cancellation and uncertainty resolution;
 - tamper-evident audit events;
@@ -60,7 +62,8 @@ system with a small pilot:
 - production identity provider, key custody or revocation;
 - exposure of the lower-level runtime to untrusted callers;
 - distributed replay protection, multi-process worker fencing or transactions;
-- OS-, container- or infrastructure-enforced worker/network isolation;
+- supported portable OS/container/infrastructure worker isolation;
+- filesystem-read, CPU, memory, process-count and general syscall isolation;
 - independently attested worker identity or signed immutable worker package;
 - external-effect transaction or service-side idempotency;
 - database migration, backup, restore or encryption;
@@ -84,7 +87,8 @@ The pilot is technically complete when:
 7. the connector dry-run demonstrates one task-bound delivery, one fenced
    claim and one digest-only simulated outcome;
 8. lease expiry enters durable uncertainty and cannot auto-retry;
-9. no network or external effect occurs;
+9. no connector/service network request or external effect occurs; only the
+   bounded local isolation probes are admitted;
 10. each pilot Agent Instance resolves one exact role-compatible Personality
     Profile that contains no authority-bearing or arbitrary prompt fields;
 11. profile lookup is authenticated and self-only;
@@ -92,8 +96,13 @@ The pilot is technically complete when:
     runtime, database or signing key;
 13. a crash, post-response crash or timeout records no successful outcome and
     can reconcile only to uncertainty after claim expiry;
-14. process separation is never represented as an enforced network sandbox;
-15. no change occurred outside the FDOS repository.
+14. process separation alone is never represented as an enforced network
+    sandbox;
+15. a Darwin-required run reports network/write enforcement only after exact
+    listen, connect and write-open denial probes;
+16. a bypassed or missing sandbox records no outcome and may reconcile only
+    through Human Governance;
+17. no change occurred outside the FDOS repository.
 
 ## Reference Assessment
 

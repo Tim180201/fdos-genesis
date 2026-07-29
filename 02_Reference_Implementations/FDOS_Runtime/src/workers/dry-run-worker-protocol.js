@@ -18,8 +18,13 @@ import {
   normalizeDeliveryOutcome,
   verifyDeliveryIntent
 } from "../domain/delivery-intent.js";
+import {
+  NO_NETWORK_ISOLATION_PROVIDER,
+  normalizeNetworkIsolationBinding,
+  processOnlyNetworkIsolationBinding
+} from "../domain/network-isolation-contract.js";
 
-const PROTOCOL_SCHEMA_VERSION = "1.0";
+const PROTOCOL_SCHEMA_VERSION = "1.1";
 const REQUEST_KIND = "fdos-process-worker-request";
 const RESPONSE_KIND = "fdos-process-worker-response";
 const MAX_REQUEST_TTL_MS = 5 * 60 * 1_000;
@@ -42,7 +47,8 @@ const requestKeys = Object.freeze([
 const executionKeys = Object.freeze([
   "externalEffects",
   "mode",
-  "networkAccess"
+  "networkAccess",
+  "networkIsolation"
 ]);
 const responseKeys = Object.freeze([
   "claimId",
@@ -59,10 +65,23 @@ const responseKeys = Object.freeze([
 ]);
 const workerBoundaryKeys = Object.freeze([
   "externalEffects",
+  "filesystemWriteIsolationEnforced",
+  "filesystemWriteIsolationProbe",
   "networkAccess",
   "networkIsolationEnforced",
+  "networkIsolationPolicyDigest",
+  "networkIsolationProbe",
+  "networkIsolationProvider",
   "processSeparated",
   "shell"
+]);
+const isolationAttestationKeys = Object.freeze([
+  "enforced",
+  "filesystemWriteEnforced",
+  "filesystemWriteProbe",
+  "policyDigest",
+  "probe",
+  "provider"
 ]);
 
 function exactKeys(value, expected, field, ErrorType = ValidationError) {
@@ -121,7 +140,11 @@ function normalizeExecution(value, ErrorType = ValidationError) {
   return {
     mode: "dry_run",
     networkAccess: false,
-    externalEffects: false
+    externalEffects: false,
+    networkIsolation: normalizeNetworkIsolationBinding(
+      value.networkIsolation,
+      ErrorType
+    )
   };
 }
 
@@ -225,12 +248,28 @@ function normalizeWorkerBoundary(value, ErrorType = IntegrityError) {
     "worker response boundary",
     ErrorType
   );
+  const isolation = normalizeNetworkIsolationBinding(
+    {
+      required: value.networkIsolationEnforced,
+      provider: value.networkIsolationProvider,
+      policyDigest: value.networkIsolationPolicyDigest
+    },
+    ErrorType
+  );
+  const expectedProbe = isolation.required
+    ? "socket_listen_and_connect_denied"
+    : "not_run";
+  const expectedFilesystemProbe = isolation.required
+    ? "dev_null_write_open_denied"
+    : "not_run";
   if (
     value.processSeparated !== true ||
     value.shell !== false ||
     value.networkAccess !== false ||
     value.externalEffects !== false ||
-    value.networkIsolationEnforced !== false
+    value.networkIsolationProbe !== expectedProbe ||
+    value.filesystemWriteIsolationEnforced !== isolation.required ||
+    value.filesystemWriteIsolationProbe !== expectedFilesystemProbe
   ) {
     throw new ErrorType("Worker response boundary is inconsistent.");
   }
@@ -239,8 +278,64 @@ function normalizeWorkerBoundary(value, ErrorType = IntegrityError) {
     shell: false,
     networkAccess: false,
     externalEffects: false,
-    networkIsolationEnforced: false
+    filesystemWriteIsolationEnforced: isolation.required,
+    filesystemWriteIsolationProbe: expectedFilesystemProbe,
+    networkIsolationEnforced: isolation.required,
+    networkIsolationProvider: isolation.provider,
+    networkIsolationPolicyDigest: isolation.policyDigest,
+    networkIsolationProbe: expectedProbe
   };
+}
+
+function createWorkerBoundary(
+  requestIsolation,
+  networkIsolationAttestation
+) {
+  const source =
+    networkIsolationAttestation ??
+    (requestIsolation.required
+      ? null
+      : {
+          enforced: false,
+          filesystemWriteEnforced: false,
+          filesystemWriteProbe: "not_run",
+          provider: NO_NETWORK_ISOLATION_PROVIDER,
+          policyDigest: requestIsolation.policyDigest,
+          probe: "not_run"
+        });
+  exactKeys(
+    source,
+    isolationAttestationKeys,
+    "worker network-isolation attestation"
+  );
+  const boundary = normalizeWorkerBoundary(
+    {
+      processSeparated: true,
+      shell: false,
+      networkAccess: false,
+      externalEffects: false,
+      filesystemWriteIsolationEnforced:
+        source.filesystemWriteEnforced,
+      filesystemWriteIsolationProbe:
+        source.filesystemWriteProbe,
+      networkIsolationEnforced: source.enforced,
+      networkIsolationProvider: source.provider,
+      networkIsolationPolicyDigest: source.policyDigest,
+      networkIsolationProbe: source.probe
+    },
+    ValidationError
+  );
+  if (
+    boundary.networkIsolationEnforced !== requestIsolation.required ||
+    boundary.networkIsolationProvider !== requestIsolation.provider ||
+    boundary.networkIsolationPolicyDigest !==
+      requestIsolation.policyDigest
+  ) {
+    throw new PolicyError(
+      "Worker network-isolation attestation differs from the request."
+    );
+  }
+  return boundary;
 }
 
 function normalizeResponse(response, ErrorType = IntegrityError) {
@@ -344,7 +439,8 @@ export function createDryRunWorkerRequest({
   delivery,
   requestId,
   issuedAt,
-  expiresAt
+  expiresAt,
+  networkIsolation = processOnlyNetworkIsolationBinding()
 }) {
   assertPlainObject(delivery, "claimed connector delivery");
   if (
@@ -397,7 +493,10 @@ export function createDryRunWorkerRequest({
     execution: {
       mode: "dry_run",
       networkAccess: false,
-      externalEffects: false
+      externalEffects: false,
+      networkIsolation: normalizeNetworkIsolationBinding(
+        networkIsolation
+      )
     },
     intent: jsonClone(delivery.intent)
   };
@@ -421,7 +520,11 @@ export function verifyDryRunWorkerRequest(request, { now } = {}) {
   return true;
 }
 
-export function createDryRunWorkerResponse({ request, completedAt }) {
+export function createDryRunWorkerResponse({
+  request,
+  completedAt,
+  networkIsolationAttestation
+}) {
   const normalizedRequest = normalizeRequest(request, IntegrityError);
   const normalizedCompletedAt = isoDate(
     completedAt,
@@ -437,13 +540,10 @@ export function createDryRunWorkerResponse({ request, completedAt }) {
       "Worker response falls outside the request validity window."
     );
   }
-  const workerBoundary = {
-    processSeparated: true,
-    shell: false,
-    networkAccess: false,
-    externalEffects: false,
-    networkIsolationEnforced: false
-  };
+  const workerBoundary = createWorkerBoundary(
+    normalizedRequest.execution.networkIsolation,
+    networkIsolationAttestation
+  );
   const outcome = normalizeDeliveryOutcome("simulated", {
     externalEffect: "none",
     resultDigest: digestObject({
@@ -483,6 +583,12 @@ export function verifyDryRunWorkerResponse(response, request) {
     normalizedResponse.claimId !== normalizedRequest.claimId ||
     normalizedResponse.connectorId !== normalizedRequest.connectorId ||
     normalizedResponse.requestDigest !== normalizedRequest.digest ||
+    normalizedResponse.workerBoundary.networkIsolationEnforced !==
+      normalizedRequest.execution.networkIsolation.required ||
+    normalizedResponse.workerBoundary.networkIsolationProvider !==
+      normalizedRequest.execution.networkIsolation.provider ||
+    normalizedResponse.workerBoundary.networkIsolationPolicyDigest !==
+      normalizedRequest.execution.networkIsolation.policyDigest ||
     Date.parse(normalizedResponse.completedAt) <
       Date.parse(normalizedRequest.issuedAt) ||
     Date.parse(normalizedResponse.completedAt) >

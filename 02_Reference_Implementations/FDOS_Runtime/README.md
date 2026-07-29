@@ -9,9 +9,12 @@ coordinate specialized AI roles as one organizational system.
 
 The current slices implement coordination, authenticated invocation, a
 no-network connector Outbox and a process-separated digest-only simulation
-worker, not autonomous model calls or external execution. Callers still supply
-all substantive work results; the runtime governs who may act, in which order,
-within which information scope and under which approval.
+worker. On Darwin, one optional experimental mode additionally denies network
+socket operations and new filesystem writes through the operating system and
+requires in-worker denial probes before accepting a result. The runtime still
+contains no autonomous model call, real connector or external execution.
+Callers supply all substantive work results; FDOS governs who may act, in
+which order, within which information scope and under which approval.
 
 ## Implemented Scope
 
@@ -34,8 +37,12 @@ within which information scope and under which approval.
   Connector claim;
 - a shell-free child process with a minimal environment, bounded input/output
   and hard timeout;
+- an optional Darwin-only, fail-closed `sandbox-exec` launch that binds the
+  inspected root-owned launcher and exact deny policy by SHA-256;
+- child-side listen, connect and filesystem write-open denial probes whose
+  exact attestation is bound into the request, response and result digest;
 - clean-exit acknowledgement plus crash-before-response,
-  response-then-crash and hang fault tests;
+  response-then-crash, hang and sandbox-bypass fault tests;
 - failed retry, cancellation and uncertainty resolution under Human
   Governance;
 - content-minimized simulated, failed and uncertain connector outcomes;
@@ -73,6 +80,7 @@ cd 02_Reference_Implementations/FDOS_Runtime
 npm test
 npm run demo
 npm run demo:outbox
+npm run demo:sandbox
 ```
 
 The demo creates an ephemeral local Ed25519 authority, gives the runtime only
@@ -85,8 +93,17 @@ connector claim, process-separated digest-only simulation and authenticated
 outcome recording. It performs no network operation and records
 `externalEffect: none`.
 
-The worker reports `networkIsolationEnforced: false`. Process separation is
-not an OS sandbox and does not prove enforced egress denial.
+The default process-only worker reports `networkIsolationEnforced: false`.
+Process separation alone is not a sandbox.
+
+On Darwin, `npm run demo:sandbox` launches the same no-effect worker through
+Apple's deprecated `/usr/bin/sandbox-exec` interface with `network*` and
+`file-write*` denied. A response is accepted only after socket listen, socket
+connect and filesystem write-open attempts return a kernel denial. The result
+may then report both isolation flags as true for that execution and exact
+policy digest. This is Level 1 evidence for one local platform/profile, not a
+production sandbox claim. It does not restrict reads, CPU, memory, process
+creation or inherited standard-I/O descriptors and is unavailable off Darwin.
 
 The built-in `node:sqlite` API is still an evolving Node.js dependency. This
 candidate records exact runtime versions and makes no production-support
@@ -119,6 +136,7 @@ See:
 - `docs/TRANSACTIONAL_PERSISTENCE.md`
 - `docs/CONNECTOR_OUTBOX.md`
 - `docs/PROCESS_SEPARATED_DRY_RUN_WORKER.md`
+- `docs/DARWIN_SANDBOXED_DRY_RUN_WORKER.md`
 - `docs/AGENT_AND_ROLE_MODEL.md`
 - `docs/AGENT_PERSONALITY_MODEL.md`
 - `docs/SECURITY_MODEL.md`
@@ -130,6 +148,7 @@ See:
 Untrusted integrations must use `AuthenticatedRuntimeGateway`; the lower-level
 runtime object is an internal reference-kernel and test surface. Passing tests
 proves behavior only inside the local process-leased experiment. The ephemeral
-demo signer is not a production identity provider and does not prove
-infrastructure, enforced network isolation, networked connector,
-database-recovery or tenant security.
+demo signer is not a production identity provider. The Darwin probe proves
+only the tested local `sandbox-exec` policy invocation; it does not prove
+portable infrastructure isolation, a networked connector, database recovery
+or tenant security.

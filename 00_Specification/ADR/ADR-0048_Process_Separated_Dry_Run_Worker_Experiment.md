@@ -16,6 +16,10 @@ Related Decisions:
 - `ADR-0046_Connector_Contract_and_Durable_Outbox_Experiment.md`
 - `ADR-0047_Governed_Agent_Personality_Profile_Experiment.md`
 
+Subsequent Decision:
+
+- `ADR-0049_Darwin_Network_and_Write_Sandbox_Experiment.md`
+
 ## Decision
 
 The Level 1 Connector Outbox demo shall execute its digest-only simulation in
@@ -82,7 +86,7 @@ to `uncertain`. Automatic retry remains prohibited.
 
 Process separation is not an operating-system security boundary.
 
-The experiment must report:
+The process-only experiment must report:
 
 ```text
 processSeparated:         true
@@ -93,7 +97,13 @@ networkIsolationEnforced: false
 
 The first value is implemented process topology. The next two are the admitted
 contract and current worker implementation. The final value records that no
-OS, container or infrastructure egress control was applied.
+OS, container or infrastructure egress control was applied to that
+process-only execution.
+
+ADR-0049 later authorizes a separate optional Darwin-required mode to report
+positive network/write isolation only after exact policy binding and runtime
+denial probes. It does not change the false reporting required by this ADR for
+process separation alone.
 
 ## Expected Evidence
 

@@ -8,8 +8,10 @@ import {
   ConflictError,
   createDryRunWorkerRequest,
   createDryRunWorkerResponse,
+  DARWIN_NETWORK_ISOLATION_PROVIDER,
   deterministicIdFactory,
   digestObject,
+  DarwinSandboxExecNetworkWriteDeny,
   IntegrityError,
   InvocationVerifier,
   LocalInvocationAuthority,
@@ -262,6 +264,237 @@ test("worker protocol binds the exact claim, intent, validity window and digest-
   );
 });
 
+test("network-isolation protocol requires exact attestation binding", async (t) => {
+  const harness = await workerHarness(t);
+  const { claimed } = await prepareClaimedDelivery(harness);
+  const issuedAt = harness.time.value().toISOString();
+  const expiresAt = new Date(
+    harness.time.value().getTime() + 4_000
+  ).toISOString();
+  const networkIsolation = {
+    required: true,
+    provider: DARWIN_NETWORK_ISOLATION_PROVIDER,
+    policyDigest: digestObject({
+      provider: DARWIN_NETWORK_ISOLATION_PROVIDER,
+      policy: "test-bound"
+    })
+  };
+  const request = createDryRunWorkerRequest({
+    delivery: claimed,
+    requestId: "workerrequest_isolation_000001",
+    issuedAt,
+    expiresAt,
+    networkIsolation
+  });
+  assert.throws(
+    () =>
+      createDryRunWorkerResponse({
+        request,
+        completedAt: issuedAt
+      }),
+    ValidationError
+  );
+  assert.throws(
+    () =>
+      createDryRunWorkerResponse({
+        request,
+        completedAt: issuedAt,
+        networkIsolationAttestation: {
+          enforced: false,
+          filesystemWriteEnforced: false,
+          filesystemWriteProbe: "not_run",
+          provider: DARWIN_NETWORK_ISOLATION_PROVIDER,
+          policyDigest: networkIsolation.policyDigest,
+          probe: "not_run"
+        }
+      }),
+    ValidationError
+  );
+
+  const response = createDryRunWorkerResponse({
+    request,
+    completedAt: issuedAt,
+    networkIsolationAttestation: {
+      enforced: true,
+      filesystemWriteEnforced: true,
+      filesystemWriteProbe: "dev_null_write_open_denied",
+      provider: DARWIN_NETWORK_ISOLATION_PROVIDER,
+      policyDigest: networkIsolation.policyDigest,
+      probe: "socket_listen_and_connect_denied"
+    }
+  });
+  assert.equal(verifyDryRunWorkerResponse(response, request), true);
+  assert.equal(
+    response.workerBoundary.networkIsolationEnforced,
+    true
+  );
+
+  const changedProbe = mutableClone(response);
+  changedProbe.workerBoundary.networkIsolationProbe = "not_run";
+  assert.throws(
+    () =>
+      verifyDryRunWorkerResponse(
+        redigest(changedProbe),
+        request
+      ),
+    IntegrityError
+  );
+
+  const changedFilesystemProbe = mutableClone(response);
+  changedFilesystemProbe.workerBoundary.filesystemWriteIsolationProbe =
+    "not_run";
+  assert.throws(
+    () =>
+      verifyDryRunWorkerResponse(
+        redigest(changedFilesystemProbe),
+        request
+      ),
+    IntegrityError
+  );
+});
+
+test(
+  "Darwin sandbox provider binds the trusted deprecated launcher and policy",
+  { skip: process.platform !== "darwin" },
+  async () => {
+    const sandbox = new DarwinSandboxExecNetworkWriteDeny();
+    const status = sandbox.status();
+    assert.equal(status.networkIsolationRequired, true);
+    assert.equal(status.networkIsolationEnforced, false);
+    assert.equal(status.filesystemWriteIsolationRequired, true);
+    assert.equal(status.filesystemWriteIsolationEnforced, false);
+    assert.equal(status.enforcementState, "not_attested");
+    assert.equal(status.deprecatedPlatformInterface, true);
+    assert.equal(status.productionReady, false);
+
+    const policy = await sandbox.inspect();
+    assert.equal(policy.provider, DARWIN_NETWORK_ISOLATION_PROVIDER);
+    assert.equal(policy.launcher.path, "/usr/bin/sandbox-exec");
+    assert.equal(policy.launcher.uid, 0);
+    assert.equal(policy.launcher.mode & 0o022, 0);
+    assert.match(policy.launcher.digest, /^sha256:[0-9a-f]{64}$/);
+    assert.match(policy.profileDigest, /^sha256:[0-9a-f]{64}$/);
+    assert.match(policy.policyDigest, /^sha256:[0-9a-f]{64}$/);
+    assert.equal(policy.networkAccess, false);
+    assert.equal(policy.filesystemWriteAccess, false);
+    assert.equal(policy.deprecatedPlatformInterface, true);
+  }
+);
+
+test(
+  "Darwin sandboxed worker proves listen and connect denial before recording an outcome",
+  { skip: process.platform !== "darwin" },
+  async (t) => {
+    const harness = await workerHarness(t);
+    const delivery = await prepareClaimedDelivery(harness);
+    const worker = new ProcessSeparatedDryRunWorker({
+      clock: harness.time.clock,
+      idFactory: deterministicIdFactory("sandboxed"),
+      timeoutMs: 3_000,
+      networkIsolation: "darwin-sandbox-exec-required"
+    });
+
+    const configured = worker.status();
+    assert.equal(configured.networkIsolationRequired, true);
+    assert.equal(
+      configured.networkIsolationProvider,
+      DARWIN_NETWORK_ISOLATION_PROVIDER
+    );
+    assert.equal(configured.networkIsolationEnforced, false);
+
+    const result = await worker.execute({
+      delivery: delivery.claimed
+    });
+    assert.equal(
+      result.workerBoundary.networkIsolationEnforced,
+      true
+    );
+    assert.equal(
+      result.workerBoundary.networkIsolationProvider,
+      DARWIN_NETWORK_ISOLATION_PROVIDER
+    );
+    assert.equal(
+      result.workerBoundary.networkIsolationProbe,
+      "socket_listen_and_connect_denied"
+    );
+    assert.equal(
+      result.workerBoundary.filesystemWriteIsolationEnforced,
+      true
+    );
+    assert.equal(
+      result.workerBoundary.filesystemWriteIsolationProbe,
+      "dev_null_write_open_denied"
+    );
+    assert.match(
+      result.workerBoundary.networkIsolationPolicyDigest,
+      /^sha256:[0-9a-f]{64}$/
+    );
+
+    const recorded = await harness.execute(
+      connector,
+      "outbox.record-outcome",
+      {
+        deliveryId: delivery.deliveryId,
+        claimId: result.claimId,
+        outcome: result.outcome.type,
+        evidence: result.outcome.evidence
+      }
+    );
+    assert.equal(recorded.status, "simulated");
+    await harness.execute(operations, "task.complete", {
+      taskId: delivery.taskId,
+      result: {
+        deliveryStatus: recorded.status,
+        isolationPolicyDigest:
+          result.workerBoundary.networkIsolationPolicyDigest
+      }
+    });
+    const run = await harness.execute(owner, "workflow.view", {
+      runId: delivery.runId
+    });
+    assert.equal(run.status, "completed");
+  }
+);
+
+test(
+  "Darwin sandbox bypass fault is rejected by the child socket probes",
+  { skip: process.platform !== "darwin" },
+  async (t) => {
+    const harness = await workerHarness(t);
+    const delivery = await prepareClaimedDelivery(harness);
+    const worker = new ProcessSeparatedDryRunWorker({
+      clock: harness.time.clock,
+      timeoutMs: 3_000,
+      faultMode: "sandbox-bypass",
+      networkIsolation: "darwin-sandbox-exec-required"
+    });
+
+    await assert.rejects(
+      () => worker.execute({ delivery: delivery.claimed }),
+      (error) =>
+        error instanceof ConflictError &&
+        error.details?.reasonCode === "WORKER_EXIT_UNTRUSTED"
+    );
+    const current = await harness.execute(owner, "outbox.get", {
+      deliveryId: delivery.deliveryId
+    });
+    assert.equal(current.status, "claimed");
+    assert.equal(current.lastOutcome, null);
+
+    harness.time.advance(30_000);
+    const reconciled = await harness.execute(
+      owner,
+      "outbox.reconcile-expired",
+      { deliveryId: delivery.deliveryId }
+    );
+    assert.equal(reconciled.status, "uncertain");
+    assert.equal(
+      reconciled.lastOutcome.evidence.reasonCode,
+      "CLAIM_LEASE_RECONCILED"
+    );
+  }
+);
+
 test("separate worker completes one authenticated outbox run with content-minimized evidence", async (t) => {
   const harness = await workerHarness(t);
   const delivery = await prepareClaimedDelivery(harness);
@@ -297,6 +530,17 @@ test("separate worker completes one authenticated outbox run with content-minimi
   assert.equal(status.networkAccess, false);
   assert.equal(status.externalEffects, false);
   assert.equal(status.networkIsolationEnforced, false);
+  assert.equal(status.networkIsolationRequired, false);
+  assert.equal(status.filesystemWriteIsolationEnforced, false);
+  assert.equal(status.filesystemWriteIsolationRequired, false);
+  assert.equal(
+    result.workerBoundary.filesystemWriteIsolationEnforced,
+    false
+  );
+  assert.equal(
+    result.workerBoundary.filesystemWriteIsolationProbe,
+    "not_run"
+  );
   assert.throws(() => {
     status.networkAccess = true;
   }, TypeError);
@@ -403,6 +647,20 @@ test("worker construction, clock and expired-claim checks fail closed", async (t
     () =>
       new ProcessSeparatedDryRunWorker({
         faultMode: "unbounded-network"
+      }),
+    ValidationError
+  );
+  assert.throws(
+    () =>
+      new ProcessSeparatedDryRunWorker({
+        networkIsolation: "assume-isolated"
+      }),
+    ValidationError
+  );
+  assert.throws(
+    () =>
+      new ProcessSeparatedDryRunWorker({
+        faultMode: "sandbox-bypass"
       }),
     ValidationError
   );

@@ -52,6 +52,7 @@ Review and validate the Level 1 Company OS Pilot:
 - `04_Evidence/fdos-runtime/EV-FDOS-CONNECTOR-OUTBOX-005.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-AGENT-PERSONALITY-006.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-PROCESS-WORKER-007.md`
+- `04_Evidence/fdos-runtime/EV-FDOS-DARWIN-SANDBOX-008.md`
 
 The pilot now includes exact read-only Git reference intake for TapTime and
 Company AI, Human-reviewed source provenance and an exclusive local runtime
@@ -60,16 +61,18 @@ server-side role derivation and an authenticated three-role workflow. FDOS did
 not modify either independent source repository.
 
 Later technical slices add a durable dry-run Connector Outbox, governed
-non-authoritative Personality Profiles and a process-separated digest-only
-simulation worker. Worker request/response binding, clean-exit
-acknowledgement, crash and timeout behavior are tested without enabling a
-networked connector, model provider or external action.
+non-authoritative Personality Profiles, a process-separated digest-only
+simulation worker and one optional Darwin network/write-denial experiment.
+Worker binding, clean-exit acknowledgement, crash/timeout behavior, exact
+isolation-policy digests, runtime denial probes and sandbox-bypass rejection
+are tested without enabling a networked connector, model provider or external
+action.
 
-Human Governance should review all seven evidence records and the remaining
-identity, database, recovery, model and isolation limits before the next
-bounded experiment: an authenticated read-only connector inside an
-OS/container-enforced sandbox with egress, workload-identity, signed-artifact
-and secrets controls.
+Human Governance should review all eight evidence records and the remaining
+identity, database, recovery, model and isolation limits. The deprecated
+Darwin adapter must be replaced by a supported portable sandbox with outbound
+allowlisting, read/resource restrictions, workload identity, signed artifacts
+and secrets controls before one authenticated read-only connector.
 
 Then use FDOS and ADO in further real projects.
 
@@ -78,7 +81,9 @@ Do not expand the Core until real evidence proves the need.
 The ephemeral local signer is not a production identity provider. Local
 SQLite transaction tests do not prove production persistence. The experimental
 runtime is not a Core expansion and is not production ready. A separate child
-process is not an enforced network or resource sandbox.
+process alone is not a sandbox. The optional Darwin result proves only the
+recorded `network*`/`file-write*` profile and selected denial probes, not a
+portable or complete resource boundary.
 
 ## Version Consistency Rule
 

@@ -14,6 +14,14 @@ import {
 import { createId } from "../kernel/ids.js";
 import { isoDate } from "../kernel/validation.js";
 import {
+  DARWIN_NETWORK_ISOLATION_PROVIDER,
+  NO_NETWORK_ISOLATION_PROVIDER,
+  processOnlyNetworkIsolationBinding
+} from "../domain/network-isolation-contract.js";
+import {
+  DarwinSandboxExecNetworkWriteDeny
+} from "./darwin-sandbox-exec-network-write-deny.js";
+import {
   createDryRunWorkerRequest,
   verifyDryRunWorkerResponse
 } from "../workers/dry-run-worker-protocol.js";
@@ -29,7 +37,12 @@ const FAULT_MODES = Object.freeze([
   "none",
   "crash-before-response",
   "hang",
-  "response-then-crash"
+  "response-then-crash",
+  "sandbox-bypass"
+]);
+const NETWORK_ISOLATION_MODES = Object.freeze([
+  "process-only",
+  "darwin-sandbox-exec-required"
 ]);
 
 function validClockValue(clock) {
@@ -66,12 +79,14 @@ export class ProcessSeparatedDryRunWorker {
   #idFactory;
   #timeoutMs;
   #faultMode;
+  #networkIsolation;
 
   constructor({
     clock = () => new Date(),
     idFactory = createId,
     timeoutMs = 2_000,
-    faultMode = "none"
+    faultMode = "none",
+    networkIsolation = "process-only"
   } = {}) {
     if (typeof clock !== "function" || typeof idFactory !== "function") {
       throw new ValidationError(
@@ -80,6 +95,19 @@ export class ProcessSeparatedDryRunWorker {
     }
     if (!FAULT_MODES.includes(faultMode)) {
       throw new ValidationError("Process worker fault mode is invalid.");
+    }
+    if (!NETWORK_ISOLATION_MODES.includes(networkIsolation)) {
+      throw new ValidationError(
+        "Process worker network-isolation mode is invalid."
+      );
+    }
+    if (
+      faultMode === "sandbox-bypass" &&
+      networkIsolation !== "darwin-sandbox-exec-required"
+    ) {
+      throw new ValidationError(
+        "Sandbox-bypass fault requires the Darwin sandbox."
+      );
     }
     this.#clock = clock;
     this.#idFactory = idFactory;
@@ -90,6 +118,7 @@ export class ProcessSeparatedDryRunWorker {
       5_000
     );
     this.#faultMode = faultMode;
+    this.#networkIsolation = networkIsolation;
   }
 
   status() {
@@ -100,10 +129,45 @@ export class ProcessSeparatedDryRunWorker {
       networkAccess: false,
       externalEffects: false,
       networkIsolationEnforced: false,
+      networkIsolationRequired:
+        this.#networkIsolation ===
+        "darwin-sandbox-exec-required",
+      networkIsolationProvider:
+        this.#networkIsolation ===
+        "darwin-sandbox-exec-required"
+          ? DARWIN_NETWORK_ISOLATION_PROVIDER
+          : NO_NETWORK_ISOLATION_PROVIDER,
+      filesystemWriteIsolationEnforced: false,
+      filesystemWriteIsolationRequired:
+        this.#networkIsolation ===
+        "darwin-sandbox-exec-required",
       parentEnvironmentForwarded: false,
       timeoutMs: this.#timeoutMs,
       faultInjectionEnabled: this.#faultMode !== "none"
     });
+  }
+
+  async #prepareLaunch() {
+    const direct = {
+      executable: process.execPath,
+      arguments: ["--no-warnings", WORKER_FILE],
+      isolation: processOnlyNetworkIsolationBinding()
+    };
+    if (this.#networkIsolation === "process-only") {
+      return direct;
+    }
+    const sandbox = new DarwinSandboxExecNetworkWriteDeny();
+    const sandboxed = await sandbox.prepareLaunch({
+      nodeExecutable: process.execPath,
+      workerFile: WORKER_FILE
+    });
+    if (this.#faultMode === "sandbox-bypass") {
+      return {
+        ...direct,
+        isolation: sandboxed.isolation
+      };
+    }
+    return sandboxed;
   }
 
   async #assertWorkerFile() {
@@ -132,6 +196,7 @@ export class ProcessSeparatedDryRunWorker {
 
   async execute({ delivery } = {}) {
     await this.#assertWorkerFile();
+    const launch = await this.#prepareLaunch();
     const now = validClockValue(this.#clock);
     const claimExpiresAt = isoDate(
       delivery?.claim?.expiresAt,
@@ -152,7 +217,8 @@ export class ProcessSeparatedDryRunWorker {
       delivery,
       requestId: this.#idFactory("workerrequest"),
       issuedAt: now.toISOString(),
-      expiresAt
+      expiresAt,
+      networkIsolation: launch.isolation
     });
     const serializedRequest = canonicalJson(request);
     if (
@@ -167,14 +233,24 @@ export class ProcessSeparatedDryRunWorker {
       let child;
       try {
         child = spawn(
-          process.execPath,
-          ["--no-warnings", WORKER_FILE],
+          launch.executable,
+          launch.arguments,
           {
             cwd: fileURLToPath(new URL("../workers/", import.meta.url)),
             env: {
-              FDOS_DRY_RUN_WORKER_FAULT: this.#faultMode,
+              FDOS_DRY_RUN_WORKER_FAULT:
+                this.#faultMode === "sandbox-bypass"
+                  ? "none"
+                  : this.#faultMode,
+              FDOS_NETWORK_ISOLATION_PROVIDER:
+                launch.isolation.provider,
+              FDOS_NETWORK_ISOLATION_POLICY_DIGEST:
+                launch.isolation.policyDigest,
               LANG: "C",
               LC_ALL: "C",
+              ...(launch.isolation.required
+                ? { NODE_V8_COVERAGE: "" }
+                : {}),
               TZ: "UTC"
             },
             shell: false,

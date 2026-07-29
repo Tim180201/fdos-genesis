@@ -1,6 +1,6 @@
 {
   "name": "@fdos/runtime-reference",
-  "version": "0.7.0-experimental",
+  "version": "0.8.0-experimental",
   "description": "Experimental, governed runtime reference implementation for FDOS",
   "private": true,
   "type": "module",
@@ -12,10 +12,11 @@
   },
   "scripts": {
     "test": "node --test --test-concurrency=1 --test-reporter=spec",
-    "check": "node --check src/cli.js && node --check src/domain/connector-contract.js && node --check src/domain/delivery-intent.js && node --check src/domain/personality-profile.js && node --check src/identity/invocation.js && node --check src/integrations/git-reference-source.js && node --check src/integrations/process-separated-dry-run-worker.js && node --check src/kernel/runtime-lease.js && node --check src/kernel/sqlite-event-store.js && node --check src/pilot/connector-outbox-demo.js && node --check src/runtime/authenticated-gateway.js && node --check src/workers/dry-run-connector-worker.js && node --check src/workers/dry-run-worker-protocol.js && node --test --test-concurrency=1 --test-reporter=spec",
+    "check": "node --check src/cli.js && node --check src/domain/connector-contract.js && node --check src/domain/delivery-intent.js && node --check src/domain/network-isolation-contract.js && node --check src/domain/personality-profile.js && node --check src/identity/invocation.js && node --check src/integrations/darwin-sandbox-exec-network-write-deny.js && node --check src/integrations/git-reference-source.js && node --check src/integrations/process-separated-dry-run-worker.js && node --check src/kernel/runtime-lease.js && node --check src/kernel/sqlite-event-store.js && node --check src/pilot/connector-outbox-demo.js && node --check src/runtime/authenticated-gateway.js && node --check src/workers/dry-run-connector-worker.js && node --check src/workers/dry-run-worker-protocol.js && node --test --test-concurrency=1 --test-reporter=spec",
     "coverage": "node --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec",
     "demo": "node src/cli.js demo",
     "demo:outbox": "node src/cli.js outbox-demo",
+    "demo:sandbox": "node src/cli.js sandbox-demo",
     "verify": "node src/cli.js verify"
   },
   "license": "UNLICENSED"

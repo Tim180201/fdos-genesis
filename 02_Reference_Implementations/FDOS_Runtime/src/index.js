@@ -21,6 +21,14 @@ export {
   verifyDeliveryOutcome
 } from "./domain/delivery-intent.js";
 export {
+  DARWIN_NETWORK_ISOLATION_PROVIDER,
+  NO_NETWORK_ISOLATION_POLICY_DIGEST,
+  NO_NETWORK_ISOLATION_PROVIDER,
+  normalizeNetworkIsolationBinding,
+  processOnlyNetworkIsolationBinding,
+  verifyNetworkIsolationBinding
+} from "./domain/network-isolation-contract.js";
+export {
   PERSONALITY_INVARIANTS,
   PERSONALITY_PRECEDENCE,
   PersonalityRegistry,
@@ -78,6 +86,10 @@ export {
 export {
   ProcessSeparatedDryRunWorker
 } from "./integrations/process-separated-dry-run-worker.js";
+export {
+  DARWIN_NETWORK_SANDBOX_PROVIDER,
+  DarwinSandboxExecNetworkWriteDeny
+} from "./integrations/darwin-sandbox-exec-network-write-deny.js";
 export {
   createDryRunWorkerRequest,
   createDryRunWorkerResponse,

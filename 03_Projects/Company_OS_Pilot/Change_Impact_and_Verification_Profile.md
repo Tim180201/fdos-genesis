@@ -41,55 +41,61 @@ V4 and V5 cannot be claimed for an uncommitted local experiment.
 Baseline commit/tree:
 
 - FDOS commit:
-  `7f41f37bf28a020e7b50ddf56a071d29ce14e0ec`
+  `371551e5fbd5de55c09dd46dd9b42dd9d00a7e9c`
 - FDOS tree:
-  `9be0e624ebeff9662bf2f0bbf08e2910e291a1f3`
-- the process-separated dry-run worker slice is evaluated as the change from
-  that governed Personality Profile baseline;
+  `215bbbb78e1ab98f608ee1ddf57012ea43871282`
+- the Darwin sandbox slice is evaluated as the change from that
+  process-separated worker baseline;
 - external references are bound separately in
   `Reference_Adoption_Assessment.md`.
 
 Changed boundaries:
 
-- exact, closed and content-addressed worker request/response protocol;
-- active delivery, fencing claim, Connector Instance, Delivery Intent and
-  validity-window binding;
-- fixed process entry point, no shell, minimal non-inherited environment and
-  explicit standard-I/O boundary;
-- parent-side timeout and request/output/error byte limits;
-- digest-only result binding request, completion time and worker boundary;
-- clean-exit acknowledgement and rejection of post-response crash;
-- crash-before-response, post-response-crash and hang fault injection;
-- preservation of the durable claim followed by human-only uncertainty
-  reconciliation;
-- explicit `networkIsolationEnforced: false` non-claim;
+- exact network-isolation provider contract with process-only and
+  Darwin-required bindings;
+- worker protocol version 1.1 binding exact provider and policy digest;
+- fixed root-owned `/usr/bin/sandbox-exec` inspection and SHA-256 binding;
+- exact profile denying `network*` and `file-write*`;
+- child-side loopback listen/connect and filesystem write-open denial probes;
+- positive network/write flags accepted only after exact probe attestation;
+- required-mode fail-closed behavior off Darwin or on launcher failure;
+- deliberate direct-launch bypass fault and rejected child response;
+- preservation of the durable claim followed by human-only uncertainty after
+  sandbox failure;
+- explicit clearing of required-mode child V8 coverage-file output;
+- default process-only behavior retaining false isolation flags;
+- new `sandbox-demo` command with no networked service or external effect;
 - architecture, identity, security, risk and evidence documentation.
 
 Risk class: R3.
 
 Rationale:
 
-- the worker crosses a process and connector boundary;
-- acknowledgement handling affects whether external work could later be
-  considered complete or uncertain;
-- the child receives exact internal Delivery Intent parameters;
-- false network-isolation claims would create a material security error;
+- isolation reporting affects whether a future worker could be admitted near
+  a connector boundary;
+- a false positive or silent fallback would create a material security error;
+- the child still receives exact internal Delivery Intent parameters and runs
+  under the same account;
+- the selected OS interface is deprecated and platform-specific;
 - the experiment remains dry-run and changes no external-effect authority.
 
 Selected verification and result:
 
-- V0: exact FDOS status/diff, `git diff --check`, navigation, unsupported-claim
-  review and source-manifest verification passed;
-- V1: worker protocol, child entry point, process client, pilot and CLI syntax
-  checks plus six focused new worker cases passed;
-- V2: exact protocol shape/digests, claim/time binding, raw-field rejection,
-  asserted-sandbox rejection, clean execution, crash-before-response,
-  post-response crash, timeout and human uncertainty reconciliation passed;
-- V3: complete 116-test runtime regression, coverage, both local demos and
-  final scope review passed;
+- V0: exact FDOS status/diff, `git diff --check`, navigation,
+  unsupported-claim review and source-manifest verification passed;
+- V1: isolation contract, provider, protocol, child, process client and CLI
+  syntax checks plus ten focused process-worker cases passed;
+- V2: launcher ownership/mode/byte inspection, profile/policy digests, exact
+  request/response binding, listen/connect/write-open denial, missing/false
+  and tampered attestations, direct-launch bypass, unchanged Outbox and
+  human-only uncertainty reconciliation passed on the recorded Darwin host;
+- V3: complete 120-test runtime regression, 90.12% line / 78.97% branch /
+  90.27% function coverage, internal/outbox/sandbox demos and final scope
+  review passed;
 - V4: not claimed; no independent exact-commit CI evidence is attached;
-- V5: not claimed and not authorized; no OS sandbox, network, service,
-  physical or external operation was exercised.
+- V5: not claimed and not authorized; no second platform, independent
+  security review, real service, deployment, physical or external operation
+  was exercised.
 
 Checks intentionally not run:
 
@@ -98,10 +104,22 @@ Checks intentionally not run:
   write-producing execution;
 - no external API/model/connector test, because the contract enforces
   `networkAccess: false` and `externalEffects: false`;
-- no OS/container sandbox or egress-control test, because none is implemented;
-- no independently authenticated or signed worker-artifact test;
+- no non-Darwin execution, supported container/VM sandbox, destination
+  allowlist, filesystem-read or CPU/memory/process isolation test;
+- no independently authenticated worker, signed artifact or kernel
+  attestation test;
 - no model personality/quality evaluation, because no model adapter exists;
 - no production, deployment, legal or physical gate.
+
+Failures and retries:
+
+- the first full coverage run failed the positive sandbox case because Node's
+  coverage harness attempted to write its child artifact and the no-write
+  profile correctly returned `EPERM`;
+- required mode was changed to clear the child coverage destination without
+  widening the sandbox;
+- the targeted and complete coverage runs then passed; process-only worker
+  runs continue to supply child-source coverage.
 
 Evidence carried forward:
 
@@ -114,7 +132,8 @@ Evidence carried forward:
 - `EV-FDOS-CONNECTOR-OUTBOX-005` remains the external-work-boundary record;
 - `EV-FDOS-AGENT-PERSONALITY-006` remains the non-authoritative personality
   record;
-- this slice is bound separately in `EV-FDOS-PROCESS-WORKER-007`.
+- `EV-FDOS-PROCESS-WORKER-007` remains the process/acknowledgement record;
+- this slice is bound separately in `EV-FDOS-DARWIN-SANDBOX-008`.
 
 ## Required Completion Report
 

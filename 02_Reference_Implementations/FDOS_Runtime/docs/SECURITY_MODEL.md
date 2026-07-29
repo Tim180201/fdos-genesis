@@ -22,6 +22,8 @@ The Level 1 runtime assumes:
 - one local SQLite database opened only by that controller;
 - one short-lived child simulation process running under the same trusted
   account and Node.js installation;
+- for the optional Darwin experiment, a trusted local kernel and fixed
+  root-owned `/usr/bin/sandbox-exec` launcher;
 - trusted bootstrap registration of the Invocation Verifier public keys;
 - safe in-memory custody of the ephemeral local demo signing key;
 - the host and Node.js runtime are not compromised.
@@ -81,7 +83,11 @@ authenticated gateway and is prohibited.
 | Child emits a result and then crashes | Result accepted only after clean exit code zero and empty standard error |
 | Child hangs or floods output | Parent timeout, byte limits and forced termination |
 | Child receives parent secrets or runtime authority | No runtime/database/key object; minimal non-inherited environment; standard-I/O protocol only |
-| Process separation is mistaken for a sandbox | Explicit `networkIsolationEnforced: false`; real connector remains blocked |
+| Process separation is mistaken for a sandbox | Process-only mode reports both isolation flags false; exact Darwin-required executions must pass kernel-denial probes |
+| Sandbox selection is confused with enforcement | Request binds provider/policy digest; child listen/connect/write-open probes must pass before true flags are accepted |
+| Required Darwin policy is bypassed | Test-only direct-launch fault is rejected by the child probes; no outcome is recorded |
+| Sandbox launcher or policy drifts | Fixed root-owned non-writable launcher is byte-digested; fixed profile and complete policy are content-addressed |
+| Deprecated platform experiment is mistaken for production | Provider and documentation declare deprecated interface, Darwin-only support and `productionReady: false`; real connectors remain blocked |
 
 ## Data Classification
 
@@ -125,7 +131,8 @@ dry-run, no network and no external effect.
 
 The separate worker does not expand that authority. A rejected worker result
 does not change the Outbox. The claim later becomes eligible only for
-Human-Governance reconciliation to uncertainty.
+Human-Governance reconciliation to uncertainty. Successful Darwin denial
+probes still produce only a local digest-only simulation.
 
 ## Known Gaps
 
@@ -143,11 +150,15 @@ Human-Governance reconciliation to uncertainty.
 - no distributed transaction, broker or distributed worker fencing;
 - local Git and its operating-system account are trusted;
 - reference evidence is content-addressed but not independently signed;
-- process separation exists only for local simulation; no OS-enforced network,
-  filesystem, CPU or memory sandbox;
+- process-only simulation has no OS isolation;
+- the optional Darwin profile enforces tested `network*` and `file-write*`
+  denials only; it is deprecated, platform-specific and does not restrict
+  reads, CPU, memory, process creation, inherited descriptors or every syscall;
+- the local denial probes are child observations, not independently signed
+  kernel or workload attestation;
 - worker response and worker artifact are not independently signed or
   workload-attested;
-- no real connector, network egress control or secret vault;
+- no real connector, production outbound allowlist or secret vault;
 - no model-level personality, precedence or prompt-injection evaluation;
 - Operating Profile digests are not yet bound into model-output evidence;
 - no denial-of-service protection;
