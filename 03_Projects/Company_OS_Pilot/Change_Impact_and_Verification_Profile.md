@@ -19,7 +19,7 @@ profile below describes how one implementation change is verified.
 | R0 | non-executable documentation with no runtime or policy effect |
 | R1 | isolated low-risk implementation |
 | R2 | public contract, adapter or cross-component boundary |
-| R3 | identity, authorization, persistence, evidence, secrets, connector or release-critical behavior |
+| R3 | identity, authorization, persistence, evidence, secrets, connector, isolation or release-critical behavior |
 
 Uncertainty selects the higher class.
 
@@ -41,167 +41,178 @@ V4 and V5 cannot be claimed for an uncommitted local experiment.
 Baseline commit/tree:
 
 - FDOS commit:
-  `73e6970019e123d13f34cda43c54106fedde8e31`
+  `7b531814979e2f050bd542d2548e4a85c47073c5`
 - FDOS tree:
-  `7ff9394bba62350e61e5695e9f408b5e3bd30912`
-- the durable Verified Worker Receipt slice is evaluated as the change from
-  that authenticated workload-session baseline;
-- external references remain bound separately in
-  `Reference_Adoption_Assessment.md`.
+  `83b2063ebd73a6561b719d52d3a7e240d6ee9b86`
+- the OCI Workload Admission slice is evaluated as the change from that
+  durable verified-worker-receipt baseline;
+- external TapTime and Company AI references remain unchanged and bound
+  separately in `Reference_Adoption_Assessment.md`.
 
 Changed boundaries:
 
-- runtime package version `0.12.0-experimental`;
-- one closed, self-digested Verified Worker Receipt contract;
-- minimized request, response, process, isolation, package, release, session
-  and local parent-verification projections;
-- independent reconstruction of the canonical protocol 1.4 worker-response
-  digest from receipt fields;
-- exact 30-second local parent/runtime clock-skew ceiling;
-- new authenticated `outbox.record-worker-outcome` operation requiring a
-  receipt;
-- explicit separation from generic `outbox.record-outcome`, which rejects a
-  receipt field;
-- exact runtime binding to Delivery, fencing claim, attempt, Connector
-  Instance, Delivery Intent, request window and result digest;
-- event-replay verification of receipt schema, response digest, active claim
-  and accepted Invocation operation;
-- reconstructed delivery state retaining receipt and its Invocation ID;
-- workflow evidence projection of the complete minimized receipt plus
-  Connector Invocation command/envelope/receipt authentication digests;
-- SQLite restart verification for receipt and evidence;
-- adversarial raw-field, command-smuggling and wrong-attempt receipt paths;
-- CLI output of receipt and authenticated command digests;
-- architecture, security, process, Outbox, risk, decision and evidence
+- runtime package version `0.13.0-experimental`;
+- one closed self-digested OCI Workload Policy;
+- exact named manifest digest and supported Linux platform binding;
+- fixed non-root worker command, working directory and environment-name
+  allowlist;
+- exact no-network, read-only-root, no-host-access, no-privilege, seccomp and
+  resource policy;
+- local Docker provider requiring an absolute launcher and explicit Unix
+  socket;
+- resolved launcher path, complete SHA-256, size, ownership and mode
+  observation;
+- Docker server API 1.49+, Linux, architecture, cgroup-v2 and built-in-seccomp
+  admission;
+- exact image RepoDigest, platform, user, workdir, command, layered rootfs,
+  absent volume/port and bounded image-environment admission;
+- self-digested runtime and image observations;
+- deterministic hardened launch-template reconstruction;
+- preflight binding of complete policy, runtime, image and template;
+- fixed false execution, observation, external-attestation and production
+  claims;
+- bounded shell-free default Docker command runner with no parent environment;
+- adversarial policy, runtime, image, command and template paths;
+- real local Docker launcher inspection and daemon-unavailable negative
+  evidence;
+- architecture, security, operations, risk, decision, validation and evidence
   documentation.
 
 Unchanged boundaries:
 
+- the OCI provider is not integrated into `ProcessSeparatedDryRunWorker`;
+- no Docker/Colima daemon was started;
+- no image was built, pulled, pushed, signed or inspected live;
+- no container was created or executed;
 - worker protocol remains version 1.4;
 - canonical worker package remains version 2 and source artifact version 3;
-- package, artifact, release attestation and trust-anchor digests are
+- package, artifact, release-attestation and trust-anchor digests are
   unchanged;
-- the full authenticated workload envelope remains transient;
-- connector network access and external effects remain disabled;
-- uncertainty and retry authority remain Human Governance controls.
+- Connector network access and external effects remain disabled;
+- no new Invocation operation, runtime event or action authority was added.
 
 Risk class: R3.
 
 Rationale:
 
-- the receipt determines whether an accepted worker result can be represented
-  as durable verified-worker evidence;
-- incomplete binding could let one claim, result or generic Connector outcome
-  masquerade as another verified execution;
-- retaining raw parameters, public keys or signatures would violate the
-  content-minimization boundary;
-- receipt trust still terminates in the mutable parent and authenticated local
-  Connector principal;
-- the experiment remains no-network/no-effect and changes no external-action
+- the policy and template define a future isolation boundary;
+- an incomplete admission could let a mutable image, root command, host mount,
+  network mode or weakened resource control masquerade as safe execution;
+- a preflight artifact could be mistaken for actual kernel enforcement;
+- the local Docker launcher/socket/daemon and image store remain trusted;
+- execution is explicitly disabled, so this slice changes no external-action
   authority.
 
 Selected verification and result:
 
-- V0: exact FDOS status/diff, `git diff --check`, navigation,
-  unsupported-claim review, private-material search, package-identity
-  comparison and source-manifest verification selected;
-- V1: receipt, Invocation, gateway, process integration, runtime, state, CLI
-  and pilot syntax checks plus 29 focused Connector/worker cases passed;
-- V2: response-digest reconstruction, closed schemas, extra raw-field
-  rejection, wrong-attempt rejection, generic-command receipt rejection,
-  active-claim preservation, exact authenticated operation binding and SQLite
-  restart/evidence rehydration passed;
-- V3: complete 140-test runtime regression, 91.30% line / 78.96% branch /
-  92.72% function coverage, internal/outbox/sandbox demos and final scope
-  review passed locally;
+- V0: exact FDOS status/diff, local Docker/Colima capability discovery,
+  official/local CLI option review, unsupported-claim review, private-material
+  search, unchanged package comparison and source-manifest verification
+  selected;
+- V1: policy, provider and public-export syntax plus 13 focused OCI cases
+  passed;
+- V2: tag/digest confusion, privilege, network, mount, device, capability,
+  seccomp, root, swap, PID, tmpfs, runtime capability, image config,
+  environment, command output, template, cross-architecture and false-claim
+  adversarial paths passed;
+- V3: complete 153-test regression, 91.57% line / 79.29% branch / 92.84%
+  function coverage, real bounded command fixture, actual launcher inspection,
+  daemon-unavailable fail-closed probe, unchanged package verification and
+  final scope review passed locally;
 - V4: not claimed; no independent exact-commit CI evidence is attached;
-- V5: not claimed and not authorized; no immutable deployment, external
-  workload/audit authority, protected Connector custody, independent security
-  review, real service, physical or external operation was exercised.
+- V5: not claimed and not authorized; no host daemon start, real image,
+  container, registry, external workload identity, security review, physical
+  or operational validation occurred.
 
-Receipt coverage:
+Focused coverage:
 
 ```text
-verified-worker-receipt.js
-line coverage:     94.26%
-branch coverage:   78.13%
+oci-workload-policy.js
+line coverage:     98.22%
+branch coverage:   92.75%
 function coverage: 100.00%
+
+docker-oci-workload-provider.js
+line coverage:     92.01%
+branch coverage:   78.69%
+function coverage: 91.84%
 ```
 
 Checks intentionally not run:
 
-- no tests/builds in TapTime or Company AI, because both remain read-only
-  references outside the authorized mutation scope;
-- no external API/model/connector test, because the contract enforces
-  `networkAccess: false` and `externalEffects: false`;
-- no container image or OCI runtime test; the installed local daemon remained
-  unavailable and starting a host service would exceed the FDOS-repository-
-  only mutation scope;
-- no immutable object/image storage, external release, Connector-key or
-  workload-identity service, HSM/KMS, expiry, revocation, transparency log,
-  trusted timestamp or atomic deployment test;
-- no hostile parent/bootstrap/verifier replacement, process-memory inspection,
-  secure-erasure or remote-attestation test;
-- no offline verification of the omitted full workload envelope;
-- no supported container/VM sandbox, destination allowlist, filesystem-read or
-  CPU/memory/process isolation test;
-- no model personality/quality evaluation, because no model adapter exists;
-- no production, deployment, legal or physical gate.
+- no Docker/Colima daemon startup because it would mutate host state outside
+  the authorized FDOS repository;
+- no image build/pull/push/sign/scan because no approved base digest,
+  registry, provenance authority or live runtime exists;
+- no live image inspection or container launch;
+- no in-container network, read-only-root, user, capability, seccomp, mount,
+  PID, memory, CPU or timeout/cleanup conformance probes;
+- no OCI integration with worker protocol, Outbox or durable receipt;
+- no tests/builds in TapTime or Company AI;
+- no external model, API, connector, DNS or TLS request was made by the FDOS
+  runtime; official standards/tool documentation was reviewed separately;
+- no external workload identity, registry trust, HSM/KMS, revocation,
+  transparency or trusted-time service;
+- no production deployment, independent security review or Human Governance
+  acceptance.
 
 Failures and retries:
 
-- the initial receipt binding required child completion to be no later than
-  the runtime record clock; real child wall time can advance slightly beyond a
-  controlled parent/runtime test clock;
-- the rule was narrowed to keep exact request/claim windows while allowing a
-  documented maximum 30-second parent/runtime skew;
-- the first evidence projection call site passed no Invocation map during
-  workflow finalization; both completion and explicit export now use the same
-  authenticated projection;
-- two test assertions initially treated synchronous command-shape rejection as
-  asynchronous business failure; assertion modes were corrected without
-  weakening runtime behavior;
-- focused tests, complete static/regression checks, coverage and all three
-  demos then passed;
-- no package/release or session private key was generated, changed, printed or
-  stored for this slice.
+- the first focused run passed 9 of 12 tests; a launch-template validation
+  block had been inserted into the image normalizer and was moved to the
+  correct closed template boundary;
+- the first real command-runner fixture resolved macOS `/var` through
+  `/private/var`; the assertion was corrected to compare the filesystem
+  `realpath` already recorded by the provider;
+- the initial minimum API assumption was raised from 1.44 to 1.49 after
+  verifying that platform-bound `docker image inspect` requires API 1.49;
+- image environment and healthcheck/core-dump paths were hardened before
+  final regression;
+- final option review found Docker's documented `--rm`/`--restart` conflict;
+  the explicit restart flag was removed while the default `no` policy and
+  required automatic cleanup flag were retained;
+- final verifier review added exact-string, runtime-architecture,
+  executable-mode, registry/socket and equal-open-file-limit rejection;
+- one attempted leaf-symlink consistency rule then failed 152/153 because
+  macOS may resolve an ancestor `/var` link while the requested file itself is
+  regular; that invalid inference was removed while the resolved-path binding
+  remained;
+- focused tests then passed 13/13 and the complete suite passed 153/153;
+- actual Docker runtime admission failed closed as expected because the daemon
+  was unavailable;
+- no private key or credential was generated, changed, printed or stored.
 
 Evidence carried forward:
 
-- `EV-FDOS-RUNTIME-PILOT-001` remains the original three-role record;
-- `EV-FDOS-REFERENCE-INTAKE-002` remains the reference-intake record;
-- `EV-FDOS-AUTHENTICATED-INVOCATION-003` remains the identity-boundary record;
-- `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004` remains the local transaction record;
-- `EV-FDOS-CONNECTOR-OUTBOX-005` remains the external-work-boundary record;
-- `EV-FDOS-AGENT-PERSONALITY-006` remains the personality record;
-- `EV-FDOS-PROCESS-WORKER-007` remains the process/acknowledgement record;
-- `EV-FDOS-DARWIN-SANDBOX-008` remains the platform-denial record;
-- `EV-FDOS-WORKER-ARTIFACT-009` remains the signed-source record;
-- `EV-FDOS-WORKER-PACKAGE-010` remains the deterministic package record;
-- `EV-FDOS-WORKLOAD-SESSION-011` remains the authenticated-session record;
-- this slice is bound separately in `EV-FDOS-WORKER-RECEIPT-012`.
+- `EV-FDOS-RUNTIME-PILOT-001` through
+  `EV-FDOS-WORKER-RECEIPT-012` remain historical bounded evidence;
+- this slice is bound separately in `EV-FDOS-OCI-ADMISSION-013`;
+- worker package v2, artifact v3, protocol 1.4 and receipt evidence remain
+  unchanged.
 
 Remaining risks:
 
-- receipt verification is performed by the same mutable local parent that
-  creates the receipt;
-- the exact Connector command is authenticated, but Connector key custody is
-  not externally protected;
-- a compromised parent, Connector key, host or event-store owner remains
-  inside the Level 1 trusted computing base;
-- the omitted full envelope prevents offline workload-signature verification;
-- no external workload/audit identity, revocation, transparency or trusted
-  timestamp exists;
-- process-only and deprecated Darwin isolation gaps remain unchanged.
+- positive runtime/image admission is fixture-backed, not live-host evidence;
+- the installed Docker CLI is user-owned and no daemon was admitted;
+- a future Unix socket/daemon and local image store remain trusted;
+- a RepoDigest is content identity, not protected signature or provenance;
+- launch-template construction is not enforcement evidence;
+- no reproducible FDOS image exists;
+- environment transfer, container timeout/kill/cleanup and orphan handling are
+  not implemented;
+- worker response and receipt do not bind an outer OCI boundary;
+- no external workload identity, registry transparency, trusted time or
+  revocation exists.
 
 Next required gate:
 
-- supported immutable container or VM deployment;
-- externally rooted workload identity and protected release/Connector custody;
-- independently verifiable signed execution receipt or separately governed
-  full-envelope retention;
-- trusted time, replay/revocation and monitoring controls;
-- portable outbound, read and resource isolation;
+- separately authorized supported local/CI OCI runtime;
+- reproducible multi-platform image from a digest-pinned base;
+- protected image signature/provenance, SBOM and vulnerability policy;
+- live inside/outside conformance probes for every declared control;
+- deterministic per-launch environment, name, timeout, kill, wait and cleanup;
+- exact outer-boundary observation in worker response and durable receipt;
+- externally rooted workload identity and replay/revocation;
 - independent security review and Human Governance decision.
 
 ## Required Completion Report
@@ -229,4 +240,5 @@ Next required gate:
 
 This profile is a project application of a reference pattern. It does not
 promote TapTime AVS-001 into FDOS Core, redefine FDOS validation maturity or
-authorize CI, deployment or production work.
+authorize CI, host-service startup, image operations, deployment or
+production work.

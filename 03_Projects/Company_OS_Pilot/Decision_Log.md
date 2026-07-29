@@ -526,3 +526,50 @@ Rationale: The full workload envelope is omitted and the mutable local parent
 constructs the receipt. Connector command authentication improves attribution
 and replay integrity but cannot replace external workload identity or
 independent attestation.
+
+## PILOT-DEC-050 — Separate OCI Admission from Execution
+
+Date: 2026-07-29
+
+Decision: Implement a complete policy/runtime/image/template preflight before
+wiring any container provider into the process worker. Every preflight remains
+explicitly non-authorizing and non-production.
+
+Rationale: A syntactically hardened command is not evidence that a real daemon,
+image or kernel enforced it. Separating the stages prevents admission fixtures
+from becoming an accidental execution claim.
+
+## PILOT-DEC-051 — Require Named OCI Manifest Digests
+
+Date: 2026-07-29
+
+Decision: Reject tag-only image references and require the reference digest to
+equal the closed policy's manifest digest. Future execution shall use
+`--pull=never`.
+
+Rationale: Tags are mutable pointers. A named digest provides the minimum
+stable content identity needed before protected provenance and transparency
+are introduced.
+
+## PILOT-DEC-052 — Close the Container Process and Security Profile
+
+Date: 2026-07-29
+
+Decision: Fix the non-root command, workdir and environment-name surface and
+require no network, read-only root, no caller-supplied host mount/device
+mappings, dropped capabilities, no-new-privileges, built-in seccomp, private
+IPC and bounded resources.
+
+Rationale: Caller-selected container options would move the authority boundary
+into untrusted launch input and make later evidence ambiguous.
+
+## PILOT-DEC-053 — Do Not Start an Unavailable Host Runtime
+
+Date: 2026-07-29
+
+Decision: Inspect the installed Docker launcher and record daemon-unavailable
+failure, but do not start Docker, Colima or Lima from this FDOS-only slice.
+
+Rationale: Starting a host service changes state outside the authorized
+repository. Live container execution requires a separate Human Governance
+decision covering image provenance, runtime custody, probes and cleanup.

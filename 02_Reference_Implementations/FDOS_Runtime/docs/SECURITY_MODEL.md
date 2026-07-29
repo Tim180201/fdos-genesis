@@ -29,6 +29,9 @@ The Level 1 runtime assumes:
   launch, whose private key remains in child-process memory;
 - for the optional Darwin experiment, a trusted local kernel and fixed
   root-owned `/usr/bin/sandbox-exec` launcher;
+- for OCI admission only, the configured local Docker CLI, Unix socket,
+  daemon response and local image store are trusted if available; none is
+  externally attested;
 - trusted bootstrap registration of the Invocation Verifier public keys;
 - safe in-memory custody of the ephemeral local demo signing key;
 - the host and Node.js runtime are not compromised.
@@ -102,6 +105,12 @@ authenticated gateway and is prohibited.
 | Required Darwin policy is bypassed | Test-only direct-launch fault is rejected by the child probes; no outcome is recorded |
 | Sandbox launcher or policy drifts | Fixed root-owned non-writable launcher is byte-digested; fixed profile and complete policy are content-addressed |
 | Deprecated platform experiment is mistaken for production | Provider and documentation declare deprecated interface, Darwin-only support and `productionReady: false`; real connectors remain blocked |
+| Mutable image tag changes workload bytes | OCI policy accepts only an exact named manifest digest; `--pull=never` |
+| Container launch silently gains host authority | Exact template requires no network, read-only root, non-root user, dropped capabilities, no-new-privileges, built-in seccomp, private IPC and no caller-supplied host mount/device mappings; runtime-managed files/devices remain in the trusted boundary |
+| Image config overrides the fixed worker | Admission binds exact entrypoint/command, user, workdir, absent volumes/ports and a four-name bounded environment allowlist |
+| Runtime lacks required isolation controls | Local Unix-socket preflight requires API 1.49+, Linux, cgroup v2 and built-in seccomp |
+| OCI preflight is mistaken for execution evidence | Preflight hard-codes execution/observation/attestation/production booleans false and is not integrated with the worker |
+| OCI template is weakened after admission | Verification reconstructs exact arguments from retained policy, runtime and image observations |
 
 ## Data Classification
 
@@ -190,6 +199,14 @@ probes still produce only a local digest-only simulation.
   an independently signed or remotely attested execution proof;
 - a compromised parent, host account or Connector signing key can fabricate
   locally consistent receipt assertions;
+- the OCI module has no live daemon/image evidence on the recorded host; its
+  positive provider cases use deterministic fixtures and a shell-free local
+  command fixture;
+- the Docker CLI is user-owned local tooling, the Unix socket/daemon would
+  remain trusted, and no registry signature, transparency or protected image
+  provenance exists;
+- OCI preflight does not execute a container, verify runtime enforcement,
+  integrate timeout/cleanup or extend the worker receipt;
 - no real connector, production outbound allowlist or secret vault;
 - no model-level personality, precedence or prompt-injection evaluation;
 - Operating Profile digests are not yet bound into model-output evidence;

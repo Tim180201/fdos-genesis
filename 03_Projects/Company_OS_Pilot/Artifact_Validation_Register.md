@@ -67,6 +67,10 @@ promotion and not a production approval.
 | Receipt protocol-response reconstruction | Tested with digest and shape tampering | Level 1 — Experimental | `EV-FDOS-WORKER-RECEIPT-012` | Pending | Does not reconstruct the signed envelope |
 | Authenticated receipt-backed outcome command | Tested with command separation and claim binding | Level 1 — Experimental | `EV-FDOS-WORKER-RECEIPT-012` | Pending | Connector key custody remains local |
 | Durable receipt and Invocation evidence projection | Tested across SQLite restart | Level 1 — Experimental | `EV-FDOS-WORKER-RECEIPT-012` | Pending | Not independently signed audit evidence |
+| Closed digest-pinned OCI Workload Policy | Tested locally | Level 1 — Experimental | `EV-FDOS-OCI-ADMISSION-013` | Pending | Policy is not runtime enforcement |
+| Local Docker launcher/runtime admission | Tested with fixtures and real launcher negative path | Level 1 — Experimental | `EV-FDOS-OCI-ADMISSION-013` | Pending | No running real daemon admitted |
+| Exact OCI image/config admission | Tested with identity/config fault injection | Level 1 — Experimental | `EV-FDOS-OCI-ADMISSION-013` | Pending | No real FDOS image inspected |
+| Hardened non-authorizing OCI launch template | Tested by reconstruction and tampering | Level 1 — Experimental | `EV-FDOS-OCI-ADMISSION-013` | Pending | No container execution/enforcement |
 | TapTime/Company AI adoption assessment | Tested as documentation/evidence | Level 1 — Experimental | exact reference manifests | Pending | Not applicable |
 
 ## Promotion Rule

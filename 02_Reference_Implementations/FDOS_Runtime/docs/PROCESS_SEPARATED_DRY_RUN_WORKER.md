@@ -14,6 +14,7 @@ Related Decisions:
 - `../../../00_Specification/ADR/ADR-0051_Deterministic_Signed_Worker_Package_Experiment.md`
 - `../../../00_Specification/ADR/ADR-0052_Ephemeral_Workload_Session_and_Authenticated_Response_Experiment.md`
 - `../../../00_Specification/ADR/ADR-0053_Durable_Verified_Worker_Receipt_Experiment.md`
+- `../../../00_Specification/ADR/ADR-0054_Portable_OCI_Workload_Admission_Experiment.md`
 
 ## Purpose
 
@@ -25,6 +26,11 @@ fail-closed acknowledgement handling. Process separation itself is not an
 operating-system sandbox. A separate optional Darwin mode wraps the process in
 one explicitly limited OS deny policy, described in
 `DARWIN_SANDBOXED_DRY_RUN_WORKER.md`.
+
+The future portable container boundary is specified separately in
+`OCI_WORKLOAD_ADMISSION.md`. Its current provider performs admission and
+constructs a hardened template only; it is not wired into this worker and
+does not execute a container.
 
 ## Boundary
 
@@ -294,10 +300,15 @@ as true. The default mode must report them as false.
 
 ## Promotion Gate
 
-Before one real read-only sandbox connector, FDOS still requires:
+Before one real read-only sandbox connector, the new OCI admission policy must
+first be followed by:
 
-- a supported OS-, container- or infrastructure-enforced outbound policy;
-- filesystem read and resource restrictions;
+- separately authorized supported Docker/OCI runtime startup;
+- a reproducible digest-pinned image build and protected registry provenance;
+- live container probes for outbound denial, read-only root, non-root user,
+  capabilities, seccomp and resource restrictions;
+- safe bounded environment transfer plus timeout, kill and cleanup behavior;
+- outer OCI observation binding in the worker response and durable receipt;
 - production workload identity, response authentication and revocation;
 - immutable deployment storage and externally protected release trust;
 - secret-vault and no-secret-persistence controls;

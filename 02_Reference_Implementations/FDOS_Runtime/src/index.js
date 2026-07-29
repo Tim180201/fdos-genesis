@@ -34,6 +34,16 @@ export {
   verifyNetworkIsolationBinding
 } from "./domain/network-isolation-contract.js";
 export {
+  createOciWorkloadPolicy,
+  DOCKER_OCI_PROVIDER,
+  OCI_WORKLOAD_POLICY_KIND,
+  OCI_WORKLOAD_POLICY_SCHEMA_VERSION,
+  PILOT_OCI_WORKER_COMMAND,
+  PILOT_OCI_WORKER_ENVIRONMENT_NAMES,
+  normalizeOciWorkloadPolicy,
+  verifyOciWorkloadPolicy
+} from "./domain/oci-workload-policy.js";
+export {
   createDryRunWorkerArtifact,
   createWorkerArtifactBinding,
   DRY_RUN_WORKER_ARTIFACT_FILES,
@@ -153,6 +163,11 @@ export {
   DARWIN_NETWORK_SANDBOX_PROVIDER,
   DarwinSandboxExecNetworkWriteDeny
 } from "./integrations/darwin-sandbox-exec-network-write-deny.js";
+export {
+  DOCKER_OCI_MINIMUM_API_VERSION,
+  DockerOciWorkloadProvider,
+  verifyOciWorkloadPreflight
+} from "./integrations/docker-oci-workload-provider.js";
 export {
   createDryRunWorkerRequest,
   createDryRunWorkerResponse,

@@ -22,8 +22,10 @@ authenticated Connector command. On
 Darwin, one optional experimental mode additionally denies
 network socket operations and new filesystem writes through the operating
 system and requires in-worker denial probes before accepting a result. The
-runtime still contains no autonomous model call, real connector or external
-execution.
+next portable boundary is now represented by a closed OCI policy plus a
+fail-closed local Docker runtime/image preflight and hardened launch template.
+No container is executed or authorized by that preflight. The runtime still
+contains no autonomous model call, real connector or external execution.
 Callers supply all substantive work results; FDOS governs who may act, in
 which order, within which information scope and under which approval.
 
@@ -69,6 +71,14 @@ which order, within which information scope and under which approval.
   the receipt to the active Delivery, claim, attempt, intent and result;
 - durable receipt replay validation and content-minimized Invocation
   authentication metadata in workflow evidence;
+- a closed digest-pinned OCI Workload Policy for the fixed pilot worker;
+- local Docker launcher, Unix-socket runtime and image admission requiring
+  API 1.49+, Linux, cgroup v2, built-in seccomp, exact image configuration and
+  an exact hardened launch template;
+- explicit OCI preflight non-claims:
+  `executionAuthorized: false`, `executionObserved: false`,
+  `workloadIdentityExternallyAttested: false` and
+  `productionReady: false`;
 - a shell-free child process with a minimal environment, bounded input/output
   and hard timeout;
 - an optional Darwin-only, fail-closed `sandbox-exec` launch that binds the
@@ -106,6 +116,7 @@ which order, within which information scope and under which approval.
 - publication, contracts, payments, deletions and personnel decisions;
 - A3 and A4 execution;
 - restricted-data storage;
+- Docker/Colima daemon start, image build/pull and container execution;
 - unattended operation.
 
 ## Quick Start
@@ -152,6 +163,11 @@ The built-in `node:sqlite` API is still an evolving Node.js dependency. This
 candidate records exact runtime versions and makes no production-support
 claim.
 
+The OCI admission module is intentionally not a demo command. The recorded
+host has a byte-inspected Docker CLI but no running Docker/Colima daemon and
+no FDOS image. See `docs/OCI_WORKLOAD_ADMISSION.md` for the policy, provider,
+tested launch template and the separately governed live-runtime gate.
+
 Read-only reference verification is explicit and prints no document content:
 
 ```bash
@@ -164,11 +180,12 @@ node src/cli.js reference-snapshot company-ai /absolute/path/to/company-ai-platf
 - `src/kernel/` — canonical serialization, identifiers and event integrity;
 - `src/identity/` — signed Invocation Contexts and public-key verification;
 - `src/domain/` — roles, personality profiles, action and delivery intents,
-  connector contracts, worker package and release contracts, policy and
-  workflow definitions, plus the ephemeral workload-session and verified-
-  worker-receipt contracts;
+  connector contracts, worker package and release contracts, OCI workload
+  policy, workflow definitions, plus the ephemeral workload-session and
+  verified-worker-receipt contracts;
 - `src/runtime/` — authenticated gateway, coordination, approvals and memory;
-- `src/integrations/` — read-only reference and process-worker boundaries;
+- `src/integrations/` — read-only reference, process-worker and local OCI
+  admission boundaries;
 - `src/workers/` — verifier bootstrap, closed dry-run protocol and packaged
   simulation entry point;
 - `artifacts/worker-packages/` — generated canonical pilot package;
@@ -188,6 +205,7 @@ See:
 - `docs/VERIFIED_WORKER_PACKAGE.md`
 - `docs/AUTHENTICATED_WORKLOAD_SESSION.md`
 - `docs/VERIFIED_WORKER_RECEIPT.md`
+- `docs/OCI_WORKLOAD_ADMISSION.md`
 - `docs/AGENT_AND_ROLE_MODEL.md`
 - `docs/AGENT_PERSONALITY_MODEL.md`
 - `docs/SECURITY_MODEL.md`
@@ -210,4 +228,7 @@ attestation. The fresh session key authenticates possession of a key created
 by that mutable bootstrap; it is not an externally issued workload identity.
 The durable receipt is authenticated by the local Connector Invocation and
 hash-chained event history; without the omitted full envelope it is not an
-independently signed workload execution proof.
+independently signed workload execution proof. The OCI preflight validates a
+policy, locally reported runtime/image state and a launch template only. It
+does not prove a live container, immutable registry, external image
+provenance, enforced isolation or workload identity.

@@ -57,6 +57,7 @@ Review and validate the Level 1 Company OS Pilot:
 - `04_Evidence/fdos-runtime/EV-FDOS-WORKER-PACKAGE-010.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-WORKLOAD-SESSION-011.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-WORKER-RECEIPT-012.md`
+- `04_Evidence/fdos-runtime/EV-FDOS-OCI-ADMISSION-013.md`
 
 The pilot now includes exact read-only Git reference intake for TapTime and
 Company AI, Human-reviewed source provenance and an exclusive local runtime
@@ -89,7 +90,13 @@ claim. The receipt survives restart and enters workflow evidence without raw
 parameters, challenge, public key or signature. It is local authenticated
 audit evidence, not an independently signed workload proof.
 
-Human Governance should review all twelve evidence records and the remaining
+Technical Slice 13 adds a closed digest-pinned OCI worker policy, local Docker
+launcher/runtime/image admission and an exact hardened launch template. The
+recorded host had no running daemon or FDOS image, so the provider failed
+closed and no container ran. This is admission evidence, not portable
+isolation or immutable-deployment evidence.
+
+Human Governance should review all thirteen evidence records and the remaining
 identity, database, recovery, model and isolation limits. The deprecated
 Darwin adapter must be replaced by a supported portable sandbox with outbound
 allowlisting, read/resource restrictions, workload identity, immutable

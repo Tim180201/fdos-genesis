@@ -1,19 +1,19 @@
 # Company OS Pilot — Project Status
 
-Status: Technical Slice 12 Passed / Human Review Pending
+Status: Technical Slice 13 Passed / Human Review Pending
 Date: 2026-07-29  
 Validation Level: Level 1 — Experimental
 
 ## Current Goal
 
-Retain one exact content-minimized Verified Worker Receipt for every accepted
-process-worker result. Bind it durably to the authenticated Connector command,
-active Delivery, fencing claim, request, response, package, session, isolation
-and result without retaining raw parameters, challenge, key or signature.
+Establish the closed, digest-pinned and fail-closed OCI admission boundary
+required before a portable container worker may be integrated. Separate
+policy/runtime/image/template admission from live execution and preserve
+explicit non-authorization when no daemon or image has been evidenced.
 
 ## Current Phase
 
-Level 1 durable verified-worker-receipt evidence review.
+Level 1 OCI workload-admission evidence review.
 
 ## Exit Criteria
 
@@ -127,11 +127,24 @@ Level 1 durable verified-worker-receipt evidence review.
       without changing the active claim;
 - [x] worker package, release and protocol identities remained unchanged;
 - [x] ADR, security model, operations guide and Evidence 012 prepared;
-- [ ] Human Governance reviewed Technical Slices 3–12 evidence.
+- [x] closed digest-pinned OCI Workload Policy implemented;
+- [x] fixed non-root worker command and environment-name allowlist bound;
+- [x] no-network, read-only-root, no-privilege and resource controls bound;
+- [x] Docker launcher identity and local Unix-socket provider implemented;
+- [x] Linux, API 1.49+, cgroup-v2 and built-in-seccomp admission implemented;
+- [x] exact image RepoDigest, platform, process, rootfs and config admission
+      implemented;
+- [x] hardened launch template reconstructed from retained observations;
+- [x] policy, runtime, image and template downgrade/confusion paths rejected;
+- [x] real shell-free bounded command-runner fixture passed;
+- [x] unavailable real local daemon failed closed before image admission;
+- [x] no daemon start, image operation or container execution occurred;
+- [x] ADR, security model, operations guide and Evidence 013 prepared;
+- [ ] Human Governance reviewed Technical Slices 3–13 evidence.
 
 ## Verified Result
 
-- 140 of 140 tests passed;
+- 153 of 153 tests passed;
 - four workflow tasks completed;
 - Chief of Staff, Operations and Marketing participated;
 - 14 signed invocations accepted in 14 committed local transactions;
@@ -247,6 +260,21 @@ Level 1 durable verified-worker-receipt evidence review.
   entered the receipt or evidence projection;
 - the receipt remains a local parent/Connector assertion rather than an
   independently signed or remotely attested execution proof;
+- one closed OCI policy admitted only an exact manifest digest, supported
+  Linux platform, fixed worker command, non-root identity and bounded
+  no-network/read-only/no-privilege resource profile;
+- the Docker provider resolved and hashed its launcher, accepted only a local
+  Unix socket and required API 1.49+, Linux, cgroup v2 and built-in seccomp;
+- fixture-backed image admission bound RepoDigest, platform, user, workdir,
+  command, rootfs, absent volumes/ports and a bounded environment allowlist;
+- the hardened launch template bound every security/resource flag and
+  rejected a redigested host-network substitution;
+- real Docker launcher inspection recorded CLI 29.6.2 and its exact binary
+  SHA-256, but the missing daemon produced no runtime/image preflight;
+- every OCI preflight retained execution, observation, external-attestation
+  and production-readiness claims as false;
+- no Docker/Colima daemon was started, no image was built/pulled and no
+  container executed;
 - no real service was contacted and no external effect occurred.
 
 See `Validation_Report.md`,
@@ -260,6 +288,7 @@ See `Validation_Report.md`,
 `Validation_Report_010_Verified_Worker_Package.md`,
 `Validation_Report_011_Authenticated_Workload_Session.md`,
 `Validation_Report_012_Durable_Verified_Worker_Receipt.md`,
+`Validation_Report_013_OCI_Workload_Admission.md`,
 `Reference_Adoption_Assessment.md` and the evidence records under
 `../../04_Evidence/fdos-runtime/`.
 
@@ -282,6 +311,11 @@ independently deployed. The session key is created by that mutable bootstrap
 and is not external workload identity. The durable receipt omits the full
 envelope and is not independent workload proof. Neither path authorizes a real
 connector.
+
+The OCI provider is an admission-only future boundary. It is not connected to
+the worker. Its positive runtime/image tests use deterministic local fixtures;
+the recorded real Docker daemon was unavailable. Every resulting template is
+non-authorizing and no container execution occurred.
 
 Personality is configuration only. No model provider is connected.
 

@@ -58,6 +58,9 @@ system with a small pilot:
 - a distinct authenticated receipt-backed outcome command;
 - durable receipt replay validation and minimized Invocation authentication
   evidence;
+- a closed digest-pinned OCI Workload Policy;
+- local Docker launcher/runtime/image admission and an exact hardened,
+  explicitly non-authorizing launch template;
 - process-separated local connector simulation with bounded I/O and timeout;
 - optional Darwin-only network and filesystem-write denial with exact
   launcher/policy digest and in-worker denial probes;
@@ -77,7 +80,9 @@ system with a small pilot:
 - production identity provider, key custody or revocation;
 - exposure of the lower-level runtime to untrusted callers;
 - distributed replay protection, multi-process worker fencing or transactions;
-- supported portable OS/container/infrastructure worker isolation;
+- live supported portable OS/container/infrastructure worker execution and
+  enforcement;
+- Docker/Colima daemon start, OCI image build/pull/push or container launch;
 - filesystem-read, CPU, memory, process-count and general syscall isolation;
 - independently attested worker identity, immutable deployment storage or
   externally protected release trust;
@@ -133,13 +138,21 @@ The pilot is technically complete when:
 21. wrong challenge, wrong response signature and a validly signed mismatched
     session observation fail closed without an Outbox outcome;
 22. the private session key never crosses a serialization boundary;
-23. no change occurred outside the FDOS repository.
+23. no change occurred outside the FDOS repository;
 24. every accepted process-worker outcome records a closed receipt through the
     distinct authenticated worker-outcome command;
 25. receipt replay reconstructs the exact protocol response and rebinds the
     Delivery, fencing claim, attempt, intent and result;
 26. receipt and workflow evidence contain no raw parameters, challenge,
-    public key or signature.
+    public key or signature;
+27. OCI policy accepts only an exact image digest, fixed non-root process,
+    closed environment names and hardened security/resource profile;
+28. runtime and image admission fail closed on capability, identity or config
+    mismatch;
+29. the launch template is reconstructed exactly and remains explicitly
+    non-authorizing;
+30. no daemon start, image operation or container execution occurs without a
+    separate Human Governance gate.
 
 ## Reference Assessment
 

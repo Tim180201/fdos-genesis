@@ -46,6 +46,12 @@ FDOS Runtime
         │     -> verified denial probes + signed digest-only response
         │     -> durable minimized Verified Worker Receipt
         │
+        ├── future portable worker boundary
+        │     -> closed digest-pinned OCI Workload Policy
+        │     -> local Docker launcher/runtime/image preflight
+        │     -> hardened non-authorizing launch template
+        │     -> no live container in the current slice
+        │
         ▼
 Transactional SQLite Event Store
   └── Hash-Chained Transaction Groups
@@ -257,6 +263,44 @@ created by the mutable bootstrap, not to an externally issued workload
 identity. The detached release-signing interface is suitable for later
 protected custody, but no HSM, KMS, external release service or remote
 attestation authority is connected.
+
+### Portable OCI admission before execution
+
+The future portable worker boundary is separated into admission and
+execution. The current OCI module implements admission only.
+
+One closed self-digested policy fixes:
+
+- exact named OCI manifest digest and Linux platform;
+- the current bootstrap/package command, non-root user and working directory;
+- the only permitted container environment names;
+- no network, read-only root, no caller-supplied host mount/device mappings,
+  private IPC, dropped capabilities, no-new-privileges and built-in seccomp;
+- bounded CPU, memory/swap, PIDs, open files and `/tmp` tmpfs.
+
+The Docker provider accepts only an explicit local Unix socket. It resolves
+and hashes the configured CLI, then requires a Linux Engine with API 1.49 or
+newer, cgroup v2 and built-in seccomp. Image inspection must match the exact
+RepoDigest, platform, non-root config, fixed command, layered rootfs, absent
+volumes/ports and a bounded image-environment allowlist.
+
+The resulting launch template reconstructs every required hardening flag from
+the retained policy and observations. Independent verification rejects a
+weakened template even after outer digests are recomputed.
+
+Admission remains:
+
+```text
+executionAuthorized: false
+executionObserved: false
+workloadIdentityExternallyAttested: false
+productionReady: false
+```
+
+The provider is not wired into the process worker. No daemon was started, no
+image was built, pulled or inspected on the recorded host and no container
+was launched. Live enforcement, timeout/cleanup, outer receipt binding,
+image provenance and external workload identity remain later gates.
 
 ## State Machines
 
