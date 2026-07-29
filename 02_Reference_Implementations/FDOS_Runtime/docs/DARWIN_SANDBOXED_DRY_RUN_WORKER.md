@@ -75,8 +75,9 @@ The provider computes SHA-256 bindings for:
 The worker request carries the exact provider identifier and policy digest.
 The response and final result must repeat that exact binding.
 
-These checks reduce accidental launcher/profile drift. They are not signed
-package verification, kernel attestation or protection from a privileged host
+These checks reduce accidental launcher/profile drift and are independent of
+the worker-package verification. Neither the package signature nor these
+checks establish kernel attestation or protection from a privileged host
 attacker. The metadata/read sequence also is not a general-purpose hostile
 root race defense.
 
@@ -151,8 +152,8 @@ Before a real read-only connector, FDOS still requires:
   allowlisting;
 - read restrictions and CPU, memory, process and time budgets;
 - independently authenticated workload identity and response provenance;
-- immutable worker packaging and trusted deployment beyond the
-  repository-local signed source manifest;
+- immutable worker deployment storage and protected release trust beyond the
+  repository-local signed package fixture;
 - secret-vault delivery with no persistent secret leakage;
 - service-specific schemas, TLS/DNS policy, rate/cost limits and idempotency;
 - monitoring, incident response and Human Governance approval.

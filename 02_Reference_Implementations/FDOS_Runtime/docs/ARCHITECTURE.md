@@ -37,10 +37,10 @@ FDOS Runtime
   └── Evidence Projection
         │
         ├── claimed Delivery Intent
-        │     -> signed closed-source artifact preflight
-        │     -> exact expiring request + release/isolation binding
-        │     -> separate dry-run child process
-        │     -> child local-source digest observation
+        │     -> signed canonical-package preflight
+        │     -> exact expiring package/release/isolation binding
+        │     -> separate verifier-bootstrap process
+        │     -> verified in-memory package evaluation
         │     -> optional Darwin network/write deny profile
         │     -> verified denial probes + digest-only response
         │
@@ -186,19 +186,24 @@ After the authenticated Connector Instance claims a delivery, the demo binds
 that exact Delivery Intent, fencing claim, connector and validity window into
 a content-addressed worker request.
 
-Before every spawn, the parent reconstructs a fixed 12-file, closed and
-reachable ES-module graph. It rejects unsafe directories/files, dynamic or
-undeclared imports and unstable reads, computes the canonical source artifact
-and verifies an Ed25519 release attestation against configured local public
-trust. Protocol 1.2 binds the artifact and attestation digests plus exact
-issuer and key identifiers.
+The deterministic builder first reconstructs a fixed 12-file, closed and
+reachable ES-module graph and emits one canonical package containing the exact
+UTF-8 source strings. The source artifact and complete package receive
+separate SHA-256 identities.
 
-The parent then starts the fixed Node.js worker entry point with no shell, no
+Before every spawn, the parent stably reads that package, reconstructs every
+module and artifact digest, enforces the closed import graph and verifies an
+Ed25519 release plus the exact public trust-descriptor digest pin. Protocol
+1.3 binds package, artifact, attestation, trust anchor, issuer and key.
+
+The parent then starts the fixed Node.js verifier bootstrap with no shell, no
 forwarded parent environment, explicit standard-I/O pipes, bounded bytes and a
 hard timeout. The child receives no gateway, runtime, database handle or
-signing key. It verifies the request, reconstructs its local artifact and
-returns one digest-only simulated outcome only after its local source digest
-matches the request binding.
+signing key. Before evaluating packaged worker code, the bootstrap repeats
+package, graph, signature and trust-pin verification. It evaluates the fixed
+entry point from the verified in-memory module strings without extracting a
+source directory. Only an exact package observation may enter a digest-only
+simulated outcome.
 
 The default `process-only` path adds no operating-system isolation. An optional
 Darwin experiment instead starts the worker through the fixed root-owned,
@@ -221,12 +226,14 @@ process creation, inherited descriptors and worker identity outside its
 claim. It is therefore Level 1 platform evidence, not the production sandbox
 design.
 
-The release signature detects a mismatched mutable source graph under the
-configured repository-local trust root. It does not make the worktree
-immutable. A same-account change between parent inspection and module loading
-remains possible, and child observation occurs after its modules load. The
-Node.js runtime, worker response and workload identity remain trusted local
-components rather than independently attested production artifacts.
+The package boundary removes live worker imports from the mutable worktree and
+prevents later package-file mutation from changing module strings already in
+memory. It does not make the package file, bootstrap, verifier or
+repository-local pilot trust pin immutable. The Node.js runtime, worker
+response and workload identity remain trusted local components rather than
+independently attested production artifacts. The detached signing interface
+is suitable for later protected custody, but no HSM, KMS or external release
+service is connected.
 
 ## State Machines
 
@@ -320,7 +327,7 @@ These are not implemented:
 - model-provider adapter;
 - supported portable connector isolation, outbound allowlisting and complete
   resource budgets;
-- immutable packaged worker, externally protected release trust and
+- immutable worker deployment object, externally protected release trust and
   independently attested workload identity;
 - secrets vault;
 - policy-as-code service;

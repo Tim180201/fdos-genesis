@@ -20,6 +20,7 @@ Subsequent Decisions:
 
 - `ADR-0049_Darwin_Network_and_Write_Sandbox_Experiment.md`
 - `ADR-0050_Signed_Worker_Source_Artifact_Experiment.md`
+- `ADR-0051_Deterministic_Signed_Worker_Package_Experiment.md`
 
 ## Decision
 
@@ -136,8 +137,9 @@ Negative:
 - the child runs under the same trusted host account;
 - no network, filesystem, CPU or memory sandbox is enforced;
 - the worker response is digested but not independently signed;
-- ADR-0050 now signs a closed mutable source artifact, but no immutable
-  packaging or independent deployment trust exists;
+- ADR-0051 now verifies a signed canonical package before in-memory module
+  evaluation, but no immutable deployment or independent workload trust
+  exists;
 - the parent still records the child result through an experimental local
   Connector identity;
 - process boundaries increase operational and timeout complexity.

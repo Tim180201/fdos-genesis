@@ -360,3 +360,63 @@ gates.
 Rationale: A signature over a development worktree detects drift but neither
 locks the source across launch nor protects a repository-local trust anchor
 from an actor already able to replace the repository.
+
+## PILOT-DEC-036 — Live Worker Executes from a Canonical Package
+
+Date: 2026-07-29
+
+Decision: Stop importing live worker execution modules from the FDOS
+development worktree. Build one canonical package containing the exact
+admitted UTF-8 module strings and bind source artifact and complete package
+with separate SHA-256 identities.
+
+Rationale: A signed source manifest still allowed modules to execute before
+the child measured them. Separate packaging creates a transport and execution
+identity independent of mutable source paths.
+
+## PILOT-DEC-037 — Release Signing Is Detached from Private-Key Handling
+
+Date: 2026-07-29
+
+Decision: Produce an exact unsigned package-attestation request and accept
+only a detached Ed25519 signature. Do not expose a runtime API that accepts,
+generates or stores the release private key.
+
+Rationale: A future HSM, KMS or offline release service must be able to own key
+custody without sharing private material with FDOS.
+
+## PILOT-DEC-038 — Public Trust Requires an Exact Anchor Pin
+
+Date: 2026-07-29
+
+Decision: Require the SHA-256 digest of the selected public trust descriptor
+in addition to issuer, key ID and signature verification.
+
+Rationale: Replacing a repository trust descriptor must not silently redefine
+which public key is trusted when deployment-controlled state can provide an
+independent pin.
+
+## PILOT-DEC-039 — Bootstrap Verifies Before Packaged Code Evaluates
+
+Date: 2026-07-29
+
+Decision: Let the parent verify the package before spawn, then require a fixed
+child bootstrap to independently repeat package, graph, release and trust-pin
+verification before evaluating the fixed entry point from the verified
+in-memory module strings.
+
+Rationale: This removes live execution-module reads from the worktree and
+closes the post-load source observation gap for admitted package bytes.
+
+## PILOT-DEC-040 — Verified Package Is Not Immutable Deployment
+
+Date: 2026-07-29
+
+Decision: Report package verification and in-memory evaluation exactly, while
+keeping immutable storage, protected release custody, supported runtime
+isolation, bootstrap integrity and workload identity as separate promotion
+gates.
+
+Rationale: Repository packaging materially narrows the execution race, but a
+mutable host can still replace the parent, bootstrap, verifier and pilot trust
+pin together.

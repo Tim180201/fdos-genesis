@@ -8,6 +8,7 @@ import {
   DRY_RUN_WORKER_ARTIFACT_FILES,
   DRY_RUN_WORKER_ENTRYPOINT
 } from "../domain/worker-artifact-attestation.js";
+import { immutableJson } from "../kernel/canonical-json.js";
 import {
   IntegrityError,
   ValidationError
@@ -50,20 +51,12 @@ const EXPECTED_IMPORT_SPECIFIERS = Object.freeze({
     "../kernel/errors.js",
     "../kernel/validation.js"
   ],
-  "src/domain/worker-artifact-attestation.js": [
+  "src/domain/worker-identity.js": [],
+  "src/domain/worker-package-contract.js": [
     "../kernel/canonical-json.js",
     "../kernel/errors.js",
     "../kernel/validation.js",
-    "node:crypto"
-  ],
-  "src/integrations/dry-run-worker-artifact.js": [
-    "../domain/worker-artifact-attestation.js",
-    "../kernel/errors.js",
-    "node:crypto",
-    "node:fs",
-    "node:fs/promises",
-    "node:path",
-    "node:url"
+    "./worker-identity.js"
   ],
   "src/kernel/canonical-json.js": [
     "./errors.js",
@@ -79,7 +72,7 @@ const EXPECTED_IMPORT_SPECIFIERS = Object.freeze({
   ],
   "src/workers/dry-run-connector-worker.js": [
     "../domain/network-isolation-contract.js",
-    "../integrations/dry-run-worker-artifact.js",
+    "../domain/worker-package-contract.js",
     "../kernel/canonical-json.js",
     "./dry-run-worker-protocol.js",
     "node:fs/promises",
@@ -88,7 +81,7 @@ const EXPECTED_IMPORT_SPECIFIERS = Object.freeze({
   "src/workers/dry-run-worker-protocol.js": [
     "../domain/delivery-intent.js",
     "../domain/network-isolation-contract.js",
-    "../domain/worker-artifact-attestation.js",
+    "../domain/worker-package-contract.js",
     "../kernel/canonical-json.js",
     "../kernel/errors.js",
     "../kernel/ids.js",
@@ -230,8 +223,26 @@ function relativeImports(source, importer) {
   return [...new Set(dependencies)].sort();
 }
 
-function verifyClosedImportGraph(sources) {
+export function verifyDryRunWorkerSourceGraph(sources) {
+  if (!(sources instanceof Map)) {
+    throw new ValidationError(
+      "Worker source graph must be provided as a Map."
+    );
+  }
   const approved = new Set(DRY_RUN_WORKER_ARTIFACT_FILES);
+  if (
+    sources.size !== approved.size ||
+    [...sources.keys()].some(
+      (filePath) => !approved.has(filePath)
+    ) ||
+    [...approved].some(
+      (filePath) => !sources.has(filePath)
+    )
+  ) {
+    throw new IntegrityError(
+      "Worker artifact source set differs from fixed policy."
+    );
+  }
   const edges = new Map();
   for (const [filePath, source] of sources) {
     const dependencies = relativeImports(source, filePath);
@@ -273,6 +284,11 @@ export class DryRunWorkerArtifactInspector {
   }
 
   async inspect() {
+    const bundle = await this.inspectBundle();
+    return bundle.artifact;
+  }
+
+  async inspectBundle() {
     await verifyTrustedDirectory(
       this.#rootDirectory,
       "runtime root"
@@ -358,11 +374,23 @@ export class DryRunWorkerArtifactInspector {
       });
       sources.set(relativePath, source);
     }
-    verifyClosedImportGraph(sources);
-    return createDryRunWorkerArtifact({ files });
+    verifyDryRunWorkerSourceGraph(sources);
+    return immutableJson({
+      artifact: createDryRunWorkerArtifact({ files }),
+      modules: [...sources].map(([modulePath, source]) => ({
+        path: modulePath,
+        source
+      }))
+    });
   }
 }
 
 export function inspectDryRunWorkerArtifact(options) {
   return new DryRunWorkerArtifactInspector(options).inspect();
+}
+
+export function inspectDryRunWorkerSourceBundle(options) {
+  return new DryRunWorkerArtifactInspector(
+    options
+  ).inspectBundle();
 }

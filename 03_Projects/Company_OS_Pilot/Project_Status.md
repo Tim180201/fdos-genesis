@@ -1,19 +1,19 @@
 # Company OS Pilot — Project Status
 
-Status: Technical Slice 9 Passed / Human Review Pending
+Status: Technical Slice 10 Passed / Human Review Pending
 Date: 2026-07-29  
 Validation Level: Level 1 — Experimental
 
 ## Current Goal
 
-Deliver and verify one exact, signed and fail-closed worker source-artifact
-boundary around the process-separated connector simulation, without claiming
-immutable deployment or enabling network access, a real connector or an
-external effect.
+Deliver and verify one deterministic, signed worker package whose exact
+modules are independently verified by parent and child bootstrap before
+in-memory evaluation, without claiming immutable deployment, protected key
+custody, production isolation or enabling an external effect.
 
 ## Current Phase
 
-Level 1 signed worker source-artifact evidence review.
+Level 1 deterministic worker-package evidence review.
 
 ## Exit Criteria
 
@@ -78,11 +78,28 @@ Level 1 signed worker source-artifact evidence review.
 - [x] mutable-source, same-account race, local-trust and runtime gaps
       documented;
 - [x] ADR, security model, operations guide and Evidence 009 prepared;
-- [ ] Human Governance reviewed Technical Slices 3–9 evidence.
+- [x] canonical separately transportable 12-module worker package generated;
+- [x] source-artifact and complete package SHA-256 identities separated;
+- [x] detached signing request implemented without runtime private-key input;
+- [x] exact public trust-descriptor digest pin required;
+- [x] parent package, graph, signature and trust-pin preflight implemented;
+- [x] child bootstrap independently repeats release verification;
+- [x] fixed entry point evaluated from verified in-memory module strings;
+- [x] live worker no longer imports execution modules from the worktree;
+- [x] package identity bound through worker protocol 1.3;
+- [x] noncanonical, changed, linked, writable and undeclared package input
+      rejected;
+- [x] bootstrap trust mismatch and request package mismatch rejected;
+- [x] package failures preserve the claim for human-only uncertainty
+      reconciliation;
+- [x] mutable bootstrap, repository trust, VM-module and workload gaps
+      documented;
+- [x] ADR, security model, operations guide and Evidence 010 prepared;
+- [ ] Human Governance reviewed Technical Slices 3–10 evidence.
 
 ## Verified Result
 
-- 125 of 125 tests passed;
+- 132 of 132 tests passed;
 - four workflow tasks completed;
 - Chief of Staff, Operations and Marketing participated;
 - 14 signed invocations accepted in 14 committed local transactions;
@@ -145,6 +162,27 @@ Level 1 signed worker source-artifact evidence review.
 - the release private key was not stored in FDOS or passed to the child;
 - no immutable-package, independent workload or same-account race claim is
   made;
+- one canonical 12-module, 63,550-source-byte and 71,179-serialized-byte
+  worker package was reproduced exactly;
+- package and source artifact were bound by separate SHA-256 identities;
+- the package release was verified against an exact Ed25519 public
+  trust-descriptor digest pin;
+- the release API accepted only a detached signature and no private release
+  key was stored or passed;
+- the parent verified package, graph, release and trust pin before spawn;
+- the child bootstrap independently repeated those checks before evaluating
+  packaged code;
+- the fixed entry point evaluated from the verified in-memory module strings
+  without source-directory extraction;
+- protocol 1.3 bound package, artifact, attestation, trust anchor, issuer and
+  key through request, response and result;
+- changed package content, signature, trust pin, schema, canonical encoding,
+  import graph, permissions and symbolic links were rejected;
+- deliberately changed bootstrap trust and request package bindings caused
+  child rejection, recorded no outcome and reconciled only to `uncertain`
+  after expiry;
+- no immutable-storage, HSM/KMS-custody, independent workload or
+  production-VM-module claim is made;
 - no real service was contacted and no external effect occurred.
 
 See `Validation_Report.md`,
@@ -155,6 +193,7 @@ See `Validation_Report.md`,
 `Validation_Report_007_Process_Separated_Worker.md`,
 `Validation_Report_008_Darwin_Sandbox.md`,
 `Validation_Report_009_Signed_Worker_Artifact.md`,
+`Validation_Report_010_Verified_Worker_Package.md`,
 `Reference_Adoption_Assessment.md` and the evidence records under
 `../../04_Evidence/fdos-runtime/`.
 
@@ -166,9 +205,10 @@ Disabled. A process-separated local simulation path is enabled with
 The default path reports both isolation flags false. On the recorded Darwin
 host, an optional deprecated `sandbox-exec` experiment may report network and
 filesystem-write isolation true only after exact in-child denial probes.
-Both paths now require the same locally signed source artifact. That artifact
-is content-addressed but not immutable or independently deployed. Neither path
-authorizes a real connector.
+Both paths now require the same deterministic signed package. Parent and
+bootstrap verify it before the fixed entry point is evaluated from memory.
+The package file, verifier, bootstrap and pilot trust pin are not immutable or
+independently deployed. Neither path authorizes a real connector.
 
 Personality is configuration only. No model provider is connected.
 

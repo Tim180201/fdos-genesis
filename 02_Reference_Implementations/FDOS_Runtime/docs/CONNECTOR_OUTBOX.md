@@ -152,13 +152,15 @@ Raw connector responses and raw errors are rejected.
 The demo now sends the active claimed delivery to a separate local Node.js
 process. The request binds the full Delivery Intent, delivery, fencing claim,
 Connector Instance, short validity window and parent-verified worker release.
-The response binds that exact request, includes the child-observed local
-artifact digest match and may contain only a digest-based simulated outcome.
+The response binds that exact request, includes the bootstrap-observed package
+and trust verification and may contain only a digest-based simulated outcome.
 
 The parent uses no shell, forwards no parent environment, limits input/output,
-enforces a timeout, reconstructs the closed worker source graph, verifies its
-local Ed25519 release attestation and requires clean exit code zero with empty
-standard error. A valid response followed by a crash is rejected.
+enforces a timeout, verifies the canonical package, closed worker source graph,
+local Ed25519 release and exact trust-anchor pin, and requires clean exit code
+zero with empty standard error. The bootstrap repeats release verification
+before evaluating the packaged modules from memory. A valid response followed
+by a crash is rejected.
 
 The child has no runtime object, database handle or signing key. It cannot
 claim or record a delivery. The parent records an accepted result through the
@@ -174,11 +176,13 @@ connect and write-open denial before either enforcement flag can be true.
 Missing or bypassed enforcement rejects the worker and records no outcome.
 
 The interface is deprecated, the response is not independently signed and the
-profile does not isolate filesystem reads or general resources. The source
-release remains mutable and repository-local. See
+profile does not isolate filesystem reads or general resources. Package,
+bootstrap, verifier and pilot trust pin remain mutable and repository-local.
+See
 `PROCESS_SEPARATED_DRY_RUN_WORKER.md` and
-`DARWIN_SANDBOXED_DRY_RUN_WORKER.md`. Source-release details and non-claims are
-in `SIGNED_WORKER_SOURCE_ARTIFACT.md`.
+`DARWIN_SANDBOXED_DRY_RUN_WORKER.md`. Current package details and non-claims
+are in `VERIFIED_WORKER_PACKAGE.md`; the source-only predecessor remains in
+`SIGNED_WORKER_SOURCE_ARTIFACT.md`.
 
 ## Transaction Semantics
 
@@ -224,7 +228,7 @@ A real read-only connector still requires:
 
 - supported OS-, container- or infrastructure-enforced worker isolation and
   portable outbound allowlisting;
-- independently authenticated worker identity, immutable packaged artifact
+- independently authenticated worker identity, immutable deployment object
   and externally protected release trust;
 - production workload identity and connector revocation;
 - outbound network allowlist and DNS/TLS controls;

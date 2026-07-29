@@ -18,25 +18,23 @@ import {
   processOnlyNetworkIsolationBinding
 } from "../domain/network-isolation-contract.js";
 import {
-  createWorkerArtifactBinding
-} from "../domain/worker-artifact-attestation.js";
-import {
   DarwinSandboxExecNetworkWriteDeny
 } from "./darwin-sandbox-exec-network-write-deny.js";
 import {
-  inspectDryRunWorkerArtifact
-} from "./dry-run-worker-artifact.js";
+  inspectDryRunWorkerPackageRelease,
+  normalizeWorkerPackageReleaseEnvelope,
+  serializeWorkerPackageReleaseEnvelope
+} from "./dry-run-worker-package.js";
 import {
-  PILOT_DRY_RUN_WORKER_ATTESTATION,
-  PILOT_DRY_RUN_WORKER_TRUST
-} from "../pilot/dry-run-worker-release.js";
+  PILOT_DRY_RUN_WORKER_PACKAGE_RELEASE
+} from "../pilot/dry-run-worker-package-release.js";
 import {
   createDryRunWorkerRequest,
   verifyDryRunWorkerResponse
 } from "../workers/dry-run-worker-protocol.js";
 
-const WORKER_FILE = fileURLToPath(
-  new URL("../workers/dry-run-connector-worker.js", import.meta.url)
+const WORKER_BOOTSTRAP_FILE = fileURLToPath(
+  new URL("../workers/dry-run-worker-bootstrap.js", import.meta.url)
 );
 const MAX_REQUEST_BYTES = 64 * 1024;
 const MAX_STDOUT_BYTES = 16 * 1024;
@@ -47,7 +45,8 @@ const FAULT_MODES = Object.freeze([
   "hang",
   "response-then-crash",
   "sandbox-bypass",
-  "artifact-binding-mismatch"
+  "bootstrap-release-mismatch",
+  "package-binding-mismatch"
 ]);
 const NETWORK_ISOLATION_MODES = Object.freeze([
   "process-only",
@@ -89,13 +88,16 @@ export class ProcessSeparatedDryRunWorker {
   #timeoutMs;
   #faultMode;
   #networkIsolation;
+  #workerPackageRelease;
+  #workerPackageTrustProvisioning;
 
   constructor({
     clock = () => new Date(),
     idFactory = createId,
     timeoutMs = 2_000,
     faultMode = "none",
-    networkIsolation = "process-only"
+    networkIsolation = "process-only",
+    workerPackageRelease
   } = {}) {
     if (typeof clock !== "function" || typeof idFactory !== "function") {
       throw new ValidationError(
@@ -128,6 +130,33 @@ export class ProcessSeparatedDryRunWorker {
     );
     this.#faultMode = faultMode;
     this.#networkIsolation = networkIsolation;
+    const usingPilotRelease =
+      workerPackageRelease === undefined;
+    const configuredRelease = usingPilotRelease
+      ? PILOT_DRY_RUN_WORKER_PACKAGE_RELEASE
+      : workerPackageRelease;
+    if (
+      !configuredRelease ||
+      typeof configuredRelease !== "object" ||
+      typeof configuredRelease.packagePath !== "string"
+    ) {
+      throw new ValidationError(
+        "Process worker package release configuration is invalid."
+      );
+    }
+    this.#workerPackageRelease = {
+      packagePath: configuredRelease.packagePath,
+      ...normalizeWorkerPackageReleaseEnvelope({
+        attestation: configuredRelease.attestation,
+        trustedKeys: configuredRelease.trustedKeys,
+        expectedTrustAnchorDigest:
+          configuredRelease.expectedTrustAnchorDigest
+      })
+    };
+    this.#workerPackageTrustProvisioning =
+      usingPilotRelease
+        ? "repository-pilot-fixture"
+        : "caller-provided";
   }
 
   status() {
@@ -151,21 +180,27 @@ export class ProcessSeparatedDryRunWorker {
         this.#networkIsolation ===
         "darwin-sandbox-exec-required",
       parentEnvironmentForwarded: false,
-      workerArtifactPreflightRequired: true,
-      workerArtifactReleaseTrustConfigured: true,
-      workerArtifactIssuerId:
-        PILOT_DRY_RUN_WORKER_TRUST.issuerId,
-      workerArtifactKeyId:
-        PILOT_DRY_RUN_WORKER_TRUST.keyId,
+      workerPackagePreflightRequired: true,
+      workerPackageBootstrapVerificationRequired: true,
+      workerPackageInMemoryEvaluationRequired: true,
+      workerPackageReleaseTrustConfigured: true,
+      workerPackageTrustProvisioning:
+        this.#workerPackageTrustProvisioning,
+      externalReleaseKeyCustodyAttested: false,
       timeoutMs: this.#timeoutMs,
       faultInjectionEnabled: this.#faultMode !== "none"
     });
   }
 
-  async #prepareLaunch() {
+  async #prepareLaunch(packagePath) {
     const direct = {
       executable: process.execPath,
-      arguments: ["--no-warnings", WORKER_FILE],
+      arguments: [
+        "--no-warnings",
+        "--experimental-vm-modules",
+        WORKER_BOOTSTRAP_FILE,
+        packagePath
+      ],
       isolation: processOnlyNetworkIsolationBinding()
     };
     if (this.#networkIsolation === "process-only") {
@@ -174,7 +209,9 @@ export class ProcessSeparatedDryRunWorker {
     const sandbox = new DarwinSandboxExecNetworkWriteDeny();
     const sandboxed = await sandbox.prepareLaunch({
       nodeExecutable: process.execPath,
-      workerFile: WORKER_FILE
+      nodeOptions: ["--experimental-vm-modules"],
+      workerFile: WORKER_BOOTSTRAP_FILE,
+      workerArguments: [packagePath]
     });
     if (this.#faultMode === "sandbox-bypass") {
       return {
@@ -185,18 +222,17 @@ export class ProcessSeparatedDryRunWorker {
     return sandboxed;
   }
 
-  async #prepareWorkerArtifact() {
-    const artifact = await inspectDryRunWorkerArtifact();
-    return createWorkerArtifactBinding({
-      artifact,
-      attestation: PILOT_DRY_RUN_WORKER_ATTESTATION,
-      trustedKeys: [PILOT_DRY_RUN_WORKER_TRUST]
-    });
+  async #prepareWorkerPackage() {
+    return inspectDryRunWorkerPackageRelease(
+      this.#workerPackageRelease
+    );
   }
 
   async execute({ delivery } = {}) {
-    const verifiedArtifact = await this.#prepareWorkerArtifact();
-    const launch = await this.#prepareLaunch();
+    const verifiedPackage = await this.#prepareWorkerPackage();
+    const launch = await this.#prepareLaunch(
+      verifiedPackage.packagePath
+    );
     const now = validClockValue(this.#clock);
     const claimExpiresAt = isoDate(
       delivery?.claim?.expiresAt,
@@ -219,17 +255,17 @@ export class ProcessSeparatedDryRunWorker {
       issuedAt: now.toISOString(),
       expiresAt,
       networkIsolation: launch.isolation,
-      workerArtifact:
-        this.#faultMode === "artifact-binding-mismatch"
+      workerPackage:
+        this.#faultMode === "package-binding-mismatch"
           ? {
-              ...verifiedArtifact,
-              artifactDigest: digestObject({
-                expectedArtifactDigest:
-                  verifiedArtifact.artifactDigest,
-                fault: "artifact-binding-mismatch"
+              ...verifiedPackage.binding,
+              packageDigest: digestObject({
+                expectedPackageDigest:
+                  verifiedPackage.binding.packageDigest,
+                fault: "package-binding-mismatch"
               })
             }
-          : verifiedArtifact
+          : verifiedPackage.binding
     });
     const serializedRequest = canonicalJson(request);
     if (
@@ -251,9 +287,30 @@ export class ProcessSeparatedDryRunWorker {
             env: {
               FDOS_DRY_RUN_WORKER_FAULT:
                 this.#faultMode === "sandbox-bypass" ||
-                this.#faultMode === "artifact-binding-mismatch"
+                this.#faultMode ===
+                  "bootstrap-release-mismatch" ||
+                this.#faultMode === "package-binding-mismatch"
                   ? "none"
                   : this.#faultMode,
+              FDOS_WORKER_PACKAGE_RELEASE: Buffer.from(
+                serializeWorkerPackageReleaseEnvelope(
+                  this.#faultMode ===
+                    "bootstrap-release-mismatch"
+                    ? {
+                        ...verifiedPackage.releaseEnvelope,
+                        expectedTrustAnchorDigest:
+                          digestObject({
+                            expectedTrustAnchorDigest:
+                              verifiedPackage.binding
+                                .trustAnchorDigest,
+                            fault:
+                              "bootstrap-release-mismatch"
+                          })
+                      }
+                    : verifiedPackage.releaseEnvelope
+                ),
+                "utf8"
+              ).toString("base64url"),
               FDOS_NETWORK_ISOLATION_PROVIDER:
                 launch.isolation.provider,
               FDOS_NETWORK_ISOLATION_POLICY_DIGEST:

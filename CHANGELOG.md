@@ -20,6 +20,10 @@
 - Added ADR-0050 for a locally signed, closed worker source-artifact
   experiment without claiming immutable packaging, independent deployment
   trust or workload identity.
+- Added ADR-0051 for a deterministic signed worker package, detached signing,
+  exact public trust-anchor pinning and verified-memory module evaluation
+  without claiming immutable deployment, protected custody or workload
+  identity.
 - Added the runtime experiment boundary for A0–A4 action governance, data
   scopes, repository ownership and production limitations.
 - Added `02_Reference_Implementations/FDOS_Runtime/` with:
@@ -89,6 +93,20 @@
   - child-side local source-digest match bound into response and result;
   - source, signature, trust, schema, path and import tamper rejection;
   - deliberate child artifact-binding mismatch fault with no recorded outcome;
+  - one deterministic canonical package containing the exact 12 admitted
+    UTF-8 worker modules;
+  - separate module, source-artifact and complete-package SHA-256 identities;
+  - a detached Ed25519 package-attestation request with no private-key
+    parameter;
+  - exact public trust-descriptor digest pinning;
+  - independent parent and bootstrap package/release verification;
+  - fixed entry-point evaluation from verified in-memory VM modules without
+    source-directory extraction;
+  - worker protocol 1.3 package, artifact, attestation, trust, issuer and key
+    binding;
+  - noncanonical, linked, writable, changed and undeclared package rejection;
+  - deliberate bootstrap-release and request-package mismatch faults with no
+    recorded outcome;
   - append-only hash-chained audit events;
   - content-minimized task and delivery evidence export.
 - Added the Chief of Staff, Operations and Marketing software-change-readiness
@@ -101,6 +119,8 @@
   process-separated worker slice expands it to 116 tests.
 - The Darwin sandbox slice expands the suite to 120 tests.
 - The signed worker source-artifact slice expands the suite to 125 tests.
+- The deterministic signed worker-package slice expands the suite to 132
+  tests.
 - Recorded 90.83% line, 77.73% branch and 90.48% function coverage for the
   authenticated candidate.
 - Recorded 90.16% line, 78.04% branch and 90.56% function coverage for the
@@ -116,6 +136,8 @@
   Darwin sandbox candidate.
 - Recorded 90.26% line, 79.04% branch and 90.82% function coverage for the
   signed worker source-artifact candidate.
+- Recorded 90.77% line, 78.85% branch and 92.15% function coverage for the
+  deterministic signed worker-package candidate.
 - Added Evidence Item `EV-FDOS-RUNTIME-PILOT-001` and its SHA-256 source
   manifest.
 - Added Evidence Item `EV-FDOS-REFERENCE-INTAKE-002` and its SHA-256 source
@@ -135,6 +157,8 @@
   manifest and Validation Report 008.
 - Added Evidence Item `EV-FDOS-WORKER-ARTIFACT-009`, its SHA-256 source
   manifest and Validation Report 009.
+- Added Evidence Item `EV-FDOS-WORKER-PACKAGE-010`, its SHA-256 source
+  manifest and Validation Report 010.
 - Added Knowledge Candidate KP-006 for exact Action Intent approval binding.
 - Added Knowledge Candidates KP-007 for exact external-source binding and
   KP-008 for exclusive ownership before transactional persistence.

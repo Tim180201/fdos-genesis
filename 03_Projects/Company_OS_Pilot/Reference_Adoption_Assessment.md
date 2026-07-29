@@ -150,18 +150,19 @@ Runtime Store
   -> process-separated local simulation with exact acknowledgement
   -> Darwin-only network/write-denial learning adapter
   -> signed closed mutable worker source artifact
-  -> future immutable package, portable sandbox and distributed worker fencing
+  -> deterministic signed worker package with verified-memory evaluation
+  -> future immutable deployment, portable sandbox and distributed fencing
 ```
 
 ## Recommended Next Build Order
 
 1. Human-review the authenticated-invocation, transactional-persistence,
    Connector Outbox, personality, process-worker and Darwin-sandbox evidence
-   plus the signed-worker-artifact evidence, with all remaining identity,
-   storage, model, release and isolation limits.
+   plus the signed-worker-artifact and verified-worker-package evidence, with
+   all remaining identity, storage, model, release and isolation limits.
 2. Replace the deprecated learning adapter with a supported portable sandbox;
    add outbound allowlisting, read/resource restrictions, workload identity,
-   immutable worker packaging, protected release trust and secrets controls.
+   immutable worker deployment, protected release trust and secrets controls.
 3. Validate one authenticated read-only GitHub or document connector in that
    sandbox.
 4. Add a model-provider adapter with budgets and structured response contracts.

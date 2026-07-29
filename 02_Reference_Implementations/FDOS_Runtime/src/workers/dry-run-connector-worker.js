@@ -10,8 +10,9 @@ import {
   NO_NETWORK_ISOLATION_PROVIDER
 } from "../domain/network-isolation-contract.js";
 import {
-  inspectDryRunWorkerArtifact
-} from "../integrations/dry-run-worker-artifact.js";
+  normalizeWorkerPackageBinding,
+  workerPackageBindingsEqual
+} from "../domain/worker-package-contract.js";
 
 const MAX_INPUT_BYTES = 64 * 1024;
 const FAULT_MODES = new Set([
@@ -179,26 +180,44 @@ async function isolationAttestation(request) {
   };
 }
 
-async function workerArtifactObservation(request) {
-  const expected = request.execution.workerArtifact;
-  const observed = await inspectDryRunWorkerArtifact();
+function workerPackageObservation(request) {
+  const expected = request.execution.workerPackage;
+  const source =
+    globalThis.__FDOS_VERIFIED_WORKER_PACKAGE__;
   if (
-    observed.artifactId !== expected.artifactId ||
-    observed.artifactVersion !== expected.artifactVersion ||
-    observed.digest !== expected.artifactDigest
+    !source ||
+    source.packageDigestMatched !== true ||
+    source.releaseSignatureVerifiedByBootstrap !== true ||
+    source.evaluatedFromVerifiedMemory !== true
   ) {
     throw new Error(
-      "Worker artifact differs from its signed request binding."
+      "Worker package was not verified before evaluation."
+    );
+  }
+  const observed = normalizeWorkerPackageBinding({
+    packageId: source.packageId,
+    packageVersion: source.packageVersion,
+    packageDigest: source.packageDigest,
+    artifactId: source.artifactId,
+    artifactVersion: source.artifactVersion,
+    artifactDigest: source.artifactDigest,
+    attestationDigest: source.attestationDigest,
+    trustAnchorDigest: source.trustAnchorDigest,
+    issuerId: source.issuerId,
+    keyId: source.keyId
+  });
+  if (
+    !workerPackageBindingsEqual(observed, expected)
+  ) {
+    throw new Error(
+      "Worker package differs from its signed request binding."
     );
   }
   return {
-    artifactId: expected.artifactId,
-    artifactVersion: expected.artifactVersion,
-    artifactDigest: observed.digest,
-    attestationDigest: expected.attestationDigest,
-    issuerId: expected.issuerId,
-    keyId: expected.keyId,
-    localDigestMatched: true
+    ...observed,
+    packageDigestMatched: true,
+    releaseSignatureVerifiedByBootstrap: true,
+    evaluatedFromVerifiedMemory: true
   };
 }
 
@@ -223,8 +242,8 @@ async function handleInput() {
     }
     const now = new Date().toISOString();
     verifyDryRunWorkerRequest(request, { now });
-    const artifactObservation =
-      await workerArtifactObservation(request);
+    const packageObservation =
+      workerPackageObservation(request);
     const networkIsolationAttestation =
       await isolationAttestation(request);
 
@@ -241,7 +260,7 @@ async function handleInput() {
       request,
       completedAt: new Date().toISOString(),
       networkIsolationAttestation,
-      workerArtifactObservation: artifactObservation
+      workerPackageObservation: packageObservation
     });
     process.stdout.write(`${canonicalJson(response)}\n`, () => {
       if (faultMode === "response-then-crash") {

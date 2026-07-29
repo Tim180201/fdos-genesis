@@ -21,6 +21,12 @@ import {
   isoDate,
   requiredString
 } from "../kernel/validation.js";
+import {
+  DRY_RUN_WORKER_ARTIFACT_FILES,
+  DRY_RUN_WORKER_ARTIFACT_ID,
+  DRY_RUN_WORKER_ARTIFACT_VERSION,
+  DRY_RUN_WORKER_ENTRYPOINT
+} from "./worker-identity.js";
 
 const SCHEMA_VERSION = "1.0";
 const ARTIFACT_KIND = "fdos-worker-artifact";
@@ -36,26 +42,12 @@ const FILE_PATH_PATTERN =
 const MAX_ARTIFACT_FILES = 32;
 const MAX_ARTIFACT_FILE_BYTES = 256 * 1024;
 
-export const DRY_RUN_WORKER_ARTIFACT_ID =
-  "worker:connector-dry-run";
-export const DRY_RUN_WORKER_ARTIFACT_VERSION =
-  "1.0.0-experimental";
-export const DRY_RUN_WORKER_ENTRYPOINT =
-  "src/workers/dry-run-connector-worker.js";
-export const DRY_RUN_WORKER_ARTIFACT_FILES = Object.freeze([
-  "src/domain/action-catalog.js",
-  "src/domain/action-intent.js",
-  "src/domain/delivery-intent.js",
-  "src/domain/network-isolation-contract.js",
-  "src/domain/worker-artifact-attestation.js",
-  "src/integrations/dry-run-worker-artifact.js",
-  "src/kernel/canonical-json.js",
-  "src/kernel/errors.js",
-  "src/kernel/ids.js",
-  "src/kernel/validation.js",
-  "src/workers/dry-run-connector-worker.js",
-  "src/workers/dry-run-worker-protocol.js"
-]);
+export {
+  DRY_RUN_WORKER_ARTIFACT_FILES,
+  DRY_RUN_WORKER_ARTIFACT_ID,
+  DRY_RUN_WORKER_ARTIFACT_VERSION,
+  DRY_RUN_WORKER_ENTRYPOINT
+} from "./worker-identity.js";
 
 const artifactKeys = Object.freeze([
   "artifactId",

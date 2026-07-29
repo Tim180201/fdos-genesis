@@ -1,7 +1,7 @@
 # ADR-0050 — Signed Worker Source Artifact Experiment
 
-Status: Implemented for Experiment; Human Review Pending; Not Accepted into
-FDOS Core
+Status: Superseded for Live Worker Execution by ADR-0051; Historical
+Experimental Evidence Retained; Not Accepted into FDOS Core
 
 Decision Date: 2026-07-29
 
@@ -15,6 +15,10 @@ Related Decisions:
 - `ADR-0046_Connector_Contract_and_Durable_Outbox_Experiment.md`
 - `ADR-0048_Process_Separated_Dry_Run_Worker_Experiment.md`
 - `ADR-0049_Darwin_Network_and_Write_Sandbox_Experiment.md`
+
+Superseded By:
+
+- `ADR-0051_Deterministic_Signed_Worker_Package_Experiment.md`
 
 ## Decision
 

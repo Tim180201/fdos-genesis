@@ -1,6 +1,6 @@
 # Signed Worker Source Artifact
 
-Status: Experimental Local Release Boundary
+Status: Historical Experimental Boundary; Superseded for Live Execution
 
 Validation Level: Level 1
 
@@ -9,6 +9,12 @@ Production Status: Not Production Ready
 Related Decision:
 
 - `../../../00_Specification/ADR/ADR-0050_Signed_Worker_Source_Artifact_Experiment.md`
+- `../../../00_Specification/ADR/ADR-0051_Deterministic_Signed_Worker_Package_Experiment.md`
+
+The live worker no longer loads this mutable source graph. Technical Slice 10
+uses the source inspection only as a deterministic package-build input, then
+executes the separately signed package described in
+`VERIFIED_WORKER_PACKAGE.md`.
 
 ## Purpose
 

@@ -54,6 +54,7 @@ Review and validate the Level 1 Company OS Pilot:
 - `04_Evidence/fdos-runtime/EV-FDOS-PROCESS-WORKER-007.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-DARWIN-SANDBOX-008.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-WORKER-ARTIFACT-009.md`
+- `04_Evidence/fdos-runtime/EV-FDOS-WORKER-PACKAGE-010.md`
 
 The pilot now includes exact read-only Git reference intake for TapTime and
 Company AI, Human-reviewed source provenance and an exclusive local runtime
@@ -64,17 +65,20 @@ not modify either independent source repository.
 Later technical slices add a durable dry-run Connector Outbox, governed
 non-authoritative Personality Profiles, a process-separated digest-only
 simulation worker, one optional Darwin network/write-denial experiment and a
-repository-local signed closed worker source artifact. Worker binding,
-clean-exit acknowledgement, crash/timeout behavior, exact isolation-policy
-digests, runtime denial probes, sandbox-bypass rejection and source-release
-tamper rejection are tested without enabling a networked connector, model
-provider or external action.
+repository-local signed closed worker source artifact. Technical Slice 10
+adds a deterministic separately transportable worker package, detached
+signing, an exact public trust-anchor pin, independent parent/bootstrap
+verification and fixed entry-point evaluation from verified in-memory module
+strings. Worker binding, clean-exit acknowledgement, crash/timeout behavior,
+exact isolation-policy digests, runtime denial probes, sandbox-bypass
+rejection and package/release tamper rejection are tested without enabling a
+networked connector, model provider or external action.
 
-Human Governance should review all nine evidence records and the remaining
+Human Governance should review all ten evidence records and the remaining
 identity, database, recovery, model and isolation limits. The deprecated
 Darwin adapter must be replaced by a supported portable sandbox with outbound
 allowlisting, read/resource restrictions, workload identity, immutable
-packaging, protected release trust and secrets controls before one
+deployment storage, protected release trust and secrets controls before one
 authenticated read-only connector.
 
 Then use FDOS and ADO in further real projects.

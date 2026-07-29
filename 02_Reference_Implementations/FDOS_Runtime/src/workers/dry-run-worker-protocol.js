@@ -24,10 +24,11 @@ import {
   processOnlyNetworkIsolationBinding
 } from "../domain/network-isolation-contract.js";
 import {
-  normalizeWorkerArtifactBinding
-} from "../domain/worker-artifact-attestation.js";
+  normalizeWorkerPackageBinding,
+  workerPackageBindingsEqual
+} from "../domain/worker-package-contract.js";
 
-const PROTOCOL_SCHEMA_VERSION = "1.2";
+const PROTOCOL_SCHEMA_VERSION = "1.3";
 const REQUEST_KIND = "fdos-process-worker-request";
 const RESPONSE_KIND = "fdos-process-worker-response";
 const MAX_REQUEST_TTL_MS = 5 * 60 * 1_000;
@@ -52,7 +53,7 @@ const executionKeys = Object.freeze([
   "mode",
   "networkAccess",
   "networkIsolation",
-  "workerArtifact"
+  "workerPackage"
 ]);
 const responseKeys = Object.freeze([
   "claimId",
@@ -78,7 +79,7 @@ const workerBoundaryKeys = Object.freeze([
   "networkIsolationProvider",
   "processSeparated",
   "shell",
-  "workerArtifact"
+  "workerPackage"
 ]);
 const isolationAttestationKeys = Object.freeze([
   "enforced",
@@ -88,14 +89,20 @@ const isolationAttestationKeys = Object.freeze([
   "probe",
   "provider"
 ]);
-const artifactObservationKeys = Object.freeze([
+const packageObservationKeys = Object.freeze([
   "artifactDigest",
   "artifactId",
   "artifactVersion",
   "attestationDigest",
+  "evaluatedFromVerifiedMemory",
   "issuerId",
   "keyId",
-  "localDigestMatched"
+  "packageDigest",
+  "packageDigestMatched",
+  "packageId",
+  "packageVersion",
+  "releaseSignatureVerifiedByBootstrap",
+  "trustAnchorDigest"
 ]);
 
 function exactKeys(value, expected, field, ErrorType = ValidationError) {
@@ -159,8 +166,8 @@ function normalizeExecution(value, ErrorType = ValidationError) {
       value.networkIsolation,
       ErrorType
     ),
-    workerArtifact: normalizeWorkerArtifactBinding(
-      value.workerArtifact,
+    workerPackage: normalizeWorkerPackageBinding(
+      value.workerPackage,
       ErrorType
     )
   };
@@ -280,8 +287,8 @@ function normalizeWorkerBoundary(value, ErrorType = IntegrityError) {
   const expectedFilesystemProbe = isolation.required
     ? "dev_null_write_open_denied"
     : "not_run";
-  const workerArtifact = normalizeWorkerArtifactObservation(
-    value.workerArtifact,
+  const workerPackage = normalizeWorkerPackageObservation(
+    value.workerPackage,
     ErrorType
   );
   if (
@@ -306,31 +313,39 @@ function normalizeWorkerBoundary(value, ErrorType = IntegrityError) {
     networkIsolationProvider: isolation.provider,
     networkIsolationPolicyDigest: isolation.policyDigest,
     networkIsolationProbe: expectedProbe,
-    workerArtifact
+    workerPackage
   };
 }
 
-function normalizeWorkerArtifactObservation(
+function normalizeWorkerPackageObservation(
   value,
   ErrorType = IntegrityError
 ) {
   exactKeys(
     value,
-    artifactObservationKeys,
-    "worker artifact observation",
+    packageObservationKeys,
+    "worker package observation",
     ErrorType
   );
-  if (value.localDigestMatched !== true) {
+  if (
+    value.packageDigestMatched !== true ||
+    value.releaseSignatureVerifiedByBootstrap !== true ||
+    value.evaluatedFromVerifiedMemory !== true
+  ) {
     throw new ErrorType(
-      "Worker artifact did not match the local source digest."
+      "Worker package was not verified before evaluation."
     );
   }
-  const binding = normalizeWorkerArtifactBinding(
+  const binding = normalizeWorkerPackageBinding(
     {
+      packageId: value.packageId,
+      packageVersion: value.packageVersion,
+      packageDigest: value.packageDigest,
       artifactId: value.artifactId,
       artifactVersion: value.artifactVersion,
       artifactDigest: value.artifactDigest,
       attestationDigest: value.attestationDigest,
+      trustAnchorDigest: value.trustAnchorDigest,
       issuerId: value.issuerId,
       keyId: value.keyId
     },
@@ -338,27 +353,38 @@ function normalizeWorkerArtifactObservation(
   );
   return {
     ...binding,
-    localDigestMatched: true
+    packageDigestMatched: true,
+    releaseSignatureVerifiedByBootstrap: true,
+    evaluatedFromVerifiedMemory: true
   };
 }
 
-function artifactObservationMatchesBinding(observation, binding) {
+function packageObservationMatchesBinding(observation, binding) {
+  const observedBinding = {
+    packageId: observation.packageId,
+    packageVersion: observation.packageVersion,
+    packageDigest: observation.packageDigest,
+    artifactId: observation.artifactId,
+    artifactVersion: observation.artifactVersion,
+    artifactDigest: observation.artifactDigest,
+    attestationDigest: observation.attestationDigest,
+    trustAnchorDigest: observation.trustAnchorDigest,
+    issuerId: observation.issuerId,
+    keyId: observation.keyId
+  };
   return (
-    observation.localDigestMatched === true &&
-    observation.artifactId === binding.artifactId &&
-    observation.artifactVersion === binding.artifactVersion &&
-    observation.artifactDigest === binding.artifactDigest &&
-    observation.attestationDigest === binding.attestationDigest &&
-    observation.issuerId === binding.issuerId &&
-    observation.keyId === binding.keyId
+    observation.packageDigestMatched === true &&
+    observation.releaseSignatureVerifiedByBootstrap === true &&
+    observation.evaluatedFromVerifiedMemory === true &&
+    workerPackageBindingsEqual(observedBinding, binding)
   );
 }
 
 function createWorkerBoundary(
   requestIsolation,
   networkIsolationAttestation,
-  requestArtifact,
-  workerArtifactObservation
+  requestPackage,
+  workerPackageObservation
 ) {
   const source =
     networkIsolationAttestation ??
@@ -391,7 +417,7 @@ function createWorkerBoundary(
       networkIsolationProvider: source.provider,
       networkIsolationPolicyDigest: source.policyDigest,
       networkIsolationProbe: source.probe,
-      workerArtifact: workerArtifactObservation
+      workerPackage: workerPackageObservation
     },
     ValidationError
   );
@@ -406,13 +432,13 @@ function createWorkerBoundary(
     );
   }
   if (
-    !artifactObservationMatchesBinding(
-      boundary.workerArtifact,
-      requestArtifact
+    !packageObservationMatchesBinding(
+      boundary.workerPackage,
+      requestPackage
     )
   ) {
     throw new PolicyError(
-      "Worker artifact observation differs from the request."
+      "Worker package observation differs from the request."
     );
   }
   return boundary;
@@ -521,7 +547,7 @@ export function createDryRunWorkerRequest({
   issuedAt,
   expiresAt,
   networkIsolation = processOnlyNetworkIsolationBinding(),
-  workerArtifact
+  workerPackage
 }) {
   assertPlainObject(delivery, "claimed connector delivery");
   if (
@@ -578,8 +604,8 @@ export function createDryRunWorkerRequest({
       networkIsolation: normalizeNetworkIsolationBinding(
         networkIsolation
       ),
-      workerArtifact: normalizeWorkerArtifactBinding(
-        workerArtifact
+      workerPackage: normalizeWorkerPackageBinding(
+        workerPackage
       )
     },
     intent: jsonClone(delivery.intent)
@@ -608,7 +634,7 @@ export function createDryRunWorkerResponse({
   request,
   completedAt,
   networkIsolationAttestation,
-  workerArtifactObservation
+  workerPackageObservation
 }) {
   const normalizedRequest = normalizeRequest(request, IntegrityError);
   const normalizedCompletedAt = isoDate(
@@ -628,8 +654,8 @@ export function createDryRunWorkerResponse({
   const workerBoundary = createWorkerBoundary(
     normalizedRequest.execution.networkIsolation,
     networkIsolationAttestation,
-    normalizedRequest.execution.workerArtifact,
-    workerArtifactObservation
+    normalizedRequest.execution.workerPackage,
+    workerPackageObservation
   );
   const outcome = normalizeDeliveryOutcome("simulated", {
     externalEffect: "none",
@@ -676,9 +702,9 @@ export function verifyDryRunWorkerResponse(response, request) {
       normalizedRequest.execution.networkIsolation.provider ||
     normalizedResponse.workerBoundary.networkIsolationPolicyDigest !==
       normalizedRequest.execution.networkIsolation.policyDigest ||
-    !artifactObservationMatchesBinding(
-      normalizedResponse.workerBoundary.workerArtifact,
-      normalizedRequest.execution.workerArtifact
+    !packageObservationMatchesBinding(
+      normalizedResponse.workerBoundary.workerPackage,
+      normalizedRequest.execution.workerPackage
     ) ||
     Date.parse(normalizedResponse.completedAt) <
       Date.parse(normalizedRequest.issuedAt) ||

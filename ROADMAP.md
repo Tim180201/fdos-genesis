@@ -14,10 +14,10 @@ Experimental Track: FDOS Runtime Level 1, authorized by ADR-0043.
 
 ## Immediate Priorities
 
-1. Human-review all nine FDOS Company OS Pilot evidence records, including
+1. Human-review all ten FDOS Company OS Pilot evidence records, including
    identity, persistence, Connector-Outbox, personality, process-worker,
-   Darwin-sandbox, signed-source-artifact, recovery and isolation limitations,
-   plus the reference adoption assessment.
+   Darwin-sandbox, signed-source-artifact, verified-worker-package, recovery
+   and isolation limitations, plus the reference adoption assessment.
 2. Validate ADO through frogs.
 3. Continue TapTime using FDOS and ADO.
 4. Capture evidence from real project work.
@@ -62,7 +62,8 @@ FDOS Runtime Level 1
 → Process-Separated No-Network Connector Worker (technical slice passed)
 → Darwin Network/Write-Denial Experiment (technical slice passed)
 → Signed Closed Worker Source Artifact (technical slice passed)
-→ Immutable Package, Supported Portable Sandbox and Workload Identity
+→ Deterministic Signed Worker Package and Verified-Memory Loading (technical slice passed)
+→ Immutable Deployment, Supported Portable Sandbox and Workload Identity
 → Authenticated Read-Only Sandboxed Connector
 → Single-Project Validation Decision
 ```

@@ -21,7 +21,7 @@ FDOS Specification
 
 | Reference Implementation | Status | Validation |
 |---|---|---|
-| `FDOS_Runtime/` | Experimental; Technical Slice 9 tested | Level 1 |
+| `FDOS_Runtime/` | Experimental; Technical Slice 10 tested | Level 1 |
 
 ## Rule
 

@@ -111,7 +111,12 @@ export class DarwinSandboxExecNetworkWriteDeny {
     });
   }
 
-  async prepareLaunch({ nodeExecutable, workerFile }) {
+  async prepareLaunch({
+    nodeExecutable,
+    workerFile,
+    nodeOptions = [],
+    workerArguments = []
+  }) {
     const normalizedNode = acceptedExecutablePath(
       nodeExecutable,
       "sandbox Node executable"
@@ -119,6 +124,26 @@ export class DarwinSandboxExecNetworkWriteDeny {
     const normalizedWorker = acceptedExecutablePath(
       workerFile,
       "sandbox worker file"
+    );
+    if (
+      !Array.isArray(nodeOptions) ||
+      nodeOptions.some(
+        (option) => option !== "--experimental-vm-modules"
+      ) ||
+      new Set(nodeOptions).size !== nodeOptions.length ||
+      !Array.isArray(workerArguments) ||
+      workerArguments.length > 2
+    ) {
+      throw new ValidationError(
+        "Sandbox worker launch arguments are invalid."
+      );
+    }
+    const normalizedWorkerArguments = workerArguments.map(
+      (argument, index) =>
+        acceptedExecutablePath(
+          argument,
+          `sandbox worker argument ${index}`
+        )
     );
     const policy = await this.inspect();
     return immutableJson({
@@ -128,7 +153,9 @@ export class DarwinSandboxExecNetworkWriteDeny {
         SANDBOX_PROFILE,
         normalizedNode,
         "--no-warnings",
-        normalizedWorker
+        ...nodeOptions,
+        normalizedWorker,
+        ...normalizedWorkerArguments
       ],
       isolation: {
         required: true,

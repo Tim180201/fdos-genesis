@@ -43,10 +43,14 @@ system with a small pilot:
 - immutable task-bound Delivery Intents and durable Outbox;
 - idempotent preparation, claim leases and fencing IDs;
 - exact, expiring worker requests and digest-only responses;
-- a closed, content-addressed worker source graph with local Ed25519 release
-  verification before every spawn;
-- exact release identity in protocol 1.2 plus child-side local digest
-  observation;
+- a closed, content-addressed worker source graph as deterministic package
+  build input;
+- one canonical separately transportable worker package with exact module,
+  artifact and package digests;
+- detached Ed25519 signing with an exact public trust-descriptor digest pin;
+- parent and bootstrap release verification before packaged module evaluation;
+- exact package/release identity in protocol 1.3 plus verified-memory
+  evaluation observation;
 - process-separated local connector simulation with bounded I/O and timeout;
 - optional Darwin-only network and filesystem-write denial with exact
   launcher/policy digest and in-worker denial probes;
@@ -68,7 +72,7 @@ system with a small pilot:
 - distributed replay protection, multi-process worker fencing or transactions;
 - supported portable OS/container/infrastructure worker isolation;
 - filesystem-read, CPU, memory, process-count and general syscall isolation;
-- independently attested worker identity, immutable worker package or
+- independently attested worker identity, immutable deployment storage or
   externally protected release trust;
 - external-effect transaction or service-side idempotency;
 - database migration, backup, restore or encryption;
@@ -107,11 +111,13 @@ The pilot is technically complete when:
     listen, connect and write-open denial probes;
 16. a bypassed or missing sandbox records no outcome and may reconcile only
     through Human Governance;
-17. every worker launch verifies the exact signed source artifact and binds it
-    through request, child observation, response and result;
-18. changed source, signature, trust, import graph or request artifact binding
-    fails closed without an Outbox outcome;
-19. no change occurred outside the FDOS repository.
+17. every worker launch verifies the exact signed package, source artifact and
+    trust pin in both parent and bootstrap;
+18. the fixed entry point evaluates only from the bootstrap-verified in-memory
+    package modules;
+19. changed package, signature, trust pin, import graph, path or request
+    binding fails closed without an Outbox outcome;
+20. no change occurred outside the FDOS repository.
 
 ## Reference Assessment
 

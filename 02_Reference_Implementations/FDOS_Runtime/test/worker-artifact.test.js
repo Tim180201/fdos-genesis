@@ -21,8 +21,6 @@ import {
   inspectDryRunWorkerArtifact,
   IntegrityError,
   LocalWorkerArtifactAuthority,
-  PILOT_DRY_RUN_WORKER_ATTESTATION,
-  PILOT_DRY_RUN_WORKER_TRUST,
   ValidationError,
   verifyWorkerArtifactAttestation
 } from "../src/index.js";
@@ -60,7 +58,7 @@ async function copiedArtifactFixture(t, label) {
   return rootDirectory;
 }
 
-test("pilot worker release verifies one exact closed source artifact", async () => {
+test("worker source inspection reconstructs one exact closed artifact", async () => {
   const artifact = await inspectDryRunWorkerArtifact();
   assert.equal(
     artifact.entrypoint,
@@ -77,12 +75,19 @@ test("pilot worker release verifies one exact closed source artifact", async () 
       }),
     ValidationError
   );
+  const authority = LocalWorkerArtifactAuthority.create({
+    issuerId: "issuer:fdos-worker-source-test",
+    keyId: "key:fdos-worker-source-test",
+    clock: () => new Date("2026-07-29T15:00:00.000Z")
+  });
+  const attestation = authority.issue({ artifact });
+  const trust = authority.trustDescriptor();
   assert.equal(
     verifyWorkerArtifactAttestation(
-      PILOT_DRY_RUN_WORKER_ATTESTATION,
+      attestation,
       {
         artifact,
-        trustedKeys: [PILOT_DRY_RUN_WORKER_TRUST]
+        trustedKeys: [trust]
       }
     ),
     true
@@ -90,23 +95,23 @@ test("pilot worker release verifies one exact closed source artifact", async () 
 
   const binding = createWorkerArtifactBinding({
     artifact,
-    attestation: PILOT_DRY_RUN_WORKER_ATTESTATION,
-    trustedKeys: [PILOT_DRY_RUN_WORKER_TRUST]
+    attestation,
+    trustedKeys: [trust]
   });
   assert.equal(binding.artifactDigest, artifact.digest);
   assert.equal(
     binding.issuerId,
-    PILOT_DRY_RUN_WORKER_TRUST.issuerId
+    trust.issuerId
   );
   assert.equal(
     binding.keyId,
-    PILOT_DRY_RUN_WORKER_TRUST.keyId
+    trust.keyId
   );
   assert.doesNotMatch(
     JSON.stringify({
       binding,
-      trust: PILOT_DRY_RUN_WORKER_TRUST,
-      attestation: PILOT_DRY_RUN_WORKER_ATTESTATION
+      trust,
+      attestation
     }),
     /PRIVATE KEY/
   );

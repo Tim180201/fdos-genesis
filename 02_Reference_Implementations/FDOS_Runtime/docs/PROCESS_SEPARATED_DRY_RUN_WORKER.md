@@ -11,6 +11,7 @@ Related Decisions:
 - `../../../00_Specification/ADR/ADR-0048_Process_Separated_Dry_Run_Worker_Experiment.md`
 - `../../../00_Specification/ADR/ADR-0049_Darwin_Network_and_Write_Sandbox_Experiment.md`
 - `../../../00_Specification/ADR/ADR-0050_Signed_Worker_Source_Artifact_Experiment.md`
+- `../../../00_Specification/ADR/ADR-0051_Deterministic_Signed_Worker_Package_Experiment.md`
 
 ## Purpose
 
@@ -30,16 +31,19 @@ authenticated Operations command
   -> immutable Delivery Intent
   -> durable Outbox preparation
   -> authenticated Connector Instance claim
-  -> inspect closed worker source graph
-  -> verify exact Ed25519 release attestation
-  -> exact, expiring worker request, release and isolation binding
+  -> read canonical worker package
+  -> verify package, source graph, Ed25519 release and trust pin
+  -> exact, expiring worker package, release and isolation binding
        │
        ▼
-     separate Node.js child process
+     separate Node.js verifier bootstrap
        -> direct process-only mode; or
        -> Darwin sandbox-exec network/write-deny mode
+       -> independently reverify package, release and trust pin
+       -> load exact verified modules into memory
+       -> evaluate fixed packaged entry point
        -> verify exact request and no-effect contract
-       -> reconstruct and match local source artifact digest
+       -> match exact package and release binding
        -> when required, prove socket and write-open denial
        -> compute digest-only simulation outcome
        -> emit one exact response
@@ -59,15 +63,20 @@ only one protocol response over standard output.
 
 `ProcessSeparatedDryRunWorker`:
 
-- reconstructs the exact allowed worker source graph before every launch;
-- rejects linked, missing, non-regular, group/world-writable, oversized,
-  unstable or non-UTF-8 source;
-- rejects source comments, dynamic loading/code, packages, added built-ins,
-  duplicate/undeclared, escaping or unreachable imports;
-- verifies the complete canonical artifact against the configured Ed25519
-  pilot release attestation;
-- launches the current absolute Node.js executable and fixed worker entry
-  point only after that preflight succeeds;
+- reads one canonical, separately transportable worker package before every
+  launch;
+- rejects linked, non-regular, wrong-owner, group/world-writable, oversized,
+  unstable, non-UTF-8 or noncanonical package input;
+- reconstructs every module digest and the complete source artifact;
+- rejects comments, dynamic loading/code, packages, added built-ins,
+  duplicate/undeclared, escaping or unreachable package imports;
+- verifies the complete package against its Ed25519 release attestation and
+  exact trust-anchor digest pin;
+- launches the current absolute Node.js executable and fixed verifier
+  bootstrap only after parent preflight succeeds;
+- supplies the package path and one bounded public release envelope;
+- requires the bootstrap to repeat package, release and trust verification
+  before evaluating the fixed entry point from verified in-memory modules;
 - uses `shell: false`;
 - opens only explicit standard-input, standard-output and standard-error
   pipes;
@@ -110,6 +119,7 @@ The content-addressed request binds:
   digest;
 - exact artifact ID, version, source digest, release-attestation digest,
   issuer and key ID;
+- exact package ID, version, complete digest and trust-anchor digest;
 - the complete verified Delivery Intent;
 - the request digest.
 
@@ -129,8 +139,10 @@ The content-addressed response binds:
   completion time and declared worker boundary rather than raw result content;
 - the declared worker boundary, including exact isolation provider, policy
   digest and denial-probe identifiers;
-- the exact artifact release binding and
-  `localDigestMatched: true` child observation;
+- the exact package and source-artifact release binding;
+- `packageDigestMatched: true`,
+  `releaseSignatureVerifiedByBootstrap: true` and
+  `evaluatedFromVerifiedMemory: true` child observations;
 - the response digest.
 
 The default process-only boundary contains
@@ -158,8 +170,10 @@ Output is accepted only when all conditions hold:
 7. every request, delivery, claim, connector and time binding matches;
 8. any required isolation provider, policy digest and denial probes match
    exactly;
-9. the child-observed artifact identity and local digest match the
-   parent-verified release binding.
+9. the bootstrap-observed package, artifact, attestation and trust pin match
+   the parent-verified release binding;
+10. the response proves the fixed entry point was evaluated from the verified
+    in-memory module set.
 
 A valid-looking response followed by a non-zero process exit is not accepted.
 This prevents the parent from interpreting a partially acknowledged or
@@ -172,7 +186,9 @@ The test worker supports bounded fault injection for:
 - crash before response;
 - valid response followed by crash;
 - hang until parent timeout;
-- a deliberately changed artifact digest in the otherwise exact request;
+- a deliberately changed package digest in the otherwise exact request;
+- a deliberately changed bootstrap trust-anchor pin after valid parent
+  preflight;
 - a deliberate sandbox-launch bypass while the request still requires the
   Darwin policy.
 
@@ -191,8 +207,8 @@ The worker:
 - cannot call the lower-level runtime because it is not passed;
 - cannot open the SQLite store through the worker protocol;
 - cannot sign an Invocation because no private key is passed;
-- cannot access a worker release private key because it is not stored or
-  passed;
+- cannot access a worker release private key because the package-release API
+  accepts detached signatures only and no private key is stored or passed;
 - cannot change the Delivery Intent;
 - cannot select another connector or claim;
 - cannot return raw response content;
@@ -213,10 +229,10 @@ This boundary does not establish:
 - filesystem read, CPU, memory, process-count or general syscall isolation;
 - container, VM or tenant isolation;
 - independently authenticated worker identity;
-- immutable worker packaging or protected deployment trust; ADR-0050 signs
-  the mutable closed source graph only;
-- protection against a same-account source race between parent inspection,
-  module loading and child observation;
+- immutable package storage or protected deployment trust; ADR-0051 packages
+  and verifies exact bytes but the repository fixture remains owner-writable;
+- protection against compromise of the mutable bootstrap, verifier, Node.js
+  runtime or repository-local pilot trust pin;
 - protection against a compromised host account or Node.js runtime;
 - secret-vault integration;
 - a real service API, DNS, TLS, rate, cost or service-idempotency control;
@@ -224,9 +240,11 @@ This boundary does not establish:
 - production monitoring or incident response.
 
 `processSeparated: true` means only that the simulation ran in another local
-process. Only the exact Darwin-required execution that completed all denial
-probes may report the two enforced-isolation flags as true. The default mode
-must report them as false.
+process. `evaluatedFromVerifiedMemory: true` means the package bootstrap
+verified the release before evaluating the admitted module strings; it is not
+remote attestation or sandbox proof. Only the exact Darwin-required execution
+that completed all denial probes may report the two enforced-isolation flags
+as true. The default mode must report them as false.
 
 ## Promotion Gate
 
@@ -235,8 +253,7 @@ Before one real read-only sandbox connector, FDOS still requires:
 - a supported OS-, container- or infrastructure-enforced outbound policy;
 - filesystem read and resource restrictions;
 - production workload identity, response authentication and revocation;
-- immutable packaged worker verification and externally protected release
-  trust;
+- immutable deployment storage and externally protected release trust;
 - secret-vault and no-secret-persistence controls;
 - service-specific request/response schemas and idempotency;
 - rate, cost, concurrency and observability budgets;

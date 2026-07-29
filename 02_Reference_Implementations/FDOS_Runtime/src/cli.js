@@ -156,27 +156,46 @@ async function runOutboxDemo({ sandbox = false } = {}) {
             .filesystemWriteIsolationEnforced,
         filesystemWriteIsolationProbe:
           result.worker.workerBoundary.filesystemWriteIsolationProbe,
-        artifact: {
+        package: {
           id:
-            result.worker.workerBoundary.workerArtifact
-              .artifactId,
+            result.worker.workerBoundary.workerPackage.packageId,
           version:
-            result.worker.workerBoundary.workerArtifact
-              .artifactVersion,
+            result.worker.workerBoundary.workerPackage
+              .packageVersion,
           digest:
-            result.worker.workerBoundary.workerArtifact
-              .artifactDigest,
+            result.worker.workerBoundary.workerPackage
+              .packageDigest,
+          sourceArtifact: {
+            id:
+              result.worker.workerBoundary.workerPackage
+                .artifactId,
+            version:
+              result.worker.workerBoundary.workerPackage
+                .artifactVersion,
+            digest:
+              result.worker.workerBoundary.workerPackage
+                .artifactDigest
+          },
           attestationDigest:
-            result.worker.workerBoundary.workerArtifact
+            result.worker.workerBoundary.workerPackage
               .attestationDigest,
+          trustAnchorDigest:
+            result.worker.workerBoundary.workerPackage
+              .trustAnchorDigest,
           issuerId:
-            result.worker.workerBoundary.workerArtifact
+            result.worker.workerBoundary.workerPackage
               .issuerId,
           keyId:
-            result.worker.workerBoundary.workerArtifact.keyId,
-          localDigestMatched:
-            result.worker.workerBoundary.workerArtifact
-              .localDigestMatched,
+            result.worker.workerBoundary.workerPackage.keyId,
+          packageDigestMatched:
+            result.worker.workerBoundary.workerPackage
+              .packageDigestMatched,
+          releaseSignatureVerifiedByBootstrap:
+            result.worker.workerBoundary.workerPackage
+              .releaseSignatureVerifiedByBootstrap,
+          evaluatedFromVerifiedMemory:
+            result.worker.workerBoundary.workerPackage
+              .evaluatedFromVerifiedMemory,
           releaseAttestationVerifiedByParent: true
         },
         requestDigest: result.worker.requestDigest,

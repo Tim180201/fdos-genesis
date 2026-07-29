@@ -54,6 +54,11 @@ promotion and not a production approval.
 | Ed25519 worker release attestation | Tested with local trust | Level 1 — Experimental | `EV-FDOS-WORKER-ARTIFACT-009` | Pending | No protected release service |
 | Parent/child artifact protocol binding | Tested with fault injection | Level 1 — Experimental | `EV-FDOS-WORKER-ARTIFACT-009` | Pending | Child observation occurs after module load |
 | Source/signature/trust/path tamper rejection | Tested locally | Level 1 — Experimental | `EV-FDOS-WORKER-ARTIFACT-009` | Pending | Same-account race remains |
+| Deterministic canonical worker package | Tested | Level 1 — Experimental | `EV-FDOS-WORKER-PACKAGE-010` | Pending | Repository file is not immutable deployment |
+| Detached package signing boundary | Tested locally | Level 1 — Experimental | `EV-FDOS-WORKER-PACKAGE-010` | Pending | No HSM/KMS custody connected |
+| Exact public trust-anchor digest pin | Tested | Level 1 — Experimental | `EV-FDOS-WORKER-PACKAGE-010` | Pending | Pilot pin remains repository-local |
+| Parent/bootstrap package verification | Tested with fault injection | Level 1 — Experimental | `EV-FDOS-WORKER-PACKAGE-010` | Pending | Bootstrap/verifier remain host TCB |
+| Verified-memory package evaluation | Tested locally | Level 1 — Experimental | `EV-FDOS-WORKER-PACKAGE-010` | Pending | Experimental VM loader / no workload identity |
 | TapTime/Company AI adoption assessment | Tested as documentation/evidence | Level 1 — Experimental | exact reference manifests | Pending | Not applicable |
 
 ## Promotion Rule

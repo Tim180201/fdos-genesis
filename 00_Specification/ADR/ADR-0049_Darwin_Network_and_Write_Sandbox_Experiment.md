@@ -17,9 +17,10 @@ Related Decisions:
 - `ADR-0046_Connector_Contract_and_Durable_Outbox_Experiment.md`
 - `ADR-0048_Process_Separated_Dry_Run_Worker_Experiment.md`
 
-Subsequent Decision:
+Subsequent Decisions:
 
 - `ADR-0050_Signed_Worker_Source_Artifact_Experiment.md`
+- `ADR-0051_Deterministic_Signed_Worker_Package_Experiment.md`
 
 ## Decision
 
@@ -167,8 +168,9 @@ Negative:
 - child probes cover selected operations, not every possible network or write
   path;
 - the worker and host still share one trusted account;
-- ADR-0050 signs the closed worker source graph, but launcher, runtime and
-  deployment remain mutable and are not independently attested;
+- ADR-0051 verifies a signed package before module evaluation, but launcher,
+  bootstrap, runtime and deployment remain mutable and are not independently
+  attested;
 - the response and probe result are not independently authenticated;
 - trusted-host and privileged-attacker risks remain;
 - behavior is validated only on the recorded local host/runtime.

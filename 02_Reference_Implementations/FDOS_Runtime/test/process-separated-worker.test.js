@@ -40,25 +40,35 @@ const connector = Object.freeze({
   type: "connector",
   id: "connector:reference:primary"
 });
-const syntheticWorkerArtifact = Object.freeze({
+const syntheticWorkerPackage = Object.freeze({
+  packageId: "worker-package:connector-dry-run",
+  packageVersion: "1.0.0-experimental",
+  packageDigest: digestObject({
+    package: "protocol-test"
+  }),
   artifactId: "worker:connector-dry-run",
-  artifactVersion: "1.0.0-experimental",
+  artifactVersion: "2.0.0-experimental",
   artifactDigest: digestObject({
     artifact: "protocol-test"
   }),
   attestationDigest: digestObject({
     attestation: "protocol-test"
   }),
-  issuerId: "issuer:fdos-worker-release-test",
-  keyId: "key:fdos-worker-release-test"
+  trustAnchorDigest: digestObject({
+    trustAnchor: "protocol-test"
+  }),
+  issuerId: "issuer:fdos-worker-package-test",
+  keyId: "key:fdos-worker-package-test"
 });
 
-function artifactObservation(
-  binding = syntheticWorkerArtifact
+function packageObservation(
+  binding = syntheticWorkerPackage
 ) {
   return {
     ...binding,
-    localDigestMatched: true
+    packageDigestMatched: true,
+    releaseSignatureVerifiedByBootstrap: true,
+    evaluatedFromVerifiedMemory: true
   };
 }
 
@@ -196,7 +206,7 @@ test("worker protocol binds the exact claim, intent, validity window and digest-
     () =>
       createDryRunWorkerRequest({
         delivery: claimed,
-        requestId: "workerrequest_protocol_missing_artifact",
+        requestId: "workerrequest_protocol_missing_package",
         issuedAt,
         expiresAt
       }),
@@ -207,7 +217,7 @@ test("worker protocol binds the exact claim, intent, validity window and digest-
     requestId: "workerrequest_protocol_000001",
     issuedAt,
     expiresAt,
-    workerArtifact: syntheticWorkerArtifact
+    workerPackage: syntheticWorkerPackage
   });
   assert.equal(
     verifyDryRunWorkerRequest(request, { now: issuedAt }),
@@ -220,7 +230,7 @@ test("worker protocol binds the exact claim, intent, validity window and digest-
   const response = createDryRunWorkerResponse({
     request,
     completedAt,
-    workerArtifactObservation: artifactObservation()
+    workerPackageObservation: packageObservation()
   });
   assert.equal(verifyDryRunWorkerResponse(response, request), true);
   assert.equal(response.outcome.type, "simulated");
@@ -234,10 +244,10 @@ test("worker protocol binds the exact claim, intent, validity window and digest-
       createDryRunWorkerResponse({
         request,
         completedAt,
-        workerArtifactObservation: artifactObservation({
-          ...syntheticWorkerArtifact,
-          artifactDigest: digestObject({
-            artifact: "mismatched-observation"
+        workerPackageObservation: packageObservation({
+          ...syntheticWorkerPackage,
+          packageDigest: digestObject({
+            package: "mismatched-observation"
           })
         })
       }),
@@ -292,13 +302,13 @@ test("worker protocol binds the exact claim, intent, validity window and digest-
     IntegrityError
   );
 
-  const changedArtifact = mutableClone(response);
-  changedArtifact.workerBoundary.workerArtifact.artifactDigest =
-    digestObject({ artifact: "tampered-response" });
+  const changedPackage = mutableClone(response);
+  changedPackage.workerBoundary.workerPackage.packageDigest =
+    digestObject({ package: "tampered-response" });
   assert.throws(
     () =>
       verifyDryRunWorkerResponse(
-        redigest(changedArtifact),
+        redigest(changedPackage),
         request
       ),
     IntegrityError
@@ -318,7 +328,7 @@ test("worker protocol binds the exact claim, intent, validity window and digest-
         completedAt: new Date(
           Date.parse(expiresAt) + 1
         ).toISOString(),
-        workerArtifactObservation: artifactObservation()
+        workerPackageObservation: packageObservation()
       }),
     PolicyError
   );
@@ -345,14 +355,14 @@ test("network-isolation protocol requires exact attestation binding", async (t) 
     issuedAt,
     expiresAt,
     networkIsolation,
-    workerArtifact: syntheticWorkerArtifact
+    workerPackage: syntheticWorkerPackage
   });
   assert.throws(
     () =>
       createDryRunWorkerResponse({
         request,
         completedAt: issuedAt,
-        workerArtifactObservation: artifactObservation()
+        workerPackageObservation: packageObservation()
       }),
     ValidationError
   );
@@ -369,7 +379,7 @@ test("network-isolation protocol requires exact attestation binding", async (t) 
           policyDigest: networkIsolation.policyDigest,
           probe: "not_run"
         },
-        workerArtifactObservation: artifactObservation()
+        workerPackageObservation: packageObservation()
       }),
     ValidationError
   );
@@ -385,7 +395,7 @@ test("network-isolation protocol requires exact attestation binding", async (t) 
       policyDigest: networkIsolation.policyDigest,
       probe: "socket_listen_and_connect_denied"
     },
-    workerArtifactObservation: artifactObservation()
+    workerPackageObservation: packageObservation()
   });
   assert.equal(verifyDryRunWorkerResponse(response, request), true);
   assert.equal(
@@ -494,7 +504,8 @@ test(
       /^sha256:[0-9a-f]{64}$/
     );
     assert.equal(
-      result.workerBoundary.workerArtifact.localDigestMatched,
+      result.workerBoundary.workerPackage
+        .evaluatedFromVerifiedMemory,
       true
     );
 
@@ -601,16 +612,24 @@ test("separate worker completes one authenticated outbox run with content-minimi
   assert.equal(status.networkIsolationRequired, false);
   assert.equal(status.filesystemWriteIsolationEnforced, false);
   assert.equal(status.filesystemWriteIsolationRequired, false);
-  assert.equal(status.workerArtifactPreflightRequired, true);
+  assert.equal(status.workerPackagePreflightRequired, true);
   assert.equal(
-    status.workerArtifactReleaseTrustConfigured,
+    status.workerPackageBootstrapVerificationRequired,
     true
   );
-  assert.match(
-    status.workerArtifactIssuerId,
-    /^issuer:/
+  assert.equal(
+    status.workerPackageInMemoryEvaluationRequired,
+    true
   );
-  assert.match(status.workerArtifactKeyId, /^key:/);
+  assert.equal(
+    status.workerPackageReleaseTrustConfigured,
+    true
+  );
+  assert.equal(
+    status.workerPackageTrustProvisioning,
+    "repository-pilot-fixture"
+  );
+  assert.equal(status.externalReleaseKeyCustodyAttested, false);
   assert.equal(
     result.workerBoundary.filesystemWriteIsolationEnforced,
     false
@@ -620,15 +639,33 @@ test("separate worker completes one authenticated outbox run with content-minimi
     "not_run"
   );
   assert.equal(
-    result.workerBoundary.workerArtifact.localDigestMatched,
+    result.workerBoundary.workerPackage.packageDigestMatched,
+    true
+  );
+  assert.equal(
+    result.workerBoundary.workerPackage
+      .releaseSignatureVerifiedByBootstrap,
+    true
+  );
+  assert.equal(
+    result.workerBoundary.workerPackage
+      .evaluatedFromVerifiedMemory,
     true
   );
   assert.match(
-    result.workerBoundary.workerArtifact.artifactDigest,
+    result.workerBoundary.workerPackage.packageDigest,
     /^sha256:[0-9a-f]{64}$/
   );
   assert.match(
-    result.workerBoundary.workerArtifact.attestationDigest,
+    result.workerBoundary.workerPackage.artifactDigest,
+    /^sha256:[0-9a-f]{64}$/
+  );
+  assert.match(
+    result.workerBoundary.workerPackage.attestationDigest,
+    /^sha256:[0-9a-f]{64}$/
+  );
+  assert.match(
+    result.workerBoundary.workerPackage.trustAnchorDigest,
     /^sha256:[0-9a-f]{64}$/
   );
   assert.throws(() => {
@@ -683,7 +720,12 @@ for (const fault of [
     reasonCode: "WORKER_EXIT_UNTRUSTED"
   },
   {
-    mode: "artifact-binding-mismatch",
+    mode: "bootstrap-release-mismatch",
+    timeoutMs: 2_000,
+    reasonCode: "WORKER_EXIT_UNTRUSTED"
+  },
+  {
+    mode: "package-binding-mismatch",
     timeoutMs: 2_000,
     reasonCode: "WORKER_EXIT_UNTRUSTED"
   },
