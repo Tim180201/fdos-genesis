@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## Unreleased — FDOS Runtime Level 1 Experiment
+
+- Added ADR-0043 authorizing a bounded FDOS Runtime Reference Implementation
+  experiment without changing the FDOS Core.
+- Added the runtime experiment boundary for A0–A4 action governance, data
+  scopes, repository ownership and production limitations.
+- Added `02_Reference_Implementations/FDOS_Runtime/` with:
+  - separate Role Definitions and Agent Instances;
+  - capability and memory-scope enforcement;
+  - immutable Action Intents;
+  - exact, expiring and single-use A2 approvals;
+  - A3/A4 execution blocking;
+  - versioned acyclic workflows;
+  - bounded handovers;
+  - human-reviewed memory candidates;
+  - exact Git-bound read-only reference snapshots;
+  - content-minimized reference evidence for Memory Candidates;
+  - exclusive local runtime-directory ownership;
+  - append-only hash-chained audit events;
+  - content-minimized evidence export.
+- Added the Chief of Staff, Operations and Marketing software-change-readiness
+  pilot under `03_Projects/Company_OS_Pilot/`.
+- Added an initial 49-test three-role slice, then expanded the complete suite to
+  63 tests for reference intake, provenance and runtime-lease behavior.
+- Recorded 89.54% line, 77.44% branch and 88.93% function coverage for the
+  expanded candidate.
+- Added Evidence Item `EV-FDOS-RUNTIME-PILOT-001` and its SHA-256 source
+  manifest.
+- Added Evidence Item `EV-FDOS-REFERENCE-INTAKE-002` and its SHA-256 source
+  manifest, a TapTime/Company AI adoption assessment, project Change-Impact
+  profile and Artifact Validation Register.
+- Added Knowledge Candidate KP-006 for exact Action Intent approval binding.
+- Added Knowledge Candidates KP-007 for exact external-source binding and
+  KP-008 for exclusive ownership before transactional persistence.
+- Applied KP-001 Role-versus-Agent-Instance separation in the experiment
+  without changing its candidate status.
+- No FDOS Core capability, canonical object or release version was added.
+
 
 ## v3.5
 - Added FDOS Object Registry.

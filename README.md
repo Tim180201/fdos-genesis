@@ -27,6 +27,7 @@ FDOS exists to serve products, customers and organizations — never itself.
 03_Projects/                   Project references and validation targets
 04_Evidence/                   Evidence packages and validation artifacts
 05_Knowledge/                  Organizational knowledge assets
+06_Learning/                   Organizational learning system and lifecycle
 Archive/                       Historical or deprecated material
 ```
 
@@ -40,9 +41,22 @@ It clarifies repository structure, object terminology and evidence handling.
 
 ## Next Step
 
-Use FDOS and ADO in real projects.
+Review and validate the Level 1 Company OS Pilot:
+
+- `02_Reference_Implementations/FDOS_Runtime/`
+- `03_Projects/Company_OS_Pilot/`
+- `04_Evidence/fdos-runtime/EV-FDOS-RUNTIME-PILOT-001.md`
+- `04_Evidence/fdos-runtime/EV-FDOS-REFERENCE-INTAKE-002.md`
+
+The pilot now includes exact read-only Git reference intake for TapTime and
+Company AI, Human-reviewed source provenance and an exclusive local runtime
+lease. FDOS did not modify either independent source repository.
+
+Then use FDOS and ADO in further real projects.
 
 Do not expand the Core until real evidence proves the need.
+
+The experimental runtime is not a Core expansion and is not production ready.
 
 ## Version Consistency Rule
 

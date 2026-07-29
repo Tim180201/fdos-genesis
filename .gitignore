@@ -1,1 +1,4 @@
 .DS_Store
+node_modules/
+coverage/
+02_Reference_Implementations/FDOS_Runtime/.runtime/

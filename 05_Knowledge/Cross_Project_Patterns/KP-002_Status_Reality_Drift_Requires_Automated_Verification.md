@@ -27,6 +27,23 @@ Validated in two independent projects. Not yet reviewed by a designated Knowledg
 
 Treat this as a Cross-Project Knowledge Candidate until reviewed by a Knowledge Owner and, if confirmed, considered by the Architecture Board for a possible lightweight capability (e.g. an optional, non-Core reference check that compares a project's declared top-level status against its Decision Log / commit history and flags divergence). This recommendation is a suggestion for governance review, not a proposal to create a new FDOS Core capability; capability creation remains subject to `00_Specification/Object_Registry/FDOS_Object_Naming_Standard.md` and Architecture Board approval.
 
+## Experimental Application
+
+The Company OS Pilot applies one narrow non-Core control:
+
+- bind exact commit and tree;
+- digest the complete tracked manifest;
+- check HEAD and status before and after capture;
+- block default intake when tracked worktree drift exists;
+- exclude untracked content.
+
+During the assessment TapTime advanced from `496ca59` to `d63c62d`. The intake
+was rebound rather than silently attributing the newer state to the earlier
+snapshot. Evidence:
+`04_Evidence/fdos-runtime/EV-FDOS-REFERENCE-INTAKE-002.md`.
+
+This is Level 1 implementation evidence, not Knowledge Owner promotion.
+
 ## Governance
 
 Do not promote to FDOS Core until confirmed by additional independent projects and formally reviewed by a Knowledge Owner, per `00_Specification/Knowledge/Organizational_Knowledge_Lifecycle.md` and `00_Specification/Knowledge/Knowledge_Confidence_Model.md`.

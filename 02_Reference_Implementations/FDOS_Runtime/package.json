@@ -1,0 +1,21 @@
+{
+  "name": "@fdos/runtime-reference",
+  "version": "0.2.0-experimental",
+  "description": "Experimental, governed runtime reference implementation for FDOS",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "node --test --test-concurrency=1 --test-reporter=spec",
+    "check": "node --check src/cli.js && node --check src/integrations/git-reference-source.js && node --check src/kernel/runtime-lease.js && node --test --test-concurrency=1 --test-reporter=spec",
+    "coverage": "node --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec",
+    "demo": "node src/cli.js demo",
+    "verify": "node src/cli.js verify"
+  },
+  "license": "UNLICENSED"
+}

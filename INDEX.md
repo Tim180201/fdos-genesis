@@ -35,6 +35,20 @@ AI Layer: Draft complete
 Learning Layer: Foundation active  
 Operational Mode: Project Validation
 
+## Active Experimental Validation
+
+| Area | Artifact | Status |
+|---|---|---|
+| Reference Implementation | `02_Reference_Implementations/FDOS_Runtime/` | Level 1 — Experimental |
+| Project | `03_Projects/Company_OS_Pilot/` | Technical slice passed; human review pending |
+| Evidence | `04_Evidence/fdos-runtime/EV-FDOS-RUNTIME-PILOT-001.md` | Evidence Item |
+| Evidence | `04_Evidence/fdos-runtime/EV-FDOS-REFERENCE-INTAKE-002.md` | Evidence Item |
+| Knowledge | `05_Knowledge/Cross_Project_Patterns/KP-006_Approval_Must_Bind_Exact_Action_Intent.md` | Candidate |
+| Knowledge | `05_Knowledge/Cross_Project_Patterns/KP-007_External_Knowledge_Requires_Exact_Source_Binding.md` | Candidate |
+| Knowledge | `05_Knowledge/Cross_Project_Patterns/KP-008_Nontransactional_Event_Store_Requires_Exclusive_Ownership.md` | Candidate |
+
+No item in this table is an FDOS Core standard.
+
 ## Active Principle
 
 Reality before Architecture.  

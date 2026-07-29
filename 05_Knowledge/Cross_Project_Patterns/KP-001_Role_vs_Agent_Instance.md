@@ -29,6 +29,25 @@ Further evidence from the same source project (`04_Evidence/taptime/EV-TAPTIME-R
 
 Treat this as a Cross-Project Knowledge Candidate until validated by additional FDOS projects. Future validation should specifically check whether roles are held by distinct accountable parties, not only whether role definitions remain stable over time.
 
+## Experimental Reference Implementation Application (added 2026-07-29)
+
+The Level 1 FDOS Runtime experiment applies this candidate explicitly:
+
+- workflow tasks are assigned to stable Role Definitions;
+- task claims, results, handovers and audit events are attributed to concrete
+  Agent Instances;
+- multiple active instances may hold the same role;
+- suspended instances are rejected;
+- the runtime derives the effective role from the registered instance and
+  rejects a conflicting caller-provided role claim.
+
+Source:
+`04_Evidence/fdos-runtime/EV-FDOS-RUNTIME-PILOT-001.md`
+
+This is implementation-feasibility evidence from an FDOS experiment, not a
+second independent project validation. It therefore does not remove the Known
+Limitation above and does not change the candidate's governance status.
+
 ## Governance
 
 Do not promote to FDOS Core until confirmed by multiple independent projects.
