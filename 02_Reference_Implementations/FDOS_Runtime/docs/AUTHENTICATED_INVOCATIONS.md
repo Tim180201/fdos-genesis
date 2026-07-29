@@ -106,8 +106,8 @@ not infer rollback from the error.
 
 This distinction is safe only because the experiment has no external effect.
 The dry-run Connector Contract and Outbox now provide idempotent preparation,
-claim fencing and uncertainty review, while still enforcing no network and no
-external effect.
+claim fencing, process-separated digest-only simulation and uncertainty
+review, while still admitting no network operation and no external effect.
 
 See `TRANSACTIONAL_PERSISTENCE.md` and `CONNECTOR_OUTBOX.md`.
 
@@ -148,6 +148,12 @@ The current runtime accepts:
 Connector principals remain denied for workflows, tasks, approvals, memory,
 general Outbox reads, audit and evidence export.
 
+The current process worker is not itself an Invocation principal. It receives
+no local signing key and cannot call the gateway. After exact protocol and
+clean-exit verification, the trusted demo controller records the result
+through its experimental Connector principal. Production requires independent
+workload identity and response authentication for the worker.
+
 ## Command Policy
 
 Commands are deny-by-default. Each allowed command has an exact payload schema.
@@ -181,6 +187,8 @@ No command enables networked connector execution or A3/A4 execution.
   untrusted integrations by architecture, not by a language sandbox.
 - Host compromise can still rewrite local files and trust configuration.
 - Connector identities are local experimental registrations without
-  production workload attestation, revocation or process isolation.
+  production workload attestation or revocation. The simulation is
+  process-separated, but its response is not independently signed and the
+  process has no OS-enforced network or resource isolation.
 - Personality Profile authentication proves exact configuration access, not
   model behavior or safe persona expression.

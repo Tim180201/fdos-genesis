@@ -24,6 +24,7 @@ import {
   PILOT_CONNECTOR_CONTRACT_DEFINITIONS,
   PILOT_CONNECTOR_INSTANCE_DEFINITIONS,
   PolicyError,
+  ProcessSeparatedDryRunWorker,
   ValidationError,
   verifyDeliveryIntent
 } from "../src/index.js";
@@ -1341,10 +1342,15 @@ test("delivery intent and outcome tampering are independently rejected", async (
 });
 
 test("authenticated outbox demo completes with no network or external effect", async (t) => {
-  const harness = await outboxHarness(t);
+  const harness = await outboxHarness(t, {
+    time: controlledClock(new Date().toISOString())
+  });
   const result = await executeConnectorOutboxDryRunDemo({
     gateway: harness.gateway,
-    authority: harness.authority
+    authority: harness.authority,
+    worker: new ProcessSeparatedDryRunWorker({
+      clock: harness.time.clock
+    })
   });
   assert.equal(result.run.status, "completed");
   assert.equal(result.delivery.status, "simulated");
@@ -1366,6 +1372,12 @@ test("authenticated outbox demo completes with no network or external effect", a
     JSON.stringify(result.evidence),
     /repositoryId|bound-local-demo/
   );
+  assert.equal(result.worker.workerBoundary.processSeparated, true);
+  assert.equal(
+    result.worker.workerBoundary.networkIsolationEnforced,
+    false
+  );
+  assert.equal(result.worker.outcome.evidence.externalEffect, "none");
   assert.equal(result.status.acceptedInvocations, 12);
   assert.equal(result.status.persistence.committedTransactionCount, 12);
   assert.equal(result.status.audit.eventCount, 22);

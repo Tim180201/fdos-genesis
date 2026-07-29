@@ -1,4 +1,6 @@
-import { digestObject } from "../kernel/canonical-json.js";
+import {
+  ProcessSeparatedDryRunWorker
+} from "../integrations/process-separated-dry-run-worker.js";
 import { createId } from "../kernel/ids.js";
 import {
   CONNECTOR_OUTBOX_DRY_RUN_WORKFLOW
@@ -52,7 +54,8 @@ async function invoke(
 
 export async function executeConnectorOutboxDryRunDemo({
   gateway,
-  authority
+  authority,
+  worker = new ProcessSeparatedDryRunWorker()
 }) {
   const correlationId = createId("correlation");
   const started = await invoke(
@@ -131,6 +134,9 @@ export async function executeConnectorOutboxDryRunDemo({
       leaseSeconds: 30
     }
   );
+  const workerResult = await worker.execute({
+    delivery: claimed
+  });
   const simulated = await invoke(
     gateway,
     authority,
@@ -140,14 +146,8 @@ export async function executeConnectorOutboxDryRunDemo({
     {
       deliveryId: prepared.delivery.id,
       claimId: claimed.claim.id,
-      outcome: "simulated",
-      evidence: {
-        externalEffect: "none",
-        resultDigest: digestObject({
-          intentDigest: prepared.delivery.intent.digest,
-          simulated: true
-        })
-      }
+      outcome: workerResult.outcome.type,
+      evidence: workerResult.outcome.evidence
     }
   );
   await invoke(
@@ -200,6 +200,7 @@ export async function executeConnectorOutboxDryRunDemo({
     run,
     evidence,
     delivery,
+    worker: workerResult,
     audit,
     status: gateway.status()
   };

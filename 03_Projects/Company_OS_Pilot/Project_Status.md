@@ -1,18 +1,18 @@
 # Company OS Pilot — Project Status
 
-Status: Technical Slice 6 Passed / Human Review Pending
+Status: Technical Slice 7 Passed / Human Review Pending
 Date: 2026-07-29  
 Validation Level: Level 1 — Experimental
 
 ## Current Goal
 
-Deliver and verify distinct governed Personality Profiles for the three pilot
-Agent Instances without changing their roles, authority, information access or
-external-action boundary.
+Deliver and verify a process-separated, exact and fail-closed connector
+simulation worker without enabling network access, an external effect or an
+operating-system sandbox claim.
 
 ## Current Phase
 
-Level 1 governed Agent Personality Profile evidence review.
+Level 1 process-separated Connector Worker evidence review.
 
 ## Exit Criteria
 
@@ -44,11 +44,21 @@ Level 1 governed Agent Personality Profile evidence review.
 - [x] authenticated self-only Operating Profile command implemented;
 - [x] fixed precedence and personality safety invariants documented;
 - [x] ADR, security model and Evidence 006 prepared;
-- [ ] Human Governance reviewed Technical Slices 3–6 evidence.
+- [x] exact expiring worker request/response protocol implemented;
+- [x] Outbox demo simulation moved to a separate shell-free child process;
+- [x] runtime, database, signing key and parent environment withheld from the
+      child protocol;
+- [x] worker response accepted only after exact binding and clean exit;
+- [x] crash-before-response, response-then-crash and timeout paths tested;
+- [x] rejected worker execution preserves the claim for human uncertainty
+      reconciliation;
+- [x] lack of OS network/resource isolation reported explicitly;
+- [x] ADR, security model, operations guide and Evidence 007 prepared;
+- [ ] Human Governance reviewed Technical Slices 3–7 evidence.
 
 ## Verified Result
 
-- 110 of 110 tests passed;
+- 116 of 116 tests passed;
 - four workflow tasks completed;
 - Chief of Staff, Operations and Marketing participated;
 - 14 signed invocations accepted in 14 committed local transactions;
@@ -81,20 +91,34 @@ Level 1 governed Agent Personality Profile evidence review.
   rejected;
 - authenticated agents could read only their own server-resolved Operating
   Profile;
-- no model call occurred and no claim of expressed personality is made.
+- no model call occurred and no claim of expressed personality is made;
+- one exact claimed delivery was transferred to a separate local process;
+- the child returned a response binding request, delivery, fencing claim,
+  Connector Instance, completion time and digest-only outcome;
+- normal process execution completed the existing authenticated Outbox demo
+  with the same 12 Invocations, 12 transactions and 22 events;
+- crash before output, valid output followed by crash and hang timeout were
+  rejected without recording an outcome;
+- abandoned failed-process claims reconciled only to `uncertain` after expiry;
+- `networkIsolationEnforced` remained false and no real service was contacted.
 
 See `Validation_Report.md`,
 `Validation_Report_003_Authenticated_Invocation.md`,
 `Validation_Report_004_Transactional_Persistence.md`,
 `Validation_Report_005_Connector_Outbox.md`,
 `Validation_Report_006_Agent_Personality.md`,
+`Validation_Report_007_Process_Separated_Worker.md`,
 `Reference_Adoption_Assessment.md` and the evidence records under
 `../../04_Evidence/fdos-runtime/`.
 
 ## External Action Status
 
-Disabled. A local dry-run worker path is enabled with
-`networkAccess: false` and `externalEffects: false`.
+Disabled. A process-separated local simulation path is enabled with
+`networkAccess: false`, `externalEffects: false` and
+`networkIsolationEnforced: false`.
+
+Process separation is not an operating-system sandbox and authorizes no real
+connector.
 
 Personality is configuration only. No model provider is connected.
 

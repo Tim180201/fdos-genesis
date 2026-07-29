@@ -12,6 +12,8 @@
   experiment without enabling a networked connector.
 - Added ADR-0047 for governed, non-authoritative Agent Personality Profiles
   without enabling a model provider.
+- Added ADR-0048 for a process-separated, digest-only Connector simulation
+  without claiming an operating-system sandbox or enabling a service.
 - Added the runtime experiment boundary for A0–A4 action governance, data
   scopes, repository ownership and production limitations.
 - Added `02_Reference_Implementations/FDOS_Runtime/` with:
@@ -54,6 +56,15 @@
   - Human Governance expired-claim reconciliation, retry, cancellation and
     uncertainty resolution;
   - stale-contract, concurrent-claim and Connector principal isolation;
+  - an exact, expiring worker request/response protocol bound to the active
+    delivery, fencing claim, connector and complete Delivery Intent;
+  - a fixed shell-free child process with minimal environment, bounded
+    standard I/O and hard timeout;
+  - exact clean-exit acknowledgement and digest-only execution evidence;
+  - crash-before-response, response-then-crash and hang fault injection;
+  - claim preservation plus Human Governance uncertainty reconciliation after
+    rejected worker execution;
+  - explicit `networkIsolationEnforced: false` reporting;
   - append-only hash-chained audit events;
   - content-minimized task and delivery evidence export.
 - Added the Chief of Staff, Operations and Marketing software-change-readiness
@@ -62,7 +73,8 @@
   reference intake/provenance/runtime ownership, and then to 79 tests for the
   authenticated Invocation boundary and gateway lifecycle. The transactional
   slice expanded the suite to 92 tests; the Connector Outbox slice expands it
-  to 106 tests; the Agent Personality slice expands it to 110 tests.
+  to 106 tests; the Agent Personality slice expands it to 110 tests; the
+  process-separated worker slice expands it to 116 tests.
 - Recorded 90.83% line, 77.73% branch and 90.48% function coverage for the
   authenticated candidate.
 - Recorded 90.16% line, 78.04% branch and 90.56% function coverage for the
@@ -72,6 +84,8 @@
   Connector Outbox candidate.
 - Recorded 90.88% line, 79.13% branch and 91.22% function coverage for the
   Agent Personality candidate.
+- Recorded 90.77% line, 78.86% branch and 90.88% function coverage for the
+  process-separated worker candidate.
 - Added Evidence Item `EV-FDOS-RUNTIME-PILOT-001` and its SHA-256 source
   manifest.
 - Added Evidence Item `EV-FDOS-REFERENCE-INTAKE-002` and its SHA-256 source
@@ -85,6 +99,8 @@
   manifest and Validation Report 005.
 - Added Evidence Item `EV-FDOS-AGENT-PERSONALITY-006`, its SHA-256 source
   manifest and Validation Report 006.
+- Added Evidence Item `EV-FDOS-PROCESS-WORKER-007`, its SHA-256 source
+  manifest and Validation Report 007.
 - Added Knowledge Candidate KP-006 for exact Action Intent approval binding.
 - Added Knowledge Candidates KP-007 for exact external-source binding and
   KP-008 for exclusive ownership before transactional persistence.

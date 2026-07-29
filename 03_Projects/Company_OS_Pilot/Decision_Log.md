@@ -233,3 +233,35 @@ Operating Profile through an exact signed command with no target-agent field.
 
 Rationale: The future model context needs an exact profile, while cross-agent
 inspection is unrelated authority and should remain an administrative concern.
+
+## PILOT-DEC-025 — Separate Connector Simulation Process
+
+Date: 2026-07-29
+
+Decision: Run the bounded connector simulation in a separate child process
+that receives only one exact claimed Delivery Intent through a closed
+standard-I/O protocol.
+
+Rationale: The worker should not share the controller's runtime object,
+database handle or signing key, and its lifecycle must be testable before any
+real connector is considered.
+
+## PILOT-DEC-026 — Clean Exit Is Part of Acknowledgement
+
+Date: 2026-07-29
+
+Decision: Accept a worker response only after exact digest verification, empty
+standard error and normal process exit code zero.
+
+Rationale: A valid-looking response followed by a crash is an ambiguous
+acknowledgement, not evidence of successful completion.
+
+## PILOT-DEC-027 — Process Separation Is Not a Sandbox
+
+Date: 2026-07-29
+
+Decision: Report `networkIsolationEnforced: false` until an OS, container or
+infrastructure control actually denies unapproved egress and resources.
+
+Rationale: A separate process under the same host account reduces authority
+sharing but does not itself prevent network, filesystem or resource access.

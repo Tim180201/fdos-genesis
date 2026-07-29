@@ -76,6 +76,15 @@ export {
   verifyReferenceSnapshot
 } from "./integrations/git-reference-source.js";
 export {
+  ProcessSeparatedDryRunWorker
+} from "./integrations/process-separated-dry-run-worker.js";
+export {
+  createDryRunWorkerRequest,
+  createDryRunWorkerResponse,
+  verifyDryRunWorkerRequest,
+  verifyDryRunWorkerResponse
+} from "./workers/dry-run-worker-protocol.js";
+export {
   createId,
   deterministicIdFactory
 } from "./kernel/ids.js";

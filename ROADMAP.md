@@ -14,9 +14,9 @@ Experimental Track: FDOS Runtime Level 1, authorized by ADR-0043.
 
 ## Immediate Priorities
 
-1. Human-review all six FDOS Company OS Pilot evidence records, including the
-   identity, persistence, connector-Outbox, personality and recovery
-   limitations, and the reference adoption assessment.
+1. Human-review all seven FDOS Company OS Pilot evidence records, including
+   identity, persistence, Connector-Outbox, personality, process-worker,
+   recovery and isolation limitations, plus the reference adoption assessment.
 2. Validate ADO through frogs.
 3. Continue TapTime using FDOS and ADO.
 4. Capture evidence from real project work.
@@ -58,7 +58,7 @@ FDOS Runtime Level 1
 → Transactional Event-Store Adapter (technical slice passed)
 → Connector Contract, Outbox and Uncertain-Outcome Experiment (technical slice passed)
 → Governed Agent Personality Profiles (technical slice passed)
-→ Process-Separated No-Network Connector Worker
+→ Process-Separated No-Network Connector Worker (technical slice passed)
 → Authenticated Read-Only Sandboxed Connector
 → Single-Project Validation Decision
 ```

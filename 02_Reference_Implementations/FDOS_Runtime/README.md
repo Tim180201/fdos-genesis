@@ -7,9 +7,10 @@ Production Status: Not Production Ready
 FDOS Runtime is a small executable kernel for testing whether FDOS can safely
 coordinate specialized AI roles as one organizational system.
 
-The current slices implement coordination, authenticated invocation and a
-no-network connector Outbox, not autonomous model calls or external execution.
-Callers supply work results; the runtime governs who may act, in which order,
+The current slices implement coordination, authenticated invocation, a
+no-network connector Outbox and a process-separated digest-only simulation
+worker, not autonomous model calls or external execution. Callers still supply
+all substantive work results; the runtime governs who may act, in which order,
 within which information scope and under which approval.
 
 ## Implemented Scope
@@ -29,6 +30,12 @@ within which information scope and under which approval.
 - deny-by-default, content-addressed dry-run Connector Contracts;
 - immutable, task-bound Delivery Intents and durable idempotent preparation;
 - registered Connector Instance identity with claim leases and fencing IDs;
+- an exact, expiring worker request/response protocol bound to the active
+  Connector claim;
+- a shell-free child process with a minimal environment, bounded input/output
+  and hard timeout;
+- clean-exit acknowledgement plus crash-before-response,
+  response-then-crash and hang fault tests;
 - failed retry, cancellation and uncertainty resolution under Human
   Governance;
 - content-minimized simulated, failed and uncertain connector outcomes;
@@ -74,8 +81,12 @@ below `.runtime/`, commits each command as one local SQLite transaction and
 prints a content-minimized evidence bundle. It performs no external action.
 
 The Outbox demo separately exercises contract binding, task-bound preparation,
-connector claim and a digest-only simulated result. It opens no network and
-records `externalEffect: none`.
+connector claim, process-separated digest-only simulation and authenticated
+outcome recording. It performs no network operation and records
+`externalEffect: none`.
+
+The worker reports `networkIsolationEnforced: false`. Process separation is
+not an OS sandbox and does not prove enforced egress denial.
 
 The built-in `node:sqlite` API is still an evolving Node.js dependency. This
 candidate records exact runtime versions and makes no production-support
@@ -95,7 +106,9 @@ node src/cli.js reference-snapshot company-ai /absolute/path/to/company-ai-platf
 - `src/domain/` — roles, personality profiles, action and delivery intents,
   connector contracts, policy and workflow definitions;
 - `src/runtime/` — authenticated gateway, coordination, approvals and memory;
-- `src/integrations/` — disabled-by-default, read-only reference boundaries;
+- `src/integrations/` — read-only reference and process-worker boundaries;
+- `src/workers/` — closed dry-run protocol and separate simulation entry
+  point;
 - `src/pilot/` — the three-role reference workflow;
 - `test/` — unit, security and end-to-end verification.
 
@@ -105,6 +118,7 @@ See:
 - `docs/AUTHENTICATED_INVOCATIONS.md`
 - `docs/TRANSACTIONAL_PERSISTENCE.md`
 - `docs/CONNECTOR_OUTBOX.md`
+- `docs/PROCESS_SEPARATED_DRY_RUN_WORKER.md`
 - `docs/AGENT_AND_ROLE_MODEL.md`
 - `docs/AGENT_PERSONALITY_MODEL.md`
 - `docs/SECURITY_MODEL.md`
@@ -117,4 +131,5 @@ Untrusted integrations must use `AuthenticatedRuntimeGateway`; the lower-level
 runtime object is an internal reference-kernel and test surface. Passing tests
 proves behavior only inside the local process-leased experiment. The ephemeral
 demo signer is not a production identity provider and does not prove
-infrastructure, networked connector, database-recovery or tenant security.
+infrastructure, enforced network isolation, networked connector,
+database-recovery or tenant security.

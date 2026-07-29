@@ -41,46 +41,55 @@ V4 and V5 cannot be claimed for an uncommitted local experiment.
 Baseline commit/tree:
 
 - FDOS commit:
-  `0533afb37ea12523e9e5c6ce0556f967ab5c0d6d`
+  `7f41f37bf28a020e7b50ddf56a071d29ce14e0ec`
 - FDOS tree:
-  `20e68c484d4516cbbed1dd03c05cce1ab7ff9059`
-- the governed Agent Personality Profile slice is evaluated as the change
-  from that Connector-Outbox baseline;
+  `9be0e624ebeff9662bf2f0bbf08e2910e291a1f3`
+- the process-separated dry-run worker slice is evaluated as the change from
+  that governed Personality Profile baseline;
 - external references are bound separately in
   `Reference_Adoption_Assessment.md`.
 
 Changed boundaries:
 
-- closed, versioned and content-addressed Personality Profile registry;
-- three distinct pilot profiles with exact compatible-role binding;
-- Agent Instance profile ID, version and digest binding;
-- fixed constitutional precedence and non-authoritative safety invariants;
-- authenticated self-only `agent.profile` command;
-- rejection of schema smuggling, invalid traits, cross-role binding, human
-  access and lower-level-runtime bypass;
+- exact, closed and content-addressed worker request/response protocol;
+- active delivery, fencing claim, Connector Instance, Delivery Intent and
+  validity-window binding;
+- fixed process entry point, no shell, minimal non-inherited environment and
+  explicit standard-I/O boundary;
+- parent-side timeout and request/output/error byte limits;
+- digest-only result binding request, completion time and worker boundary;
+- clean-exit acknowledgement and rejection of post-response crash;
+- crash-before-response, post-response-crash and hang fault injection;
+- preservation of the durable claim followed by human-only uncertainty
+  reconciliation;
+- explicit `networkIsolationEnforced: false` non-claim;
 - architecture, identity, security, risk and evidence documentation.
 
-Risk class: R2.
+Risk class: R3.
 
 Rationale:
 
-- the Operating Profile is a future model-context contract;
-- bad precedence could let personality alter higher-authority instructions;
-- the self-read operation changes the authenticated public command surface;
-- no persistence, capability or external-effect semantics change.
+- the worker crosses a process and connector boundary;
+- acknowledgement handling affects whether external work could later be
+  considered complete or uncertain;
+- the child receives exact internal Delivery Intent parameters;
+- false network-isolation claims would create a material security error;
+- the experiment remains dry-run and changes no external-effect authority.
 
 Selected verification and result:
 
 - V0: exact FDOS status/diff, `git diff --check`, navigation, unsupported-claim
   review and source-manifest verification passed;
-- V1: personality, agent-registry, gateway and runtime syntax checks plus four
-  focused personality tests passed;
-- V2: exact schema, digest drift, trait allowlist, role compatibility,
-  self-only access, payload closure and lower-level-runtime denial passed;
-- V3: complete 110-test runtime regression, coverage and final scope review
-  passed;
+- V1: worker protocol, child entry point, process client, pilot and CLI syntax
+  checks plus six focused new worker cases passed;
+- V2: exact protocol shape/digests, claim/time binding, raw-field rejection,
+  asserted-sandbox rejection, clean execution, crash-before-response,
+  post-response crash, timeout and human uncertainty reconciliation passed;
+- V3: complete 116-test runtime regression, coverage, both local demos and
+  final scope review passed;
 - V4: not claimed; no independent exact-commit CI evidence is attached;
-- V5: not applicable and not authorized; no physical or external operation.
+- V5: not claimed and not authorized; no OS sandbox, network, service,
+  physical or external operation was exercised.
 
 Checks intentionally not run:
 
@@ -89,6 +98,8 @@ Checks intentionally not run:
   write-producing execution;
 - no external API/model/connector test, because the contract enforces
   `networkAccess: false` and `externalEffects: false`;
+- no OS/container sandbox or egress-control test, because none is implemented;
+- no independently authenticated or signed worker-artifact test;
 - no model personality/quality evaluation, because no model adapter exists;
 - no production, deployment, legal or physical gate.
 
@@ -101,7 +112,9 @@ Evidence carried forward:
 - `EV-FDOS-AUTHENTICATED-INVOCATION-003` remains the identity-boundary record;
 - `EV-FDOS-TRANSACTIONAL-PERSISTENCE-004` remains the local transaction record;
 - `EV-FDOS-CONNECTOR-OUTBOX-005` remains the external-work-boundary record;
-- this slice is bound separately in `EV-FDOS-AGENT-PERSONALITY-006`.
+- `EV-FDOS-AGENT-PERSONALITY-006` remains the non-authoritative personality
+  record;
+- this slice is bound separately in `EV-FDOS-PROCESS-WORKER-007`.
 
 ## Required Completion Report
 

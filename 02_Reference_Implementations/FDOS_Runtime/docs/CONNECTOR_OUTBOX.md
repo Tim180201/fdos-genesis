@@ -27,6 +27,8 @@ claimed FDOS task
   -> immutable Delivery Intent
   -> durable Outbox record
   -> authenticated connector claim with lease and fencing ID
+  -> exact expiring request to a separate local dry-run process
+  -> exact digest-only response accepted only after clean exit
   -> content-minimized dry-run outcome
   -> success, failure or Human Governance uncertainty review
 ```
@@ -76,9 +78,9 @@ The immutable intent binds:
 - scoped idempotency digest;
 - complete intent digest.
 
-The outbox stores normalized parameters because a future isolated worker needs
-an exact request. The contract limits their names, types and size. Restricted
-or secret material remains prohibited; credential-looking field names fail
+The outbox stores normalized parameters because the separate worker needs an
+exact request. The contract limits their names, types and size. Restricted or
+secret material remains prohibited; credential-looking field names fail
 closed.
 
 ## Idempotency
@@ -145,6 +147,25 @@ The current outcome contract stores only:
 
 Raw connector responses and raw errors are rejected.
 
+## Process Worker
+
+The demo now sends the active claimed delivery to a separate local Node.js
+process. The request binds the full Delivery Intent, delivery, fencing claim,
+Connector Instance and short validity window. The response binds that exact
+request and may contain only a digest-based simulated outcome.
+
+The parent uses no shell, forwards no parent environment, limits input/output,
+enforces a timeout and requires clean exit code zero with empty standard
+error. A valid response followed by a crash is rejected.
+
+The child has no runtime object, database handle or signing key. It cannot
+claim or record a delivery. The parent records an accepted result through the
+existing authenticated Connector principal.
+
+This is not an OS sandbox. `networkIsolationEnforced` remains false, and the
+worker response is not independently signed. See
+`PROCESS_SEPARATED_DRY_RUN_WORKER.md`.
+
 ## Transaction Semantics
 
 Each prepare, claim, outcome, expired-claim reconciliation, retry,
@@ -166,15 +187,18 @@ npm run demo:outbox
 ```
 
 The demo completes a two-task Chief of Staff and Operations workflow, prepares
-one delivery, claims it as the registered connector and records a simulated
-digest-only result. Workflow evidence includes a content-minimized delivery
-projection and does not expose the exact connector parameters.
+one delivery, claims it as the registered connector, runs the simulation in a
+separate child process and records the verified digest-only result. Workflow
+evidence includes a content-minimized delivery projection and does not expose
+the exact connector parameters.
 
 Expected invariant:
 
 ```text
 network access:      false
 external effect:     none
+process separated:   true
+OS network sandbox:  false
 delivery status:     simulated
 ```
 
@@ -182,7 +206,8 @@ delivery status:     simulated
 
 A real read-only connector still requires:
 
-- isolated worker process and package/API boundary;
+- OS-, container- or infrastructure-enforced worker isolation;
+- independently authenticated worker identity and signed immutable artifact;
 - production workload identity and connector revocation;
 - outbound network allowlist and DNS/TLS controls;
 - secret-vault integration with no secret persistence in events;

@@ -147,16 +147,18 @@ Runtime Store
   -> local SQLite command transaction
   -> verified event-chain and transaction rehydration
   -> durable dry-run Outbox with serialized local claim fencing
-  -> future isolated connector and distributed worker fencing
+  -> process-separated local simulation with exact acknowledgement
+  -> future OS-isolated connector and distributed worker fencing
 ```
 
 ## Recommended Next Build Order
 
-1. Human-review the authenticated-invocation and transactional-persistence
-   evidence with their remaining identity, storage and recovery limits.
-2. Human-review the implemented dry-run Connector Contract, durable Outbox,
-   idempotency and uncertain-outcome evidence.
-3. Validate one authenticated read-only GitHub or document connector in a
+1. Human-review the authenticated-invocation, transactional-persistence,
+   Connector Outbox, personality and process-worker evidence with all
+   remaining identity, storage, model and isolation limits.
+2. Add OS/container egress and resource isolation, workload identity, signed
+   worker artifacts and secrets controls.
+3. Validate one authenticated read-only GitHub or document connector in that
    sandbox.
 4. Add a model-provider adapter with budgets and structured response contracts.
 5. Only then pilot Teams or Slack ingress; outbound actions remain separately

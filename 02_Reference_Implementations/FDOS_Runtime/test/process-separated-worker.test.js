@@ -1,0 +1,439 @@
+import assert from "node:assert/strict";
+import { mkdtemp, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import test from "node:test";
+import {
+  CONNECTOR_OUTBOX_DRY_RUN_WORKFLOW,
+  ConflictError,
+  createDryRunWorkerRequest,
+  createDryRunWorkerResponse,
+  deterministicIdFactory,
+  digestObject,
+  IntegrityError,
+  InvocationVerifier,
+  LocalInvocationAuthority,
+  openAuthenticatedPilotRuntime,
+  PolicyError,
+  ProcessSeparatedDryRunWorker,
+  ValidationError,
+  verifyDryRunWorkerRequest,
+  verifyDryRunWorkerResponse
+} from "../src/index.js";
+import { controlledClock } from "../test-support/helpers.js";
+
+const owner = Object.freeze({
+  type: "human",
+  id: "human:worker-owner"
+});
+const chief = Object.freeze({
+  type: "agent",
+  id: "agent:chief-of-staff:primary"
+});
+const operations = Object.freeze({
+  type: "agent",
+  id: "agent:operations:primary"
+});
+const connector = Object.freeze({
+  type: "connector",
+  id: "connector:reference:primary"
+});
+
+function mutableClone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function redigest(value) {
+  const unsigned = mutableClone(value);
+  delete unsigned.digest;
+  return {
+    ...unsigned,
+    digest: digestObject(unsigned)
+  };
+}
+
+function taskByStep(run, stepId) {
+  const task = run.tasks.find((candidate) => candidate.stepId === stepId);
+  if (!task) throw new Error(`Missing process-worker task ${stepId}.`);
+  return task;
+}
+
+async function workerHarness(t) {
+  const time = controlledClock(new Date().toISOString());
+  const directory = await mkdtemp(
+    path.join(os.tmpdir(), "fdos-process-worker-")
+  );
+  const authority = LocalInvocationAuthority.create({
+    clock: time.clock
+  });
+  const verifier = new InvocationVerifier({
+    trustedKeys: [authority.trustDescriptor()],
+    organizationId: authority.organizationId,
+    audience: authority.audience,
+    clock: time.clock
+  });
+  const gateway = await openAuthenticatedPilotRuntime({
+    directory,
+    invocationVerifier: verifier,
+    clock: time.clock
+  });
+  t.after(async () => {
+    await gateway.close().catch(() => {});
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  function execute(principal, type, payload) {
+    const command = { type, payload };
+    return gateway.execute({
+      command,
+      invocation: authority.issue({
+        principal,
+        command
+      })
+    });
+  }
+
+  return {
+    time,
+    gateway,
+    execute
+  };
+}
+
+async function prepareClaimedDelivery(
+  harness,
+  {
+    leaseSeconds = 30,
+    idempotencyKey = "process-worker-delivery-v1"
+  } = {}
+) {
+  const started = await harness.execute(
+    owner,
+    "workflow.start",
+    {
+      workflowId: CONNECTOR_OUTBOX_DRY_RUN_WORKFLOW.id,
+      version: CONNECTOR_OUTBOX_DRY_RUN_WORKFLOW.version,
+      objective:
+        "Exercise one exact process-separated connector dry-run."
+    }
+  );
+  const intake = taskByStep(started.run, "intake");
+  await harness.execute(chief, "task.claim", {
+    taskId: intake.id
+  });
+  await harness.execute(chief, "task.complete", {
+    taskId: intake.id,
+    result: {
+      scope: "Process-separated local simulation only."
+    }
+  });
+  const connectorTask = taskByStep(started.run, "reference-read");
+  await harness.execute(operations, "task.claim", {
+    taskId: connectorTask.id
+  });
+  const prepared = await harness.execute(
+    operations,
+    "outbox.prepare",
+    {
+      taskId: connectorTask.id,
+      connectorId: connector.id,
+      operationId: "repository.metadata.read",
+      parameters: {
+        repositoryId: "fdos-genesis",
+        revision: "process-bound-test",
+        includeCommitMetadata: true
+      },
+      idempotencyKey
+    }
+  );
+  const claimed = await harness.execute(
+    connector,
+    "outbox.claim",
+    {
+      deliveryId: prepared.delivery.id,
+      leaseSeconds
+    }
+  );
+  return {
+    runId: started.run.id,
+    taskId: connectorTask.id,
+    deliveryId: prepared.delivery.id,
+    claimed
+  };
+}
+
+test("worker protocol binds the exact claim, intent, validity window and digest-only outcome", async (t) => {
+  const harness = await workerHarness(t);
+  const { claimed } = await prepareClaimedDelivery(harness);
+  const issuedAt = harness.time.value().toISOString();
+  const expiresAt = new Date(
+    harness.time.value().getTime() + 4_000
+  ).toISOString();
+  const request = createDryRunWorkerRequest({
+    delivery: claimed,
+    requestId: "workerrequest_protocol_000001",
+    issuedAt,
+    expiresAt
+  });
+  assert.equal(
+    verifyDryRunWorkerRequest(request, { now: issuedAt }),
+    true
+  );
+
+  const completedAt = new Date(
+    harness.time.value().getTime() + 100
+  ).toISOString();
+  const response = createDryRunWorkerResponse({
+    request,
+    completedAt
+  });
+  assert.equal(verifyDryRunWorkerResponse(response, request), true);
+  assert.equal(response.outcome.type, "simulated");
+  assert.deepEqual(
+    Object.keys(response.outcome.evidence).sort(),
+    ["externalEffect", "resultDigest"]
+  );
+  assert.equal(response.outcome.evidence.externalEffect, "none");
+  assert.throws(
+    () => verifyDryRunWorkerRequest(null),
+    IntegrityError
+  );
+
+  const changedBoundary = mutableClone(request);
+  changedBoundary.execution.networkAccess = true;
+  assert.throws(
+    () => verifyDryRunWorkerRequest(redigest(changedBoundary)),
+    IntegrityError
+  );
+
+  const extraRequestField = mutableClone(request);
+  extraRequestField.rawToken = "must-not-be-accepted";
+  assert.throws(
+    () => verifyDryRunWorkerRequest(extraRequestField),
+    IntegrityError
+  );
+
+  assert.throws(
+    () =>
+      verifyDryRunWorkerRequest(request, {
+        now: new Date(Date.parse(expiresAt) + 1).toISOString()
+      }),
+    PolicyError
+  );
+
+  const changedClaim = mutableClone(response);
+  changedClaim.claimId = "claim_tampered_000001";
+  assert.throws(
+    () =>
+      verifyDryRunWorkerResponse(
+        redigest(changedClaim),
+        request
+      ),
+    IntegrityError
+  );
+
+  const assertedSandbox = mutableClone(response);
+  assertedSandbox.workerBoundary.networkIsolationEnforced = true;
+  assert.throws(
+    () =>
+      verifyDryRunWorkerResponse(
+        redigest(assertedSandbox),
+        request
+      ),
+    IntegrityError
+  );
+
+  const rawResponse = mutableClone(response);
+  rawResponse.rawResult = claimed.intent.parameters;
+  assert.throws(
+    () => verifyDryRunWorkerResponse(rawResponse, request),
+    IntegrityError
+  );
+
+  assert.throws(
+    () =>
+      createDryRunWorkerResponse({
+        request,
+        completedAt: new Date(
+          Date.parse(expiresAt) + 1
+        ).toISOString()
+      }),
+    PolicyError
+  );
+});
+
+test("separate worker completes one authenticated outbox run with content-minimized evidence", async (t) => {
+  const harness = await workerHarness(t);
+  const delivery = await prepareClaimedDelivery(harness);
+  const worker = new ProcessSeparatedDryRunWorker({
+    clock: harness.time.clock,
+    idFactory: deterministicIdFactory("process"),
+    timeoutMs: 2_000
+  });
+
+  const result = await worker.execute({
+    delivery: delivery.claimed
+  });
+  assert.equal(result.deliveryId, delivery.deliveryId);
+  assert.equal(result.claimId, delivery.claimed.claim.id);
+  assert.equal(result.connectorId, connector.id);
+  assert.equal(result.outcome.type, "simulated");
+  assert.equal(result.outcome.evidence.externalEffect, "none");
+  assert.match(result.requestDigest, /^sha256:[0-9a-f]{64}$/);
+  assert.match(result.responseDigest, /^sha256:[0-9a-f]{64}$/);
+  assert.equal(
+    new Date(result.completedAt).toISOString(),
+    result.completedAt
+  );
+  assert.doesNotMatch(
+    JSON.stringify(result),
+    /repositoryId|process-bound-test|includeCommitMetadata/
+  );
+
+  const status = worker.status();
+  assert.equal(status.processSeparated, true);
+  assert.equal(status.shell, false);
+  assert.equal(status.parentEnvironmentForwarded, false);
+  assert.equal(status.networkAccess, false);
+  assert.equal(status.externalEffects, false);
+  assert.equal(status.networkIsolationEnforced, false);
+  assert.throws(() => {
+    status.networkAccess = true;
+  }, TypeError);
+
+  const recorded = await harness.execute(
+    connector,
+    "outbox.record-outcome",
+    {
+      deliveryId: delivery.deliveryId,
+      claimId: result.claimId,
+      outcome: result.outcome.type,
+      evidence: result.outcome.evidence
+    }
+  );
+  assert.equal(recorded.status, "simulated");
+  await harness.execute(operations, "task.complete", {
+    taskId: delivery.taskId,
+    result: {
+      deliveryStatus: recorded.status,
+      workerResponseDigest: result.responseDigest
+    }
+  });
+  const run = await harness.execute(owner, "workflow.view", {
+    runId: delivery.runId
+  });
+  assert.equal(run.status, "completed");
+  const evidence = await harness.execute(owner, "evidence.export", {
+    runId: delivery.runId
+  });
+  assert.equal(evidence.deliveries.length, 1);
+  assert.equal(
+    evidence.deliveries[0].resultDigest,
+    result.outcome.evidence.resultDigest
+  );
+  assert.doesNotMatch(
+    JSON.stringify(evidence),
+    /repositoryId|process-bound-test/
+  );
+});
+
+for (const fault of [
+  {
+    mode: "crash-before-response",
+    timeoutMs: 2_000,
+    reasonCode: "WORKER_EXIT_UNTRUSTED"
+  },
+  {
+    mode: "response-then-crash",
+    timeoutMs: 2_000,
+    reasonCode: "WORKER_EXIT_UNTRUSTED"
+  },
+  {
+    mode: "hang",
+    timeoutMs: 50,
+    reasonCode: "WORKER_TIMEOUT"
+  }
+]) {
+  test(`worker fault ${fault.mode} is rejected and reconciles only to uncertainty`, async (t) => {
+    const harness = await workerHarness(t);
+    const delivery = await prepareClaimedDelivery(harness);
+    const worker = new ProcessSeparatedDryRunWorker({
+      clock: harness.time.clock,
+      timeoutMs: fault.timeoutMs,
+      faultMode: fault.mode
+    });
+
+    await assert.rejects(
+      () => worker.execute({ delivery: delivery.claimed }),
+      (error) =>
+        error instanceof ConflictError &&
+        error.details?.reasonCode === fault.reasonCode
+    );
+    const stillClaimed = await harness.execute(
+      owner,
+      "outbox.get",
+      { deliveryId: delivery.deliveryId }
+    );
+    assert.equal(stillClaimed.status, "claimed");
+    assert.equal(stillClaimed.lastOutcome, null);
+
+    harness.time.advance(30_000);
+    const reconciled = await harness.execute(
+      owner,
+      "outbox.reconcile-expired",
+      { deliveryId: delivery.deliveryId }
+    );
+    assert.equal(reconciled.status, "uncertain");
+    assert.equal(
+      reconciled.lastOutcome.evidence.reasonCode,
+      "CLAIM_LEASE_RECONCILED"
+    );
+  });
+}
+
+test("worker construction, clock and expired-claim checks fail closed", async (t) => {
+  assert.throws(
+    () =>
+      new ProcessSeparatedDryRunWorker({
+        timeoutMs: 49
+      }),
+    ValidationError
+  );
+  assert.throws(
+    () =>
+      new ProcessSeparatedDryRunWorker({
+        faultMode: "unbounded-network"
+      }),
+    ValidationError
+  );
+  assert.throws(
+    () =>
+      new ProcessSeparatedDryRunWorker({
+        clock: null
+      }),
+    ValidationError
+  );
+
+  const harness = await workerHarness(t);
+  const delivery = await prepareClaimedDelivery(harness);
+  await assert.rejects(
+    () => new ProcessSeparatedDryRunWorker().execute(),
+    ValidationError
+  );
+  const invalidClock = new ProcessSeparatedDryRunWorker({
+    clock: () => "not-a-date"
+  });
+  await assert.rejects(
+    () => invalidClock.execute({ delivery: delivery.claimed }),
+    ValidationError
+  );
+
+  harness.time.advance(30_000);
+  const expired = new ProcessSeparatedDryRunWorker({
+    clock: harness.time.clock
+  });
+  await assert.rejects(
+    () => expired.execute({ delivery: delivery.claimed }),
+    ConflictError
+  );
+});

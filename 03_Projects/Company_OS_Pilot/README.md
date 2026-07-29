@@ -42,6 +42,9 @@ system with a small pilot:
 - dry-run Connector Contract and active Connector Instance registry;
 - immutable task-bound Delivery Intents and durable Outbox;
 - idempotent preparation, claim leases and fencing IDs;
+- exact, expiring worker requests and digest-only responses;
+- process-separated local connector simulation with bounded I/O and timeout;
+- fail-closed crash and acknowledgement handling;
 - Human Governance retry, cancellation and uncertainty resolution;
 - tamper-evident audit events;
 - automated tests and evidence export.
@@ -57,6 +60,8 @@ system with a small pilot:
 - production identity provider, key custody or revocation;
 - exposure of the lower-level runtime to untrusted callers;
 - distributed replay protection, multi-process worker fencing or transactions;
+- OS-, container- or infrastructure-enforced worker/network isolation;
+- independently attested worker identity or signed immutable worker package;
 - external-effect transaction or service-side idempotency;
 - database migration, backup, restore or encryption;
 - production support for the evolving synchronous `node:sqlite` dependency;
@@ -83,7 +88,12 @@ The pilot is technically complete when:
 10. each pilot Agent Instance resolves one exact role-compatible Personality
     Profile that contains no authority-bearing or arbitrary prompt fields;
 11. profile lookup is authenticated and self-only;
-12. no change occurred outside the FDOS repository.
+12. the connector simulation runs in a separate process without receiving the
+    runtime, database or signing key;
+13. a crash, post-response crash or timeout records no successful outcome and
+    can reconcile only to uncertainty after claim expiry;
+14. process separation is never represented as an enforced network sandbox;
+15. no change occurred outside the FDOS repository.
 
 ## Reference Assessment
 

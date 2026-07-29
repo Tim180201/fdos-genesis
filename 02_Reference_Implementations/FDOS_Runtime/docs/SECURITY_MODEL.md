@@ -18,8 +18,10 @@ Validation Level: Level 1
 The Level 1 runtime assumes:
 
 - one trusted local operating-system account;
-- one process holding the exact runtime-directory lease;
-- one local SQLite database opened by that process;
+- one trusted controller process holding the exact runtime-directory lease;
+- one local SQLite database opened only by that controller;
+- one short-lived child simulation process running under the same trusted
+  account and Node.js installation;
 - trusted bootstrap registration of the Invocation Verifier public keys;
 - safe in-memory custody of the ephemeral local demo signing key;
 - the host and Node.js runtime are not compromised.
@@ -75,6 +77,11 @@ authenticated gateway and is prohibited.
 | Claim outcome is unknown | Durable uncertain state; no automatic retry; human evidence resolution |
 | Connector response leaks raw data | Closed outcome shapes containing typed fields and digests only |
 | Dry-run accidentally performs an effect | Contract requires network false, external effects false and outcome `externalEffect: none` |
+| Child changes delivery or fencing claim | Exact request and response digests bind delivery, claim, connector and full Delivery Intent |
+| Child emits a result and then crashes | Result accepted only after clean exit code zero and empty standard error |
+| Child hangs or floods output | Parent timeout, byte limits and forced termination |
+| Child receives parent secrets or runtime authority | No runtime/database/key object; minimal non-inherited environment; standard-I/O protocol only |
+| Process separation is mistaken for a sandbox | Explicit `networkIsolationEnforced: false`; real connector remains blocked |
 
 ## Data Classification
 
@@ -116,6 +123,10 @@ This rollback policy does not authorize external effects. The new Outbox
 provides durable intent and uncertainty semantics only; its contracts enforce
 dry-run, no network and no external effect.
 
+The separate worker does not expand that authority. A rejected worker result
+does not change the Outbox. The claim later becomes eligible only for
+Human-Governance reconciliation to uncertainty.
+
 ## Known Gaps
 
 - the ephemeral local signer does not prove a real human or workload identity;
@@ -129,10 +140,14 @@ dry-run, no network and no external effect.
 - the synchronous `node:sqlite` API can block the event loop and remains an
   evolving dependency;
 - process lease and SQLite are not distributed fencing;
-- no distributed transaction, broker or multi-process outbox worker;
+- no distributed transaction, broker or distributed worker fencing;
 - local Git and its operating-system account are trusted;
 - reference evidence is content-addressed but not independently signed;
-- no real connector sandbox, network egress control or secret vault;
+- process separation exists only for local simulation; no OS-enforced network,
+  filesystem, CPU or memory sandbox;
+- worker response and worker artifact are not independently signed or
+  workload-attested;
+- no real connector, network egress control or secret vault;
 - no model-level personality, precedence or prompt-injection evaluation;
 - Operating Profile digests are not yet bound into model-output evidence;
 - no denial-of-service protection;

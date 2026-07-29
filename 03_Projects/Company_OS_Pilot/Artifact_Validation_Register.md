@@ -43,6 +43,9 @@ promotion and not a production approval.
 | Content-minimized delivery evidence | Tested in dry-run | Level 1 — Experimental | `EV-FDOS-CONNECTOR-OUTBOX-005` | Pending | Not independently signed |
 | Closed Personality Profile Registry | Tested | Level 1 — Experimental | `EV-FDOS-AGENT-PERSONALITY-006` | Pending | Not model-validated |
 | Agent Operating Profile self-read | Tested | Level 1 — Experimental | `EV-FDOS-AGENT-PERSONALITY-006` | Pending | Not model-validated |
+| Exact dry-run worker protocol | Tested | Level 1 — Experimental | `EV-FDOS-PROCESS-WORKER-007` | Pending | No real connector |
+| Process-separated connector simulation | Tested locally | Level 1 — Experimental | `EV-FDOS-PROCESS-WORKER-007` | Pending | Not OS-sandboxed |
+| Crash/timeout acknowledgement handling | Tested with fault injection | Level 1 — Experimental | `EV-FDOS-PROCESS-WORKER-007` | Pending | Not independently attested |
 | TapTime/Company AI adoption assessment | Tested as documentation/evidence | Level 1 — Experimental | exact reference manifests | Pending | Not applicable |
 
 ## Promotion Rule

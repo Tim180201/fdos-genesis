@@ -122,6 +122,20 @@ async function runOutboxDemo() {
         externalEffect:
           result.delivery.lastOutcome?.evidence?.externalEffect || null
       },
+      worker: {
+        kind: result.worker.kind,
+        processSeparated:
+          result.worker.workerBoundary.processSeparated,
+        shell: result.worker.workerBoundary.shell,
+        networkAccess:
+          result.worker.workerBoundary.networkAccess,
+        externalEffects:
+          result.worker.workerBoundary.externalEffects,
+        networkIsolationEnforced:
+          result.worker.workerBoundary.networkIsolationEnforced,
+        requestDigest: result.worker.requestDigest,
+        responseDigest: result.worker.responseDigest
+      },
       evidence: {
         bundleDigest: result.evidence.bundleDigest,
         deliveryCount: result.evidence.deliveries.length,

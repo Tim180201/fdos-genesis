@@ -36,6 +36,11 @@ FDOS Runtime
   ├── Git Reference Evidence
   └── Evidence Projection
         │
+        ├── claimed Delivery Intent
+        │     -> exact expiring request
+        │     -> separate dry-run child process
+        │     -> verified digest-only response
+        │
         ▼
 Transactional SQLite Event Store
   └── Hash-Chained Transaction Groups
@@ -172,6 +177,27 @@ cancellation and uncertainty resolution remain Human Governance actions.
 
 No contract in this slice can open a network or record an external effect.
 
+### Process-separated dry-run simulation
+
+After the authenticated Connector Instance claims a delivery, the demo binds
+that exact Delivery Intent, fencing claim, connector and validity window into
+a content-addressed worker request.
+
+The parent starts a fixed regular Node.js worker file with no shell, no
+forwarded parent environment, explicit standard-I/O pipes, bounded bytes and a
+hard timeout. The child receives no gateway, runtime, database handle or
+signing key. It verifies the request and returns one digest-only simulated
+outcome.
+
+The parent accepts the result only after exact response verification and a
+clean process exit. Crash before response, response followed by crash and hang
+are rejected. Rejection leaves the durable claim unchanged; lease expiry can
+be reconciled only to uncertainty by Human Governance.
+
+This topology is process separation, not OS isolation. The runtime reports
+`networkIsolationEnforced: false`; there is no egress, filesystem or resource
+sandbox and no independently authenticated worker identity.
+
 ## State Machines
 
 ### Task
@@ -246,6 +272,7 @@ migrated implicitly.
 
 See `TRANSACTIONAL_PERSISTENCE.md`.
 See `CONNECTOR_OUTBOX.md` for the external-work boundary.
+See `PROCESS_SEPARATED_DRY_RUN_WORKER.md` for the child-process boundary.
 
 ## Future Extension Points
 
@@ -257,7 +284,8 @@ These are not implemented:
 - real read-only connector sandbox and service-specific idempotency;
 - message bus and durable queues;
 - model-provider adapter;
-- isolated connector executors and network egress policy;
+- OS-enforced connector resource isolation and network egress policy;
+- independently attested and signed worker identity/artifacts;
 - secrets vault;
 - policy-as-code service;
 - observability and incident operations.
