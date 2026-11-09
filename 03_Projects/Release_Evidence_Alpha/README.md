@@ -3,6 +3,7 @@
 Status: Active Experiment — Gate G1 Accepted, G2 Active
 Owner: Human Governance
 Accepted ADR: `../../00_Specification/ADR/ADR-0055_Release_Evidence_Alpha_Experiment.md`
+G2 Candidate ADR: `../../00_Specification/ADR/ADR-0056_Deterministic_Release_Evidence_Domain_Experiment.md`
 Reference Implementation: `../../02_Reference_Implementations/FDOS_Runtime/`
 Validation Level: Level 1 — Experimental
 Planning Date: 2026-11-09
@@ -56,6 +57,7 @@ work is repeated.
 | `Decision_Log.md` | Project-level decisions and rationale |
 | `Project_Status.md` | Current verified state and next action |
 | `Gate_G1_Review.md` | Human/independent acceptance checklist for the Phase 0 evidence |
+| `../../02_Reference_Implementations/FDOS_Runtime/docs/RELEASE_EVIDENCE_DOMAIN.md` | Versioned G2 domain, replay, migration and non-claim contract |
 
 ## Operating Rules
 
@@ -82,10 +84,17 @@ work is repeated.
   coverage, migration boundaries and remaining non-claims.
 - Human Governance accepted REA-AC-001 through REA-AC-007, closed Gate G1 and
   authorized bounded G2 deterministic domain work on 2026-11-09.
+- Commit `468b572` implements the review-pending G2 domain/authorization
+  candidate with 202 passing tests, 31 adverse applicability fixtures and
+  restart-safe single-use approval consumption.
+- Evidence item `EV-FDOS-RELEASE-EVIDENCE-G2-015` records the exact source,
+  mutation matrices, failure injection, coverage, limitations and the
+  supplemental host-independent OCI fixture correction.
 - External actions and customer-system mutations remain disabled.
 
 ## Next Gate
 
-Gate G2 requires accepted Release Evidence domain contracts, deterministic
-verification, adverse fixtures and exact approval evidence. GitHub and agent
-integration remain outside the current authorization.
+Gate G2 remains open. The domain/authorization sub-scope requires independent
+review, and the canonical JSON/HTML dossier plus its reproducibility evidence
+remain to be implemented. GitHub and agent integration remain outside the
+current authorization.

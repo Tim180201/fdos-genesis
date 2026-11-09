@@ -233,3 +233,36 @@ Rationale: Evidence item `EV-FDOS-PHASE0-INTEGRITY-014` and its review record
 provide the required bounded integrity baseline. Authorization remains limited
 to WP2/WP3 source, tests and evidence; it does not include GitHub installation,
 model execution, customer systems, external effects or FDOS Core promotion.
+
+## REA-DEC-022 — Implement the G2 Domain as Exact Replayable Objects
+
+Date: 2026-11-09
+
+Decision: Implement the authorized G2 candidate as closed, immutable and
+content-addressed Change, Decision, Work Order, Candidate, Baseline, Evidence,
+Finding, Policy, Approval, Evaluation and Authorization objects. Reproduce
+eligibility from retained exact inputs and join final approval consumption to
+authorization in one SQLite transaction.
+
+Rationale: A mutable release record or LLM judgment cannot prove which exact
+requirement, source, evidence and authority produced a release decision.
+Separate status axes, deterministic replay and exact-baseline approval keep
+unknown state blocking and make restart behavior testable.
+
+Status: Implementation candidate at `468b572`; Human Governance acceptance
+pending under proposed ADR-0056 and Evidence Item
+`EV-FDOS-RELEASE-EVIDENCE-G2-015`.
+
+## REA-DEC-023 — Correct the Remaining Host-Dependent OCI Test Fixture
+
+Date: 2026-11-09
+
+Decision: Replace the OCI preflight tests' remaining shared use of
+`process.execPath` with one controlled executable fixture. Retain the 64 MiB
+production admission limit and its exact boundary tests.
+
+Rationale: Cross-version verification on Node.js 22.23.0 used a 112,928,848
+byte executable and reproduced the host-size dependency despite the earlier
+G1 evidence claiming complete fixture independence. The honest correction is
+to repair the remaining tests and disclose the overstatement, not weaken the
+security limit or omit the failed run.

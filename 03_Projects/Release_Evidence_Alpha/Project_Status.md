@@ -3,7 +3,7 @@
 Status: Gate G1 Accepted — G2 Deterministic Domain Active
 Status Date: 2026-11-09
 Owner: Human Governance
-Branch: `codex/release-evidence-phase-0`
+Branch: `codex/release-evidence-g2-domain`
 Starting Commit: `7e3960c088f15d2640a7717bcae0366b9d3cd0ec`
 
 ## Current Decision State
@@ -16,6 +16,8 @@ Starting Commit: `7e3960c088f15d2640a7717bcae0366b9d3cd0ec`
   REA-AC-007 on 2026-11-09.
 - G2 implementation authorization: granted for the deterministic Release
   Evidence domain model and verifier only.
+- G2 domain implementation candidate: complete at
+  `468b572941e982db4752d450abb0dfa367bf891e`; independent acceptance pending.
 - FDOS Core impact: none.
 - Runtime production readiness: not claimed.
 - External repository mutation: disabled.
@@ -83,13 +85,47 @@ Final verification on the pinned Node.js 26.3.1 environment:
 Evidence:
 `../../04_Evidence/fdos-runtime/EV-FDOS-PHASE0-INTEGRITY-014.md`.
 
+## G2 Domain Candidate Results
+
+Runtime `0.15.0-experimental` now implements:
+
+- immutable Change and Decision Revisions;
+- exact Work Orders, Release Candidates and Release Baselines;
+- Evidence, Finding, Policy, Approval and typed Relationship contracts;
+- five independent one-axis status machines;
+- deterministic eligibility and evaluation reproduction;
+- exact policy-admitted work-order and release approvals;
+- atomic single-use Release Authorization in the existing SQLite store;
+- deterministic event replay and restart/replay rejection.
+
+Verification on pinned Node.js 26.3.1:
+
+- `npm run check`: 202 passed, zero failed, zero skipped;
+- `npm run coverage`: 91.96% lines, 79.70% branches, 93.47% functions.
+
+The same complete check passed on Node.js 22.23.0 after a supplemental
+correction replaced the remaining OCI preflight use of the host Node binary
+with a controlled launcher fixture. The original cross-version run exposed
+that the earlier G1 evidence had overstated complete fixture independence.
+
+Evidence:
+`../../04_Evidence/fdos-runtime/EV-FDOS-RELEASE-EVIDENCE-G2-015.md`.
+
+Implementation status, not independent acceptance:
+
+| Acceptance | Candidate state |
+|---|---|
+| REA-AC-008, REA-AC-009 | Implemented; review required |
+| REA-AC-011 through REA-AC-014 | Implemented; review required |
+| REA-AC-018 through REA-AC-021 | Implemented; review required |
+
 ## Open Gates
 
 | Gate | State | Blocking condition |
 |---|---|---|
 | G0 — Plan accepted | Accepted 2026-11-09 | Plan 0 and ADR-0055 accepted by Human Governance |
 | G1 — Integrity base | Accepted 2026-11-09 | REA-AC-001..007 accepted by Human Governance |
-| G2 — Deterministic verifier | Active | Implement WP2/WP3 and produce acceptance evidence |
+| G2 — Deterministic verifier | Active | Independently review domain evidence; implement canonical JSON/HTML dossier and remaining WP3 evidence |
 | G3 — Internal vertical slice | Not started | Verifier, agent contracts and real workflow required |
 | G4 — Internal Alpha | Not started | Three dogfood changes and measurements required |
 | G5 — External pilot | Not authorized | Security/operations hardening and paid pilot required |
@@ -97,19 +133,22 @@ Evidence:
 
 ## Active G2 Actions
 
-1. Implement immutable Change and Decision Revisions.
-2. Implement exact Work Order and Release Candidate baselines.
-3. Implement Evidence, Finding and Approval contracts.
-4. Keep evidence, implementation, review, approval and release status axes
-   independent.
-5. Implement deterministic applicability and eligibility rules.
-6. Add at least 20 adverse fixtures with no false eligible/authorized result.
-7. Prove approval binding, single use, replay and atomic consumption.
-8. Record G2 evidence before requesting the next gate decision.
+1. Obtain independent review of Evidence Item
+   `EV-FDOS-RELEASE-EVIDENCE-G2-015` and ADR-0056.
+2. Implement the canonical JSON dossier from the same retained domain state.
+3. Implement deterministic HTML rendering that cannot upgrade authority.
+4. Add golden-file, JSON/HTML equivalence and dossier restart tests.
+5. Record the remaining WP3 evidence before requesting Gate G2 closure.
 
 ## Current Limitations
 
-- No implemented Release Evidence domain exists.
+- The Release Evidence domain is an unaccepted Level 1 implementation
+  candidate, not a production authority boundary.
+- Evidence producer identities are declared/admitted domain digests; real
+  GitHub/CI identity verification and reconciliation do not exist.
+- Human IDs are admitted by policy, but the new coordinator is not yet joined
+  to signed Runtime Invocation authentication.
+- No canonical JSON/HTML release dossier exists.
 - No live GitHub or CI integration exists.
 - No real Technical Lead, Programmer or Reviewer model run is connected.
 - No production identity, secret custody, tenant isolation, recovery or data
@@ -119,7 +158,7 @@ Evidence:
 
 ## External Action Status
 
-Disabled. Phase 0 changed only FDOS source, tests, local documentation and
+Disabled. G2 work changed only FDOS source, tests, local documentation and
 repository evidence. It sent no message, installed no GitHub App, called no
 model provider and performed no release, deployment or customer-system
 action.

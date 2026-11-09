@@ -16,6 +16,13 @@ claim.
 All items below begin as `Planned` unless stated otherwise in
 `Project_Status.md`.
 
+G2 candidate evidence is recorded in
+`../../04_Evidence/fdos-runtime/EV-FDOS-RELEASE-EVIDENCE-G2-015.md` for
+REA-AC-008, REA-AC-009, REA-AC-011 through REA-AC-014 and REA-AC-018 through
+REA-AC-021. These items are `Implemented; review required`, not `Accepted`.
+Only Human Governance or an explicitly independent reviewer may change that
+state.
+
 ## Integrity and Security
 
 | ID | Mandatory acceptance | Required evidence | Gate |

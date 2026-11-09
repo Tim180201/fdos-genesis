@@ -11,4 +11,4 @@ implementations.
 | Project | Purpose | Status |
 |---|---|---|
 | `Company_OS_Pilot/` | Validate the experimental FDOS Runtime with three organizational roles | Level 1 experiment |
-| `Release_Evidence_Alpha/` | Validate a narrow GitHub-near release-evidence product path with controlled Technical Lead, Programmer and Reviewer roles | Level 1 experiment — Gate G1 accepted; G2 active |
+| `Release_Evidence_Alpha/` | Validate a narrow GitHub-near release-evidence product path with controlled Technical Lead, Programmer and Reviewer roles | Level 1 experiment — G2 domain candidate implemented; review and dossier pending |
