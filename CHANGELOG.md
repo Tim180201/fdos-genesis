@@ -15,8 +15,9 @@
 - Expanded the complete Runtime suite to 159 passing tests with zero failures
   or skips; recorded 91.61% line, 79.50% branch and 92.80% function coverage.
 - Added Evidence Item `EV-FDOS-PHASE0-INTEGRITY-014` and its SHA-256 source
-  manifest. Gate G1 remains subject to Human Governance or independent
-  acceptance.
+  manifest for Human Governance review.
+- Human Governance accepted REA-AC-001 through REA-AC-007, closed Gate G1 and
+  authorized bounded G2 deterministic Release Evidence domain/verifier work.
 - Added ADR-0043 authorizing a bounded FDOS Runtime Reference Implementation
   experiment without changing the FDOS Core.
 - Added ADR-0044 authorizing an authenticated Invocation boundary experiment

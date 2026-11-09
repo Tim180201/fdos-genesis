@@ -1,6 +1,6 @@
 # Release Evidence Alpha — Gate G1 Review
 
-Status: Pending Human Governance or Independent Review
+Status: Accepted by Human Governance
 
 Gate: G1 — Integrity Base
 
@@ -26,13 +26,13 @@ Core expansion.
 
 | ID | Evidence presented | Reviewer decision | Reviewer note |
 |---|---|---|---|
-| REA-AC-001 | Direct and multi-hop confidential downgrade attempts fail closed | Pending | — |
-| REA-AC-002 | No free-form cross-department transfer or declassification path is enabled | Pending | — |
-| REA-AC-003 | Trusted Git reconstruction rejects a false path/blob association | Pending | — |
-| REA-AC-004 | Own `__proto__` data is preserved; ambiguous property shapes are rejected | Pending | — |
-| REA-AC-005 | Canonical format v2 binds digests/signatures and rejects v1 store/signature compatibility | Pending | — |
-| REA-AC-006 | OCI launcher fixture is host-independent and tests 64 MiB / 64 MiB + 1 | Pending | — |
-| REA-AC-007 | Pinned environment passes all 159 tests with zero failures or skips | Pending | — |
+| REA-AC-001 | Direct and multi-hop confidential downgrade attempts fail closed | Accepted | Human Governance accepted the complete G1 criterion set |
+| REA-AC-002 | No free-form cross-department transfer or declassification path is enabled | Accepted | Human Governance accepted the complete G1 criterion set |
+| REA-AC-003 | Trusted Git reconstruction rejects a false path/blob association | Accepted | Human Governance accepted the complete G1 criterion set |
+| REA-AC-004 | Own `__proto__` data is preserved; ambiguous property shapes are rejected | Accepted | Human Governance accepted the complete G1 criterion set |
+| REA-AC-005 | Canonical format v2 binds digests/signatures and rejects v1 store/signature compatibility | Accepted | Human Governance accepted the complete G1 criterion set |
+| REA-AC-006 | OCI launcher fixture is host-independent and tests 64 MiB / 64 MiB + 1 | Accepted | Human Governance accepted the complete G1 criterion set |
+| REA-AC-007 | Pinned environment passes all 159 tests with zero failures or skips | Accepted | Human Governance accepted the complete G1 criterion set |
 
 Allowed reviewer decisions are `Accepted` or `Rejected`. A rejection requires
 an exact deficiency and required correction.
@@ -51,14 +51,16 @@ an exact deficiency and required correction.
 
 ## Decision
 
-Decision: Pending
+Decision: Accepted — Gate G1 closed; G2 domain work authorized
 
-Reviewer: Pending
+Reviewer: Human Governance
 
-Decision Date: Pending
+Decision Date: 2026-11-09
 
-Rationale: Pending
+Rationale: Human Governance explicitly accepted REA-AC-001 through
+REA-AC-007, closed Gate G1 and authorized G2 development of the deterministic
+Release Evidence domain model.
 
-If accepted, record a new project decision that closes G1 and explicitly
-authorizes G2. Do not edit historical implementation evidence to imply that
-acceptance occurred earlier.
+This decision authorizes only bounded G2 domain and deterministic-verifier
+work. It does not authorize external repositories, GitHub installation, model
+providers, customer operation or FDOS Core expansion.

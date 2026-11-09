@@ -75,8 +75,8 @@ FDOS Runtime Level 1
 Plan 0 for a materially narrower Release Evidence Alpha is documented under
 `03_Projects/Release_Evidence_Alpha/`. Human Governance accepted ADR-0055 and
 authorized Phase 0 integrity work on 2026-11-09. Commit `d51f8ce` implements
-the bounded repairs; evidence item `EV-FDOS-PHASE0-INTEGRITY-014` awaits Gate
-G1 Human Review before deterministic verifier work may begin.
+the bounded repairs. Human Governance accepted its evidence, closed G1 and
+authorized G2 deterministic domain/verifier work on 2026-11-09.
 
 ```text
 Human Plan Review

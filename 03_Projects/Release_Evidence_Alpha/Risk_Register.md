@@ -5,10 +5,10 @@ Review Date: 2026-11-09
 
 | ID | Risk | Severity | Mitigation / Test | Status |
 |---|---|---|---|---|
-| REA-R-001 | Reported handoff leak exposes confidential content | Critical | Reproduce first; provenance, sensitivity inheritance and transfer authorization | Mitigated by same-department dynamic-handoff boundary; G1 acceptance pending |
-| REA-R-002 | False Git path/blob binding creates invalid source evidence | Critical | Trusted Git reconstruction and substitution tests | Mitigated in `d51f8ce`; G1 acceptance pending |
-| REA-R-003 | Canonicalization collision undermines digests and approvals | Critical | Versioned canonicalizer, property tests and migration decision | Mitigated by canonical JSON v2; G1 acceptance pending |
-| REA-R-004 | Host-dependent OCI fixture keeps supported suite red | High | Small controlled fixture; retain explicit production size limits | Mitigated by controlled fixture and exact boundary tests; G1 acceptance pending |
+| REA-R-001 | Reported handoff leak exposes confidential content | Critical | Reproduce first; provenance, sensitivity inheritance and transfer authorization | Mitigated and accepted at G1; broader projection risk remains REA-R-011 |
+| REA-R-002 | False Git path/blob binding creates invalid source evidence | Critical | Trusted Git reconstruction and substitution tests | Mitigated in `d51f8ce`; accepted at G1 |
+| REA-R-003 | Canonicalization collision undermines digests and approvals | Critical | Versioned canonicalizer, property tests and migration decision | Mitigated by canonical JSON v2; accepted at G1 |
+| REA-R-004 | Host-dependent OCI fixture keeps supported suite red | High | Small controlled fixture; retain explicit production size limits | Mitigated by controlled fixture and exact boundary tests; accepted at G1 |
 | REA-R-005 | Existing runtime complexity costs more than selective replacement | High | Measure repair effort; permit small module replacement behind stable contracts | Open |
 | REA-R-006 | Native GitHub/CI features provide equivalent value | High | Implement identical reference case with native controls and compare | Open — commercial kill risk |
 | REA-R-007 | Evidence applicability rules create false green | Critical | Adversarial corpus, mutation matrix and unknown-fails-closed rule | Open |

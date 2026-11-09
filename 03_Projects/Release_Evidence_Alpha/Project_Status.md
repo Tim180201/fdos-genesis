@@ -1,6 +1,6 @@
 # Release Evidence Alpha — Project Status
 
-Status: Phase 0 Implemented — Gate G1 Human Review Required
+Status: Gate G1 Accepted — G2 Deterministic Domain Active
 Status Date: 2026-11-09
 Owner: Human Governance
 Branch: `codex/release-evidence-phase-0`
@@ -12,8 +12,10 @@ Starting Commit: `7e3960c088f15d2640a7717bcae0366b9d3cd0ec`
 - Implementation authorization: Phase 0 accepted under ADR-0055.
 - Phase 0 implementation: complete at
   `d51f8ce837029ab5ae2995e93fdc71ee0ce4ee88`.
-- Gate G1 acceptance: pending Human Governance or independent review.
-- G2 implementation authorization: not granted.
+- Gate G1 acceptance: Human Governance accepted REA-AC-001 through
+  REA-AC-007 on 2026-11-09.
+- G2 implementation authorization: granted for the deterministic Release
+  Evidence domain model and verifier only.
 - FDOS Core impact: none.
 - Runtime production readiness: not claimed.
 - External repository mutation: disabled.
@@ -86,21 +88,24 @@ Evidence:
 | Gate | State | Blocking condition |
 |---|---|---|
 | G0 — Plan accepted | Accepted 2026-11-09 | Plan 0 and ADR-0055 accepted by Human Governance |
-| G1 — Integrity base | Review required | REA-AC-001..007 implemented; Human Governance or independent acceptance pending |
-| G2 — Deterministic verifier | Not authorized | G1 acceptance required |
+| G1 — Integrity base | Accepted 2026-11-09 | REA-AC-001..007 accepted by Human Governance |
+| G2 — Deterministic verifier | Active | Implement WP2/WP3 and produce acceptance evidence |
 | G3 — Internal vertical slice | Not started | Verifier, agent contracts and real workflow required |
 | G4 — Internal Alpha | Not started | Three dogfood changes and measurements required |
 | G5 — External pilot | Not authorized | Security/operations hardening and paid pilot required |
 | G6 — Sellable product | Not authorized | Repeated paid use and margin evidence required |
 
-## Pending Human Actions
+## Active G2 Actions
 
-1. Review evidence item `EV-FDOS-PHASE0-INTEGRITY-014`.
-2. Accept or reject REA-AC-001 through REA-AC-007 individually.
-3. If all mandatory G1 criteria are accepted, close G1 and explicitly
-   authorize G2.
-4. If any criterion is rejected, record the exact deficiency and keep G1
-   open.
+1. Implement immutable Change and Decision Revisions.
+2. Implement exact Work Order and Release Candidate baselines.
+3. Implement Evidence, Finding and Approval contracts.
+4. Keep evidence, implementation, review, approval and release status axes
+   independent.
+5. Implement deterministic applicability and eligibility rules.
+6. Add at least 20 adverse fixtures with no false eligible/authorized result.
+7. Prove approval binding, single use, replay and atomic consumption.
+8. Record G2 evidence before requesting the next gate decision.
 
 ## Current Limitations
 

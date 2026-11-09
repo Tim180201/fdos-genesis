@@ -220,3 +220,16 @@ size limit to make an environment-specific test pass.
 Rationale: Test portability and production admission policy are separate
 concerns. Weakening the policy would hide the fixture defect instead of
 repairing it.
+
+## REA-DEC-021 — Accept Gate G1 and Authorize G2
+
+Date: 2026-11-09
+
+Decision: Human Governance accepted REA-AC-001 through REA-AC-007, closed
+Gate G1 and authorized G2 development of the deterministic Release Evidence
+domain model and verifier.
+
+Rationale: Evidence item `EV-FDOS-PHASE0-INTEGRITY-014` and its review record
+provide the required bounded integrity baseline. Authorization remains limited
+to WP2/WP3 source, tests and evidence; it does not include GitHub installation,
+model execution, customer systems, external effects or FDOS Core promotion.

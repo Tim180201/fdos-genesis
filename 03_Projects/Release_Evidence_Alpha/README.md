@@ -1,6 +1,6 @@
 # FDOS Release Evidence Alpha
 
-Status: Active Experiment — Phase 0 Implemented, G1 Review Required
+Status: Active Experiment — Gate G1 Accepted, G2 Active
 Owner: Human Governance
 Accepted ADR: `../../00_Specification/ADR/ADR-0055_Release_Evidence_Alpha_Experiment.md`
 Reference Implementation: `../../02_Reference_Implementations/FDOS_Runtime/`
@@ -80,11 +80,12 @@ work is repeated.
   canonicalization and OCI fixture repairs.
 - Evidence item `EV-FDOS-PHASE0-INTEGRITY-014` records 159 passing tests,
   coverage, migration boundaries and remaining non-claims.
-- Gate G1 requires Human Governance or independent review; product feature
-  work remains unauthorized until that decision.
+- Human Governance accepted REA-AC-001 through REA-AC-007, closed Gate G1 and
+  authorized bounded G2 deterministic domain work on 2026-11-09.
 - External actions and customer-system mutations remain disabled.
 
 ## Next Gate
 
-Gate G1 review must accept or reject REA-AC-001 through REA-AC-007. No new
-agent or GitHub feature precedes explicit G1 acceptance and G2 authorization.
+Gate G2 requires accepted Release Evidence domain contracts, deterministic
+verification, adverse fixtures and exact approval evidence. GitHub and agent
+integration remain outside the current authorization.

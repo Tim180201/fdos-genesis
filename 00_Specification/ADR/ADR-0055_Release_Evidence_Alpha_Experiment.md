@@ -1,6 +1,6 @@
 # ADR-0055 — Release Evidence Alpha Experiment
 
-Status: Accepted for Experiment; Phase 0 Implemented; G1 Review Pending
+Status: Accepted for Experiment; Gate G1 Accepted; G2 Authorized
 Decision Date: 2026-11-09
 Decision Owner: Human Governance
 Validation Level: Level 1 — Experimental
@@ -17,8 +17,8 @@ selectively. It shall not create a second platform, redefine the FDOS Core or
 imply production readiness.
 
 Implementation note: commit `d51f8ce` completed the bounded Phase 0 repairs.
-Evidence item `EV-FDOS-PHASE0-INTEGRITY-014` awaits Human Governance or
-independent Gate G1 acceptance. G2 is not authorized by this implementation.
+Human Governance accepted REA-AC-001 through REA-AC-007, closed Gate G1 and
+authorized bounded G2 domain/verifier work on 2026-11-09.
 
 The Alpha shall prove one narrow outcome:
 

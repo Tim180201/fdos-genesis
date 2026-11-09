@@ -110,8 +110,9 @@ A separate bounded product-validation experiment is documented under
 `03_Projects/Release_Evidence_Alpha/` and accepted ADR-0055. It narrows the
 next experiment to exact release-evidence applicability for one GitHub/Actions
 workflow with controlled Technical Lead, Programmer and Reviewer roles. Phase
-0 repairs are implemented in commit `d51f8ce`; Gate G1 acceptance is still
-pending. This does not authorize G2, external operation or FDOS Core expansion.
+0 repairs are implemented in commit `d51f8ce`. Human Governance accepted Gate
+G1 and authorized bounded G2 deterministic domain/verifier work on 2026-11-09.
+This does not authorize external operation or FDOS Core expansion.
 
 Do not expand the Core until real evidence proves the need.
 
