@@ -45,12 +45,12 @@ const syntheticWorkloadSessionChallenge =
   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const syntheticWorkerPackage = Object.freeze({
   packageId: "worker-package:connector-dry-run",
-  packageVersion: "2.0.0-experimental",
+  packageVersion: "3.0.0-experimental",
   packageDigest: digestObject({
     package: "protocol-test"
   }),
   artifactId: "worker:connector-dry-run",
-  artifactVersion: "3.0.0-experimental",
+  artifactVersion: "4.0.0-experimental",
   artifactDigest: digestObject({
     artifact: "protocol-test"
   }),

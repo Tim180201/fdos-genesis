@@ -4,7 +4,7 @@ import {
   verify as verifyBytes
 } from "node:crypto";
 import {
-  canonicalJson,
+  canonicalIntegrityBytes,
   digestObject,
   immutableJson,
   jsonClone
@@ -589,7 +589,7 @@ export function verifyAuthenticatedWorkerResponse(
   );
   const valid = verifyBytes(
     null,
-    Buffer.from(canonicalJson(statement), "utf8"),
+    canonicalIntegrityBytes(statement),
     publicKey,
     Buffer.from(envelope.signature, "base64url")
   );

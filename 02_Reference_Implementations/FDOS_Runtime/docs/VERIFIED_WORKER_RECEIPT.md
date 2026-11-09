@@ -198,7 +198,8 @@ They are claims by the mutable local parent, not remote attestation.
 
 ## Durable Authentication
 
-The receipt itself is content-addressed with canonical SHA-256. The exact
+The receipt itself is content-addressed with canonical JSON v2
+domain-separated SHA-256. The exact
 `outbox.record-worker-outcome` command, including that receipt, is signed by
 the registered Connector Instance through the existing Ed25519 Invocation
 boundary.

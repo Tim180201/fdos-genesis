@@ -19,7 +19,7 @@ import path from "node:path";
 import test from "node:test";
 import {
   buildDryRunWorkerPackage,
-  canonicalJson,
+  canonicalIntegrityBytes,
   createDryRunWorkerArtifact,
   createDryRunWorkerPackage,
   createWorkerPackageAttestation,
@@ -211,7 +211,7 @@ test("detached signer request keeps private keys outside the release API", async
   });
   const signature = sign(
     null,
-    Buffer.from(canonicalJson(request), "utf8"),
+    canonicalIntegrityBytes(request),
     privateKey
   ).toString("base64url");
   const attestation = createWorkerPackageAttestation({

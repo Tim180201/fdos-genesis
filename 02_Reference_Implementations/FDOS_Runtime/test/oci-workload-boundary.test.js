@@ -4,6 +4,7 @@ import {
   mkdtemp,
   realpath,
   rm,
+  truncate,
   writeFile
 } from "node:fs/promises";
 import os from "node:os";
@@ -28,6 +29,7 @@ const imageId = `sha256:${"b".repeat(64)}`;
 const layerOne = `sha256:${"c".repeat(64)}`;
 const layerTwo = `sha256:${"d".repeat(64)}`;
 const endpoint = "unix:///tmp/fdos-docker-test.sock";
+const MAX_LAUNCHER_BYTES = 64 * 1024 * 1024;
 
 function mutableClone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -728,20 +730,37 @@ test("Docker launcher inspection records exact local binary identity without upg
   const fake = fakeDockerRunner({
     configuredPolicy: configured
   });
-  const localProvider = provider(fake.runner);
+  const directory = await mkdtemp(
+    path.join(os.tmpdir(), "fdos-launcher-mode-")
+  );
+  const executable = path.join(directory, "docker-fixture");
+  await writeFile(executable, "#!/bin/sh\nexit 0\n", {
+    encoding: "utf8",
+    mode: 0o500,
+    flag: "wx"
+  });
+  await chmod(executable, 0o500);
+  t.after(async () => {
+    await rm(directory, {
+      recursive: true,
+      force: true
+    });
+  });
+  const localProvider = new DockerOciWorkloadProvider({
+    executable,
+    endpoint,
+    commandRunner: fake.runner
+  });
   const launcher = await localProvider.inspectLauncher();
   assert.match(launcher.digest, /^sha256:[0-9a-f]{64}$/);
-  assert.equal(launcher.requestedPath, process.execPath);
+  assert.equal(launcher.requestedPath, executable);
   assert.equal(launcher.size > 0, true);
   assert.equal(launcher.mode & 0o022, 0);
   assert.equal(typeof launcher.rootOwned, "boolean");
 
-  const directory = await mkdtemp(
-    path.join(os.tmpdir(), "fdos-launcher-mode-")
-  );
   const untrustedExecutable = path.join(
     directory,
-    "docker-fixture"
+    "untrusted-docker-fixture"
   );
   await writeFile(untrustedExecutable, "fixture", {
     encoding: "utf8",
@@ -765,6 +784,58 @@ test("Docker launcher inspection records exact local binary identity without upg
   await chmod(untrustedExecutable, 0o722);
   await assert.rejects(
     () => untrustedProvider.inspectLauncher(),
+    IntegrityError
+  );
+});
+
+test("Docker launcher size boundary is exact and independent of the host Node binary", async (t) => {
+  const directory = await mkdtemp(
+    path.join(os.tmpdir(), "fdos-launcher-size-")
+  );
+  t.after(async () => {
+    await rm(directory, {
+      recursive: true,
+      force: true
+    });
+  });
+
+  const exactLimitExecutable = path.join(
+    directory,
+    "docker-at-limit"
+  );
+  await writeFile(exactLimitExecutable, "x", {
+    encoding: "utf8",
+    mode: 0o600,
+    flag: "wx"
+  });
+  await truncate(exactLimitExecutable, MAX_LAUNCHER_BYTES);
+  await chmod(exactLimitExecutable, 0o500);
+  const accepted = await new DockerOciWorkloadProvider({
+    executable: exactLimitExecutable,
+    endpoint
+  }).inspectLauncher();
+  assert.equal(accepted.size, MAX_LAUNCHER_BYTES);
+
+  const overLimitExecutable = path.join(
+    directory,
+    "docker-over-limit"
+  );
+  await writeFile(overLimitExecutable, "x", {
+    encoding: "utf8",
+    mode: 0o600,
+    flag: "wx"
+  });
+  await truncate(
+    overLimitExecutable,
+    MAX_LAUNCHER_BYTES + 1
+  );
+  await chmod(overLimitExecutable, 0o500);
+  await assert.rejects(
+    () =>
+      new DockerOciWorkloadProvider({
+        executable: overLimitExecutable,
+        endpoint
+      }).inspectLauncher(),
     IntegrityError
   );
 });

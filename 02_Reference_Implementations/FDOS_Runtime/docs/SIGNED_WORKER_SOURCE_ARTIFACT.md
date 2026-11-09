@@ -118,7 +118,7 @@ issue time and Ed25519 signature. The verifier:
 - requires Ed25519 key material;
 - requires exact issuer/key agreement;
 - requires exact local artifact digest agreement;
-- verifies the canonical unsigned attestation bytes;
+- verifies the canonical JSON v2 domain-separated unsigned attestation bytes;
 - rejects every unexpected field.
 
 The attestation has no expiry or online revocation. Rotation is currently an

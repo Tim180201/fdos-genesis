@@ -1496,7 +1496,13 @@ export class FdosRuntime {
         normalizedActor.roleId,
         "task:delegate"
       );
-      this.#roleRegistry.get(targetRoleId);
+      const sourceRole = this.#roleRegistry.get(normalizedActor.roleId);
+      const targetRole = this.#roleRegistry.get(targetRoleId);
+      if (sourceRole.department !== targetRole.department) {
+        throw new PolicyError(
+          "Cross-department free-form handoffs require a governed context projection and declassification decision."
+        );
+      }
       const run = this.findRun(parent.runId);
       if (run.status !== "active") {
         throw new ConflictError(

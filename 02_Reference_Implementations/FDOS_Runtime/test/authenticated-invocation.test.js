@@ -814,7 +814,7 @@ test("authenticated handoff returns specialist context to the parent", async (t)
     "task.handoff",
     {
       taskId: intake.id,
-      targetRoleId: "operations",
+      targetRoleId: "chief-of-staff",
       title: "Validate the authenticated boundary",
       context: "Confirm that no connector execution is authorized.",
       desiredOutcome: "A boolean validation with rationale.",
@@ -825,13 +825,13 @@ test("authenticated handoff returns specialist context to the parent", async (t)
 
   await executeAs(
     harness,
-    operations,
+    chief,
     "task.claim",
     { taskId: child.id }
   );
   await executeAs(
     harness,
-    operations,
+    chief,
     "task.complete",
     {
       taskId: child.id,
@@ -994,7 +994,7 @@ test("authenticated three-role pilot completes with traceable invocations", asyn
   assert.equal(result.status.externalActionsEnabled, false);
   assert.deepEqual(result.status.persistence, {
     kind: "sqlite",
-    schemaVersion: "1.0",
+    schemaVersion: "2.0",
     transactional: true,
     transactionCount: 14,
     committedTransactionCount: 14,

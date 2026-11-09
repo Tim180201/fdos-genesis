@@ -1,10 +1,17 @@
 import assert from "node:assert/strict";
+import {
+  generateKeyPairSync,
+  sign,
+  verify
+} from "node:crypto";
 import test from "node:test";
 import {
   ActionCatalog,
   agentActor,
   AgentRegistry,
   AuthorizationError,
+  CANONICAL_JSON_FORMAT_VERSION,
+  canonicalIntegrityBytes,
   canonicalJson,
   ConflictError,
   createActionIntent,
@@ -31,6 +38,51 @@ test("canonical JSON is independent of object key insertion order", () => {
   const right = { list: [{ x: 1, y: 2 }], nested: { a: 1, b: 2 }, z: 3 };
   assert.equal(canonicalJson(left), canonicalJson(right));
   assert.equal(digestObject(left), digestObject(right));
+  assert.equal(CANONICAL_JSON_FORMAT_VERSION, "2.0");
+  assert.equal(
+    canonicalIntegrityBytes(left).subarray(0, 24).toString("utf8"),
+    "fdos-canonical-json:2.0\u0000"
+  );
+});
+
+test("canonical JSON preserves an own __proto__ property", () => {
+  const withOwnProto = Object.create(null);
+  Object.defineProperty(withOwnProto, "__proto__", {
+    value: { classification: "confidential" },
+    enumerable: true,
+    configurable: false,
+    writable: false
+  });
+
+  assert.notEqual(canonicalJson(withOwnProto), canonicalJson({}));
+  assert.notEqual(digestObject(withOwnProto), digestObject({}));
+  assert.equal(
+    canonicalJson(withOwnProto),
+    '{"__proto__":{"classification":"confidential"}}'
+  );
+});
+
+test("canonical JSON v1 signatures do not verify in the v2 integrity domain", () => {
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+  const statement = {
+    kind: "format-migration-test",
+    approved: false
+  };
+  const legacySignature = sign(
+    null,
+    Buffer.from(canonicalJson(statement), "utf8"),
+    privateKey
+  );
+
+  assert.equal(
+    verify(
+      null,
+      canonicalIntegrityBytes(statement),
+      publicKey,
+      legacySignature
+    ),
+    false
+  );
 });
 
 test("canonical JSON rejects values that cannot be audited safely", () => {
@@ -39,6 +91,34 @@ test("canonical JSON rejects values that cannot be audited safely", () => {
   const circular = {};
   circular.self = circular;
   assert.throws(() => canonicalJson(circular), ValidationError);
+
+  const sparse = [];
+  sparse.length = 1;
+  assert.throws(() => canonicalJson(sparse), ValidationError);
+
+  const extended = [];
+  extended.extra = true;
+  assert.throws(() => canonicalJson(extended), ValidationError);
+
+  const accessor = {};
+  Object.defineProperty(accessor, "value", {
+    enumerable: true,
+    get() {
+      return "side effect";
+    }
+  });
+  assert.throws(() => canonicalJson(accessor), ValidationError);
+
+  const hidden = {};
+  Object.defineProperty(hidden, "value", {
+    value: "hidden",
+    enumerable: false
+  });
+  assert.throws(() => canonicalJson(hidden), ValidationError);
+
+  const symbolKeyed = { visible: true };
+  symbolKeyed[Symbol("hidden")] = true;
+  assert.throws(() => canonicalJson(symbolKeyed), ValidationError);
 });
 
 test("action catalogue denies unknown action types", () => {

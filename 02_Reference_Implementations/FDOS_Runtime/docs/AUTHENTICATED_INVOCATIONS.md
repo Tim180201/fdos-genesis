@@ -43,7 +43,7 @@ Each Invocation Context binds:
 - correlation ID;
 - principal type and identifier;
 - exact operation;
-- canonical SHA-256 command digest;
+- canonical JSON v2 domain-separated SHA-256 command digest;
 - authentication method and assurance label;
 - issue, activation and expiration timestamps.
 

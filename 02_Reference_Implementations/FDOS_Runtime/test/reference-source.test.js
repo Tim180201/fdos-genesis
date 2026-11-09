@@ -183,6 +183,47 @@ test("old snapshot keeps reading the old object after HEAD advances", async (t) 
   );
 });
 
+test("caller-controlled snapshot cannot move another blob onto an allowed path", async (t) => {
+  const allowedContent = "Public status\n";
+  const unrelatedContent = "Private note!\n";
+  assert.equal(
+    Buffer.byteLength(allowedContent),
+    Buffer.byteLength(unrelatedContent)
+  );
+  const directory = await createRepository(t, {
+    "docs/status.md": allowedContent,
+    "docs/private.md": unrelatedContent
+  });
+  const source = await openSource(directory);
+  const snapshot = await source.captureSnapshot();
+  const { stdout } = await git(
+    directory,
+    "rev-parse",
+    "HEAD:docs/private.md"
+  );
+  const unrelatedObjectId = stdout.trim();
+  const unsigned = {
+    ...snapshot,
+    allowedDocuments: [
+      {
+        ...snapshot.allowedDocuments[0],
+        objectId: unrelatedObjectId
+      }
+    ]
+  };
+  delete unsigned.snapshotDigest;
+  const forgedSnapshot = {
+    ...unsigned,
+    snapshotDigest: digestObject(unsigned)
+  };
+
+  assert.equal(verifyReferenceSnapshot(forgedSnapshot), true);
+  await assert.rejects(
+    () => source.readDocument("docs/status.md", { snapshot: forgedSnapshot }),
+    IntegrityError
+  );
+});
+
 test("allowlist denies other files and rejects traversal configuration", async (t) => {
   const directory = await createRepository(t, {
     "docs/status.md": "Allowed\n",

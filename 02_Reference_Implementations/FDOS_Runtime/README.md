@@ -41,6 +41,8 @@ which order, within which information scope and under which approval.
 - exact authenticated-command schemas and correlation attribution;
 - local SQLite transactions joining Invocation acceptance and internal command
   events;
+- canonical JSON `2.0` with strict own-property validation, retained
+  `__proto__` data properties and format-domain-separated digests/signatures;
 - transaction-aware hash-chain and metadata verification across restart;
 - fail-closed persistence-format selection without implicit JSONL migration;
 - deny-by-default, content-addressed dry-run Connector Contracts;
@@ -100,7 +102,9 @@ which order, within which information scope and under which approval.
 - A0–A4 action policy;
 - exact, expiring and single-use A2 approvals;
 - explicit workflow task handovers;
-- bounded dynamic specialist handovers;
+- bounded same-department dynamic specialist handovers;
+- cross-department collaboration only through predeclared workflow
+  dependencies; free-form cross-department handovers remain disabled;
 - company and department memory candidates with human review;
 - exact Git-bound read-only reference snapshots;
 - content-minimized source evidence for memory candidates;
@@ -121,7 +125,9 @@ which order, within which information scope and under which approval.
 
 ## Quick Start
 
-Requirements: Node.js 22.13 or newer.
+Requirements: Node.js 22.13 or newer. Phase 0 validation is pinned by
+`.node-version` to Node.js 26.3.1; other supported-range versions were not
+independently exercised in that validation run.
 
 ```bash
 cd 02_Reference_Implementations/FDOS_Runtime
@@ -198,6 +204,7 @@ See:
 - `docs/ARCHITECTURE.md`
 - `docs/AUTHENTICATED_INVOCATIONS.md`
 - `docs/TRANSACTIONAL_PERSISTENCE.md`
+- `docs/CANONICAL_JSON_V2_MIGRATION.md`
 - `docs/CONNECTOR_OUTBOX.md`
 - `docs/PROCESS_SEPARATED_DRY_RUN_WORKER.md`
 - `docs/DARWIN_SANDBOXED_DRY_RUN_WORKER.md`

@@ -27,7 +27,11 @@ The intake adapter:
 9. excludes every untracked file from content intake;
 10. creates content-minimized document evidence;
 11. rejects digest-valid snapshots or evidence objects with unexpected fields
-    or inconsistent Git object formats.
+    or inconsistent Git object formats;
+12. before every document read, independently asks trusted local Git for the
+    snapshot commit, root tree and complete recursive tree, then compares the
+    recomputed manifest and exact path/mode/type/object/size tuple with the
+    caller-supplied snapshot.
 
 The adapter performs no network request and writes nothing to a reference
 repository.
@@ -59,6 +63,11 @@ digests with the candidate. Human Governance must still:
 A valid digest proves integrity of the recorded evidence object. It does not
 prove that a summary is semantically correct or that the source itself is
 authoritative.
+
+A caller-supplied, internally consistent snapshot is not itself authority.
+Document intake succeeds only when trusted repository reconstruction proves
+that the declared path actually maps to the declared blob in the declared
+commit.
 
 ## Pilot Policies
 

@@ -46,25 +46,25 @@ fixed 13-module source policy
 
 ```text
 package id:         worker-package:connector-dry-run
-package version:    2.0.0-experimental
-package digest:     sha256:51cd86533646d78353ed91fc86e0d16f74fc7b4eb404c722c77d3b4a3d67d196
+package version:    3.0.0-experimental
+package digest:     sha256:afc2612336bc34f8c1da817be814f40ed713de8b13ad4380a29cd75c2d343700
 artifact id:        worker:connector-dry-run
-artifact version:   3.0.0-experimental
-artifact digest:    sha256:59933e5c2830b0a63d32c2938cb00175431495862a2c948af8d3d4c105a7db8a
+artifact version:   4.0.0-experimental
+artifact digest:    sha256:5b138ba1405ff1f8d6dd011d24053b97db6a0a37aa083ec49acfd875da12ca2d
 modules:            13
-source bytes:       80,676
-serialized bytes:   89,555
-attestation digest: sha256:e78fc5e2f8ca6fd90b19739634c10ec1b06c6ff83ec91776698bd49b754cda93
-trust-anchor digest: sha256:c70b21a175dbfa514447d1de2476a7931e52632446abcaee6cba3c8a5da92c39
+source bytes:       82,378
+serialized bytes:   91,329
+attestation digest: sha256:0a65f68281e452e6dc1fe41a2b77bf2a6b28a1a3c6096bc9642e54b2f95a6c1d
+trust-anchor digest: sha256:cc0f819ae182836b859213ab5f660f9f07f18557b42a9169263c83009bc011d1
 algorithm:          Ed25519
-issuer:             issuer:fdos-worker-package-pilot
-key:                key:449d04c19a66d93bc574d99b
-issued:             2026-07-29T14:17:25.900Z
+issuer:             issuer:fdos-worker-package-pilot-v3
+key:                key:3e80c4b6f855915a67e70d23
+issued:             2026-11-09T12:00:00.000Z
 ```
 
 The package is:
 
-`../artifacts/worker-packages/connector-dry-run-v2.fdos-package.json`
+`../artifacts/worker-packages/connector-dry-run-v3.fdos-package.json`
 
 Only its public trust descriptor, trust pin and signed attestation are stored
 in `src/pilot/dry-run-worker-package-release.js`. The ephemeral signing key
@@ -109,9 +109,10 @@ requires a new detached release signature.
 
 ## Detached Signing Boundary
 
-`createWorkerPackageAttestationRequest` returns the exact canonical unsigned
-release statement. An external signer signs those bytes. The runtime accepts
-only the canonical base64url representation of the detached 64-byte Ed25519
+`createWorkerPackageAttestationRequest` returns the exact unsigned release
+statement. An external signer signs its canonical JSON v2 integrity bytes,
+including the `fdos-canonical-json:2.0` domain prefix. The runtime accepts only
+the canonical base64url representation of the detached 64-byte Ed25519
 signature through
 `createWorkerPackageAttestation`.
 

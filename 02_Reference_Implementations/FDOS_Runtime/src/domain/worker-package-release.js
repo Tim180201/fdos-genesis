@@ -4,7 +4,7 @@ import {
   verify as verifyBytes
 } from "node:crypto";
 import {
-  canonicalJson,
+  canonicalIntegrityBytes,
   digestObject,
   immutableJson
 } from "../kernel/canonical-json.js";
@@ -627,18 +627,15 @@ function verifiedPackageRelease(
   const publicKey = createPublicKey(trustedKey.publicKeyPem);
   const valid = verifyBytes(
     null,
-    Buffer.from(
-      canonicalJson(
-        normalizeAttestationRequest(
-          Object.fromEntries(
-            attestationRequestKeys.map((key) => [
-              key,
-              normalizedAttestation[key]
-            ])
-          )
+    canonicalIntegrityBytes(
+      normalizeAttestationRequest(
+        Object.fromEntries(
+          attestationRequestKeys.map((key) => [
+            key,
+            normalizedAttestation[key]
+          ])
         )
-      ),
-      "utf8"
+      )
     ),
     publicKey,
     Buffer.from(normalizedAttestation.signature, "base64url")

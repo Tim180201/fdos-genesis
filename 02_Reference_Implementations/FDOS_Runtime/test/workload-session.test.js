@@ -5,7 +5,7 @@ import {
 } from "node:crypto";
 import test from "node:test";
 import {
-  canonicalJson,
+  canonicalIntegrityBytes,
   createAuthenticatedWorkerResponse,
   createWorkloadResponseSignatureRequest,
   createWorkloadSession,
@@ -27,12 +27,12 @@ const challenge =
   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const workerPackage = Object.freeze({
   packageId: "worker-package:connector-dry-run",
-  packageVersion: "2.0.0-experimental",
+  packageVersion: "3.0.0-experimental",
   packageDigest: digestObject({
     package: "workload-session-test"
   }),
   artifactId: "worker:connector-dry-run",
-  artifactVersion: "3.0.0-experimental",
+  artifactVersion: "4.0.0-experimental",
   artifactDigest: digestObject({
     artifact: "workload-session-test"
   }),
@@ -223,7 +223,7 @@ test("detached workload response API accepts only canonical Ed25519 material", (
     });
   const signature = sign(
     null,
-    Buffer.from(canonicalJson(statement), "utf8"),
+    canonicalIntegrityBytes(statement),
     privateKey
   ).toString("base64url");
   const envelope = createAuthenticatedWorkerResponse({

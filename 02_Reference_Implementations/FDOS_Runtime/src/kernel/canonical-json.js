@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { ValidationError } from "./errors.js";
 
+export const CANONICAL_JSON_FORMAT_VERSION = "2.0";
+const INTEGRITY_DOMAIN =
+  `fdos-canonical-json:${CANONICAL_JSON_FORMAT_VERSION}\u0000`;
+
 function normalizedJson(value, path, seen) {
   if (value === null) return null;
 
@@ -31,9 +35,37 @@ function normalizedJson(value, path, seen) {
 
   try {
     if (Array.isArray(value)) {
-      return value.map((entry, index) =>
-        normalizedJson(entry, `${path}[${index}]`, seen)
-      );
+      const ownKeys = Reflect.ownKeys(value);
+      const expectedKeys = [
+        ...Array.from({ length: value.length }, (_, index) => String(index)),
+        "length"
+      ];
+      if (
+        ownKeys.length !== expectedKeys.length ||
+        ownKeys.some((key, index) => key !== expectedKeys[index])
+      ) {
+        throw new ValidationError(
+          `Sparse or extended JSON array at ${path}.`
+        );
+      }
+      return Array.from({ length: value.length }, (_, index) => {
+        const descriptor = Object.getOwnPropertyDescriptor(
+          value,
+          String(index)
+        );
+        if (
+          !descriptor ||
+          descriptor.enumerable !== true ||
+          !Object.hasOwn(descriptor, "value")
+        ) {
+          throw new ValidationError(`Non-data JSON value at ${path}[${index}].`);
+        }
+        return normalizedJson(
+          descriptor.value,
+          `${path}[${index}]`,
+          seen
+        );
+      });
     }
 
     const prototype = Object.getPrototypeOf(value);
@@ -41,9 +73,25 @@ function normalizedJson(value, path, seen) {
       throw new ValidationError(`Non-plain JSON object at ${path}.`);
     }
 
-    const result = {};
-    for (const key of Object.keys(value).sort()) {
-      result[key] = normalizedJson(value[key], `${path}.${key}`, seen);
+    const ownKeys = Reflect.ownKeys(value);
+    if (ownKeys.some((key) => typeof key !== "string")) {
+      throw new ValidationError(`Symbol-keyed JSON object at ${path}.`);
+    }
+    const result = Object.create(null);
+    for (const key of ownKeys.sort()) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      if (
+        !descriptor ||
+        descriptor.enumerable !== true ||
+        !Object.hasOwn(descriptor, "value")
+      ) {
+        throw new ValidationError(`Non-data JSON property at ${path}.${key}.`);
+      }
+      result[key] = normalizedJson(
+        descriptor.value,
+        `${path}.${key}`,
+        seen
+      );
     }
     return result;
   } finally {
@@ -55,12 +103,21 @@ export function canonicalJson(value) {
   return JSON.stringify(normalizedJson(value, "$", new Set()));
 }
 
+export function canonicalIntegrityBytes(value) {
+  return Buffer.from(
+    `${INTEGRITY_DOMAIN}${canonicalJson(value)}`,
+    "utf8"
+  );
+}
+
 export function sha256(value) {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
 
 export function digestObject(value) {
-  return `sha256:${sha256(canonicalJson(value))}`;
+  return `sha256:${createHash("sha256")
+    .update(canonicalIntegrityBytes(value))
+    .digest("hex")}`;
 }
 
 export function jsonClone(value) {

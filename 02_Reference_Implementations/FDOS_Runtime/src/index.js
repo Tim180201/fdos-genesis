@@ -120,6 +120,8 @@ export {
   ValidationError
 } from "./kernel/errors.js";
 export {
+  CANONICAL_JSON_FORMAT_VERSION,
+  canonicalIntegrityBytes,
   canonicalJson,
   digestObject,
   immutableJson,

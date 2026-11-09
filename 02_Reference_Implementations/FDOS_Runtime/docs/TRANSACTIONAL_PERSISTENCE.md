@@ -25,7 +25,8 @@ directory.
 
 The database contains:
 
-- `fdos_metadata` — exact store kind and schema version;
+- `fdos_metadata` — exact store kind, schema version and canonical JSON
+  format version;
 - `fdos_transactions` — transaction start/commit time, event count, sequence
   range and head hash;
 - `fdos_events` — canonical event JSON plus indexed sequence, ID, transaction
@@ -115,6 +116,10 @@ Before state rehydration, the adapter checks:
 
 Event-content or transaction-metadata mismatch fails closed.
 
+The current store and event schemas are `2.0`, SQLite `user_version` is `2`
+and the required canonical JSON format is `2.0`. These values are one
+integrity boundary; a mismatch is not upgraded implicitly.
+
 `npm run verify -- <directory>` selects the sole non-empty store format and
 verifies the complete runtime state without migrating it.
 
@@ -153,6 +158,10 @@ There is intentionally no migration command in this slice. Preserve or archive
 an old experimental runtime directory and start a new SQLite directory.
 Any later migration tool needs exact source and target manifests, event-count
 and hash verification, backup, rollback and Human Governance acceptance.
+
+Canonical JSON v2 is a breaking cryptographic format change. See
+`CANONICAL_JSON_V2_MIGRATION.md` for the fail-closed compatibility rule and
+the only supported experimental carry-forward procedure.
 
 ## Node.js Dependency Boundary
 

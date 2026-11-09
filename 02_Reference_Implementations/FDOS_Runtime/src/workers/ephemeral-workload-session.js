@@ -2,7 +2,9 @@ import {
   generateKeyPairSync,
   sign as signBytes
 } from "node:crypto";
-import { canonicalJson } from "../kernel/canonical-json.js";
+import {
+  canonicalIntegrityBytes
+} from "../kernel/canonical-json.js";
 import {
   ConflictError,
   ValidationError
@@ -64,7 +66,7 @@ export function createEphemeralWorkloadSessionAuthority({
         });
       const signature = signBytes(
         null,
-        Buffer.from(canonicalJson(statement), "utf8"),
+        canonicalIntegrityBytes(statement),
         privateKey
       ).toString("base64url");
       return createAuthenticatedWorkerResponse({

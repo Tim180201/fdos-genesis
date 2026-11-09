@@ -158,6 +158,13 @@ Task results are private to the owning role by default. A downstream role may
 read an upstream result only when the workflow definition declares the upstream
 step as a dependency.
 
+Free-form dynamic handoffs are currently restricted to roles in the same
+department. Cross-department collaboration must use a predeclared workflow
+dependency whose admitted context is known before execution. There is no
+declassification API in this slice; a future task-scoped Context Projection
+and independent Human Governance decision are prerequisites before dynamic
+cross-department transfer can be re-enabled.
+
 ### Human-reviewed memory
 
 Agents create Memory Candidates. Only an explicit human review promotes a
@@ -169,9 +176,12 @@ candidate. Exact source binding does not bypass human semantic review.
 ### Exact reference state
 
 The read-only reference adapter binds commit, tree and every tracked Git
-object before reading an allowlisted document from its committed blob. It
-never reads untracked content. A changing HEAD/status, tracked worktree drift,
-symlink or invalid evidence fails closed.
+object before reading an allowlisted document from its committed blob. Before
+the read it reconstructs the commit, root tree and complete manifest from
+trusted local Git and compares the exact path-to-object mapping with the
+supplied snapshot. It never reads untracked content. A changing HEAD/status,
+tracked worktree drift, substituted path/blob pair, symlink or invalid
+evidence fails closed.
 
 ### Connector work before connector execution
 
@@ -373,6 +383,11 @@ rehydration. File permissions are restricted to the local account.
 The legacy JSONL adapter remains available only for lower-level compatibility
 tests. Authenticated operation requires SQLite, and no non-empty store is
 migrated implicitly.
+
+Canonical JSON `2.0` domain-separates every affected digest and signature.
+Audit event schema `2.0`, SQLite store schema `2.0` and SQLite
+`user_version = 2` reject older integrity material rather than silently
+rehashing it. See `CANONICAL_JSON_V2_MIGRATION.md`.
 
 See `TRANSACTIONAL_PERSISTENCE.md`.
 See `CONNECTOR_OUTBOX.md` for the external-work boundary.

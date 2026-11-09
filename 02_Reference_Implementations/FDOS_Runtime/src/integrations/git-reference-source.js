@@ -196,6 +196,29 @@ function parseManifest(source) {
   return entries;
 }
 
+function summarizeManifest(manifest) {
+  return {
+    trackedEntryCount: manifest.length,
+    trackedBlobCount: manifest.filter(
+      (entry) => entry.type === "blob" && entry.mode !== "120000"
+    ).length,
+    symlinkCount: manifest.filter(
+      (entry) => entry.mode === "120000"
+    ).length,
+    submoduleCount: manifest.filter(
+      (entry) => entry.type === "commit" || entry.mode === "160000"
+    ).length,
+    totalBlobBytes: manifest.reduce(
+      (sum, entry) => sum + (entry.byteLength || 0),
+      0
+    )
+  };
+}
+
+function manifestEntriesEqual(left, right) {
+  return manifestEntryKeys.every((key) => left[key] === right[key]);
+}
+
 function parseStatus(source, allowedFiles) {
   const records = splitNullDelimited(source);
   const allowedBuffers = new Map(
@@ -616,6 +639,67 @@ export class GitReferenceSource {
     this.clock = clock;
   }
 
+  async assertSnapshotRepositoryBinding(snapshot) {
+    const [typeBuffer, treeBuffer, objectFormatBuffer, manifestBuffer] =
+      await Promise.all([
+        executeGit(this.root, ["cat-file", "-t", snapshot.commit]),
+        executeGit(this.root, ["rev-parse", `${snapshot.commit}^{tree}`]),
+        executeGit(this.root, ["rev-parse", "--show-object-format"]),
+        executeGit(this.root, [
+          "ls-tree",
+          "-r",
+          "-z",
+          "-l",
+          "--full-tree",
+          snapshot.commit
+        ])
+      ]);
+    const objectType = outputLine(typeBuffer, "Git snapshot object type", {
+      max: 16,
+      pattern: /^commit$/
+    });
+    const tree = outputLine(treeBuffer, "Git snapshot tree", {
+      max: 64,
+      pattern: objectIdPattern
+    });
+    const objectFormat = outputLine(
+      objectFormatBuffer,
+      "Git snapshot object format",
+      { max: 16, pattern: /^(sha1|sha256)$/ }
+    );
+    const manifest = parseManifest(manifestBuffer);
+    const summary = summarizeManifest(manifest);
+    const manifestDigest = digestObject({
+      objectFormat,
+      entries: manifest
+    });
+    if (
+      objectType !== "commit" ||
+      tree !== snapshot.tree ||
+      objectFormat !== snapshot.objectFormat ||
+      manifestDigest !== snapshot.manifestDigest ||
+      Object.entries(summary).some(
+        ([field, value]) => snapshot[field] !== value
+      )
+    ) {
+      throw new IntegrityError(
+        "Reference snapshot does not match its trusted Git commit."
+      );
+    }
+    const manifestByPath = new Map(
+      manifest.map((entry) => [entry.path, entry])
+    );
+    for (const allowed of snapshot.allowedDocuments) {
+      const trusted = manifestByPath.get(allowed.path);
+      if (!trusted || !manifestEntriesEqual(allowed, trusted)) {
+        throw new IntegrityError(
+          "Reference snapshot path and Git object binding differ."
+        );
+      }
+    }
+    return true;
+  }
+
   async captureSnapshot() {
     const commitBefore = outputLine(
       await executeGit(this.root, ["rev-parse", "HEAD"]),
@@ -699,19 +783,7 @@ export class GitReferenceSource {
       return jsonClone(entry);
     });
     const status = parseStatus(statusAfter, this.allowedFiles);
-    const trackedBlobCount = manifest.filter(
-      (entry) => entry.type === "blob" && entry.mode !== "120000"
-    ).length;
-    const symlinkCount = manifest.filter(
-      (entry) => entry.mode === "120000"
-    ).length;
-    const submoduleCount = manifest.filter(
-      (entry) => entry.type === "commit" || entry.mode === "160000"
-    ).length;
-    const totalBlobBytes = manifest.reduce(
-      (sum, entry) => sum + (entry.byteLength || 0),
-      0
-    );
+    const manifestSummary = summarizeManifest(manifest);
     const sourceState =
       status.trackedChangeCount > 0
         ? "tracked-dirty"
@@ -728,11 +800,7 @@ export class GitReferenceSource {
       branch,
       objectFormat,
       sourceState,
-      trackedEntryCount: manifest.length,
-      trackedBlobCount,
-      symlinkCount,
-      submoduleCount,
-      totalBlobBytes,
+      ...manifestSummary,
       trackedChangeCount: status.trackedChangeCount,
       untrackedFileCount: status.untrackedFileCount,
       allowlistedChangeCount: status.changedAllowedFiles.length,
@@ -763,6 +831,7 @@ export class GitReferenceSource {
     if (boundSnapshot.sourceId !== this.sourceId) {
       throw new IntegrityError("Reference snapshot belongs to another source.");
     }
+    await this.assertSnapshotRepositoryBinding(boundSnapshot);
     if (requireTrackedClean && boundSnapshot.trackedChangeCount !== 0) {
       throw new PolicyError(
         "Reference source has tracked changes; committed document intake is blocked."

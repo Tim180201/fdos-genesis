@@ -1,6 +1,6 @@
 {
   "name": "@fdos/runtime-reference",
-  "version": "0.13.0-experimental",
+  "version": "0.14.0-experimental",
   "description": "Experimental, governed runtime reference implementation for FDOS",
   "private": true,
   "type": "module",

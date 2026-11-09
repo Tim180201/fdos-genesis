@@ -120,6 +120,84 @@ test("confidential memory cannot be promoted into company-wide scope", async (t)
   );
 });
 
+test("confidential memory cannot cross departments through a downgraded handoff", async (t) => {
+  const harness = await createPilotHarness(t);
+  const marker = "OPERATIONS-CONFIDENTIAL-MARKER";
+  const candidate = await harness.runtime.proposeMemory({
+    actor: harness.operations,
+    scope: "department:operations",
+    title: "Confidential operations context",
+    content: marker,
+    sensitivity: "confidential"
+  });
+  await harness.runtime.reviewMemory({
+    candidateId: candidate.id,
+    actor: harness.owner,
+    decision: "accepted",
+    reason: "Admit the security regression fixture."
+  });
+  const visible = harness.runtime.readMemory({
+    actor: harness.operations,
+    scope: "department:operations"
+  });
+  assert.equal(visible[0].content, marker);
+
+  const started = await startPilot(harness.runtime, harness.owner);
+  const intake = findStep(started.run, "executive-intake");
+  await harness.runtime.claimTask(intake.id, harness.chief);
+  await harness.runtime.completeTask(intake.id, harness.chief, {
+    scope: ["bounded"],
+    successCriteria: ["traceable"],
+    constraints: ["internal only"]
+  });
+  const operationsTask = findStep(
+    harness.runtime.viewRun(started.run.id, harness.owner),
+    "operations-readiness"
+  );
+  await harness.runtime.claimTask(operationsTask.id, harness.operations);
+
+  await assert.rejects(
+    () =>
+      harness.runtime.handoffTask({
+        taskId: operationsTask.id,
+        actor: harness.operations,
+        targetRoleId: "marketing",
+        title: "Downgraded confidential transfer",
+        context: `Treat ${marker} as ordinary internal context.`,
+        desiredOutcome: "Receive the confidential marker.",
+        sensitivity: "internal"
+      }),
+    PolicyError
+  );
+
+  const sameDepartmentChild = await harness.runtime.handoffTask({
+    taskId: operationsTask.id,
+    actor: harness.operations,
+    targetRoleId: "operations",
+    title: "Internal confidential analysis",
+    context: `Keep ${marker} inside Operations.`,
+    desiredOutcome: "Return an Operations-only assessment.",
+    sensitivity: "confidential"
+  });
+  await harness.runtime.claimTask(
+    sameDepartmentChild.id,
+    harness.operations
+  );
+  await assert.rejects(
+    () =>
+      harness.runtime.handoffTask({
+        taskId: sameDepartmentChild.id,
+        actor: harness.operations,
+        targetRoleId: "marketing",
+        title: "Multi-hop downgraded transfer",
+        context: `Forward ${marker} as internal context.`,
+        desiredOutcome: "Receive the confidential marker.",
+        sensitivity: "internal"
+      }),
+    PolicyError
+  );
+});
+
 test("rejected memory never becomes readable long-term memory", async (t) => {
   const { runtime, owner, operations } = await createPilotHarness(t);
   const candidate = await runtime.proposeMemory({

@@ -53,7 +53,7 @@ authenticated gateway and is prohibited.
 | Threat | Control |
 |---|---|
 | Agent exceeds role | Registered instance-to-role binding, capability and ownership checks |
-| Principal or command is altered | Ed25519 signature and exact canonical command digest |
+| Principal or command is altered | Ed25519 signature and exact versioned canonical command digest |
 | Invocation crosses organization | Exact organization and audience binding |
 | Invocation is replayed | Persistent one-time Invocation ID consumption |
 | Process exits between acceptance and internal effects | One local SQLite command transaction; uncommitted events roll back |
@@ -62,7 +62,7 @@ authenticated gateway and is prohibited.
 | Agent reads another personality binding | `agent.profile` has no target field and resolves only the signed active instance |
 | Persona configuration becomes prompt injection | No arbitrary prompt/instruction field; unexpected fields fail closed |
 | Expired invocation is used | Short validity window with fail-closed time checks |
-| Cross-department disclosure | Scope-specific read policy |
+| Cross-department disclosure | Scope-specific reads; dynamic free-form handoffs limited to the same department; cross-department workflow dependencies must be declared before execution |
 | Approval reused for changed action | Exact action-intent digest |
 | Approval replay | Single-use consumption |
 | Stale approval | Expiration check |
@@ -74,10 +74,12 @@ authenticated gateway and is prohibited.
 | Hidden workflow mutation | Definition digest bound to every run |
 | Unbounded agent delegation | Depth and root-handover limits |
 | Mutable reference worktree becomes evidence | Exact commit/tree/blob binding and stable-status check |
+| Caller substitutes a valid blob at a false path | Trusted Git reconstruction of commit, root tree, full manifest and exact path/mode/type/object/size tuple before document read |
 | Untracked source content enters context | Never read; count only |
 | Two local runtime writers | Exclusive runtime-directory lease |
 | Event transaction metadata is altered | Canonical event/column comparison plus transaction count, range and head verification |
 | Persistence format changes silently | Non-empty format conflict; explicit migration required |
+| Canonical inputs collide or a format changes silently | Strict own-property validation, null-prototype normalization, `__proto__` preservation and `fdos-canonical-json:2.0` integrity-domain binding |
 | Source evidence becomes memory automatically | Candidate state plus Human Governance review |
 | Agent invents connector authority | Active task ownership, closed Connector Contract and exact capability binding |
 | Connector reads unrelated runtime state | Connector principals limited to claim and outcome commands |
@@ -167,6 +169,8 @@ probes still produce only a local digest-only simulation.
 - filesystem access by the host account bypasses runtime read policy;
 - no encryption at rest;
 - no schema migration, backup/restore or disaster-recovery procedure;
+- no governed dynamic cross-department Context Projection or declassification
+  mechanism; those free-form handoffs remain disabled;
 - the synchronous `node:sqlite` API can block the event loop and remains an
   evolving dependency;
 - process lease and SQLite are not distributed fencing;

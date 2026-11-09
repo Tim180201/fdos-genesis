@@ -8,6 +8,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import {
+  CANONICAL_JSON_FORMAT_VERSION,
   canonicalJson,
   immutableJson,
   jsonClone
@@ -28,10 +29,10 @@ import {
   requiredString
 } from "./validation.js";
 
-const STORE_SCHEMA_VERSION = "1.0";
+const STORE_SCHEMA_VERSION = "2.0";
 const STORE_KIND = "fdos-sqlite-event-store";
 const APPLICATION_ID = 0x46444f53;
-const USER_VERSION = 1;
+const USER_VERSION = 2;
 const SAVEPOINT_NAME = "fdos_command_effects";
 
 const INITIAL_SCHEMA = `
@@ -75,6 +76,8 @@ const INITIAL_SCHEMA = `
     VALUES ('kind', '${STORE_KIND}');
   INSERT INTO fdos_metadata(key, value)
     VALUES ('schema_version', '${STORE_SCHEMA_VERSION}');
+  INSERT INTO fdos_metadata(key, value)
+    VALUES ('canonical_json_format', '${CANONICAL_JSON_FORMAT_VERSION}');
 
   PRAGMA application_id = ${APPLICATION_ID};
   PRAGMA user_version = ${USER_VERSION};
@@ -253,9 +256,10 @@ function validateStoreIdentity(database) {
     metadataRows.map((row) => [row.key, row.value])
   );
   if (
-    metadataRows.length !== 2 ||
+    metadataRows.length !== 3 ||
     metadata.kind !== STORE_KIND ||
-    metadata.schema_version !== STORE_SCHEMA_VERSION
+    metadata.schema_version !== STORE_SCHEMA_VERSION ||
+    metadata.canonical_json_format !== CANONICAL_JSON_FORMAT_VERSION
   ) {
     throw new IntegrityError(
       "SQLite event-store metadata is invalid."

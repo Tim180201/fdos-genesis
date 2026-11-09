@@ -7,7 +7,7 @@ import {
   verify as verifyBytes
 } from "node:crypto";
 import {
-  canonicalJson,
+  canonicalIntegrityBytes,
   digestObject,
   immutableJson,
   jsonClone
@@ -474,10 +474,7 @@ function verifiedAttestation(
   }
   const valid = verifyBytes(
     null,
-    Buffer.from(
-      canonicalJson(unsignedAttestation(normalizedAttestation)),
-      "utf8"
-    ),
+    canonicalIntegrityBytes(unsignedAttestation(normalizedAttestation)),
     trustedKey.publicKey,
     Buffer.from(normalizedAttestation.signature, "base64url")
   );
@@ -681,7 +678,7 @@ export class LocalWorkerArtifactAuthority {
     });
     const signature = signBytes(
       null,
-      Buffer.from(canonicalJson(unsigned), "utf8"),
+      canonicalIntegrityBytes(unsigned),
       this.#privateKey
     ).toString("base64url");
     return normalizeAttestation({

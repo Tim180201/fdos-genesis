@@ -10,7 +10,7 @@ import { IntegrityError, ValidationError } from "./errors.js";
 import { assertId, createId } from "./ids.js";
 import { assertPlainObject, isoDate, requiredString } from "./validation.js";
 
-const EVENT_SCHEMA_VERSION = "1.0";
+const EVENT_SCHEMA_VERSION = "2.0";
 
 function unsignedEvent(event) {
   const { hash: _hash, ...unsigned } = event;

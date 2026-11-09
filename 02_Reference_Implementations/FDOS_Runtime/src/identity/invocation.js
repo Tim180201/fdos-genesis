@@ -7,6 +7,7 @@ import {
   verify as verifyBytes
 } from "node:crypto";
 import {
+  canonicalIntegrityBytes,
   canonicalJson,
   digestObject,
   immutableJson,
@@ -624,7 +625,7 @@ export class LocalInvocationAuthority {
     });
     const signature = signBytes(
       null,
-      Buffer.from(canonicalJson(unsigned), "utf8"),
+      canonicalIntegrityBytes(unsigned),
       this.#privateKey
     ).toString("base64url");
     return immutableJson({ ...unsigned, signature });
@@ -717,7 +718,7 @@ export class InvocationVerifier {
     const unsigned = unsignedEnvelope(envelope);
     const signatureValid = verifyBytes(
       null,
-      Buffer.from(canonicalJson(unsigned), "utf8"),
+      canonicalIntegrityBytes(unsigned),
       trustedKey.publicKey,
       Buffer.from(signature, "base64url")
     );

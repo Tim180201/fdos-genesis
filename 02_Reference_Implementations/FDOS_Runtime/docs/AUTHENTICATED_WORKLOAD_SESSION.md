@@ -112,7 +112,7 @@ verification.
 
 ## Signed Statement and Envelope
 
-The one-use authority signs canonical JSON for:
+The one-use authority signs the canonical JSON v2 integrity bytes for:
 
 ```text
 schemaVersion: 1.0
@@ -121,6 +121,8 @@ sessionDigest
 requestDigest
 responseDigest
 ```
+
+Those bytes include the `fdos-canonical-json:2.0` integrity-domain prefix.
 
 The exact authenticated envelope contains:
 

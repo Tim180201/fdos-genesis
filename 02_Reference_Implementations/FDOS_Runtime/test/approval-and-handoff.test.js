@@ -189,15 +189,15 @@ test("handoff suspends parent and returns explicit specialist result", async (t)
   const child = await harness.runtime.handoffTask({
     taskId: intake.id,
     actor: harness.chief,
-    targetRoleId: "operations",
+    targetRoleId: "chief-of-staff",
     title: "Validate one intake constraint",
     context: "Check whether the stated no-external-action boundary is explicit.",
     desiredOutcome: "A boolean validation with rationale.",
     requiredOutputFields: ["valid", "rationale"]
   });
   assert.equal(harness.runtime.getTask(intake.id, harness.chief).status, "waiting_handoff");
-  await harness.runtime.claimTask(child.id, harness.operations);
-  await harness.runtime.completeTask(child.id, harness.operations, {
+  await harness.runtime.claimTask(child.id, harness.chief);
+  await harness.runtime.completeTask(child.id, harness.chief, {
     valid: true,
     rationale: "The boundary is explicit."
   });
@@ -221,27 +221,27 @@ test("handoff depth is bounded by the workflow definition", async (t) => {
   const first = await harness.runtime.handoffTask({
     taskId: intake.id,
     actor: harness.chief,
-    targetRoleId: "operations",
+    targetRoleId: "chief-of-staff",
     title: "First handoff",
     context: "Depth one.",
     desiredOutcome: "Analysis."
   });
-  await harness.runtime.claimTask(first.id, harness.operations);
+  await harness.runtime.claimTask(first.id, harness.chief);
   const second = await harness.runtime.handoffTask({
     taskId: first.id,
-    actor: harness.operations,
-    targetRoleId: "marketing",
+    actor: harness.chief,
+    targetRoleId: "chief-of-staff",
     title: "Second handoff",
     context: "Depth two.",
     desiredOutcome: "Analysis."
   });
-  await harness.runtime.claimTask(second.id, harness.marketing);
+  await harness.runtime.claimTask(second.id, harness.chief);
   await assert.rejects(
     () =>
       harness.runtime.handoffTask({
         taskId: second.id,
-        actor: harness.marketing,
-        targetRoleId: "operations",
+        actor: harness.chief,
+        targetRoleId: "chief-of-staff",
         title: "Third handoff",
         context: "Depth three must fail.",
         desiredOutcome: "Denied."

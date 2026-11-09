@@ -79,7 +79,7 @@ test("SQLite store commits a contiguous hash-chained transaction", async (t) => 
   );
   assert.deepEqual(store.status(), {
     kind: "sqlite",
-    schemaVersion: "1.0",
+    schemaVersion: "2.0",
     transactional: true,
     transactionCount: 1,
     committedTransactionCount: 1,
@@ -163,7 +163,7 @@ test("SQLite store rejects empty transactions and stale transaction contexts", a
     });
     assert.deepEqual(store.status(), {
       kind: "sqlite",
-      schemaVersion: "1.0",
+      schemaVersion: "2.0",
       transactional: true,
       transactionCount: 1,
       committedTransactionCount: 0,
@@ -394,8 +394,29 @@ test("SQLite transaction-metadata tampering is rejected on reopen", async (t) =>
        SET event_count = 1`
     )
     .run();
-  versionTamper.exec("PRAGMA user_version = 2");
+  versionTamper.exec("PRAGMA user_version = 3");
   versionTamper.close();
+  await assert.rejects(
+    () => SqliteEventStore.open({ directory }),
+    IntegrityError
+  );
+});
+
+test("SQLite store rejects another canonical JSON format", async (t) => {
+  const directory = await storeDirectory(t);
+  const store = await SqliteEventStore.open({ directory });
+  const filePath = store.filePath;
+  await store.close();
+
+  const database = new DatabaseSync(filePath);
+  database
+    .prepare(
+      `UPDATE fdos_metadata
+       SET value = '1.0'
+       WHERE key = 'canonical_json_format'`
+    )
+    .run();
+  database.close();
   await assert.rejects(
     () => SqliteEventStore.open({ directory }),
     IntegrityError
