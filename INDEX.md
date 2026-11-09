@@ -41,8 +41,8 @@ Operational Mode: Project Validation
 |---|---|---|
 | Reference Implementation | `02_Reference_Implementations/FDOS_Runtime/` | Level 1 — Experimental |
 | Project | `03_Projects/Company_OS_Pilot/` | Technical slice passed; human review pending |
-| Project | `03_Projects/Release_Evidence_Alpha/` | Plan 0 documented; implementation pending ADR-0055 |
-| Proposed ADR | `00_Specification/ADR/ADR-0055_Release_Evidence_Alpha_Experiment.md` | Planning authorized; experiment decision pending |
+| Project | `03_Projects/Release_Evidence_Alpha/` | Phase 0 integrity reproduction and repair active |
+| ADR | `00_Specification/ADR/ADR-0055_Release_Evidence_Alpha_Experiment.md` | Accepted for experiment; Phase 0 authorized |
 | Evidence | `04_Evidence/fdos-runtime/EV-FDOS-RUNTIME-PILOT-001.md` | Evidence Item |
 | Evidence | `04_Evidence/fdos-runtime/EV-FDOS-REFERENCE-INTAKE-002.md` | Evidence Item |
 | Evidence | `04_Evidence/fdos-runtime/EV-FDOS-AUTHENTICATED-INVOCATION-003.md` | Evidence Item |

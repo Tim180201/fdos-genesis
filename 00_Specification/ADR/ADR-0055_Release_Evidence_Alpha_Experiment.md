@@ -1,6 +1,6 @@
 # ADR-0055 — Release Evidence Alpha Experiment
 
-Status: Proposed for Experiment; Planning Authorized
+Status: Accepted for Experiment; Phase 0 Implementation Authorized
 Decision Date: 2026-11-09
 Decision Owner: Human Governance
 Validation Level: Level 1 — Experimental
@@ -8,12 +8,13 @@ Repository Baseline: `7e3960c088f15d2640a7717bcae0366b9d3cd0ec`
 
 ## Decision
 
-FDOS may plan a bounded Release Evidence Alpha as a new validation project
+FDOS may execute a bounded Release Evidence Alpha as a new validation project
 under `03_Projects/Release_Evidence_Alpha/`.
 
-If Human Governance accepts implementation, the Alpha shall extend the
-existing experimental FDOS Runtime selectively. It shall not create a second
-platform, redefine the FDOS Core or imply production readiness.
+Human Governance accepted the Plan 0 package and authorized Phase 0 on
+2026-11-09. The Alpha shall extend the existing experimental FDOS Runtime
+selectively. It shall not create a second platform, redefine the FDOS Core or
+imply production readiness.
 
 The Alpha shall prove one narrow outcome:
 

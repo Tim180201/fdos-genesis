@@ -105,12 +105,12 @@ authenticated read-only connector.
 
 Then use FDOS and ADO in further real projects.
 
-A separate bounded product-validation proposal is documented under
-`03_Projects/Release_Evidence_Alpha/` and proposed ADR-0055. It narrows the
+A separate bounded product-validation experiment is documented under
+`03_Projects/Release_Evidence_Alpha/` and accepted ADR-0055. It narrows the
 next experiment to exact release-evidence applicability for one GitHub/Actions
-workflow with controlled Technical Lead, Programmer and Reviewer roles. Plan
-0 does not authorize implementation, external operation or FDOS Core
-expansion.
+workflow with controlled Technical Lead, Programmer and Reviewer roles. Phase
+0 authorizes integrity reproduction and repair only; it does not authorize
+external operation or FDOS Core expansion.
 
 Do not expand the Core until real evidence proves the need.
 

@@ -1,8 +1,8 @@
 # FDOS Release Evidence Alpha
 
-Status: Active Planning — Implementation Not Yet Accepted
+Status: Active Experiment — Phase 0 Authorized
 Owner: Human Governance
-Proposed ADR: `../../00_Specification/ADR/ADR-0055_Release_Evidence_Alpha_Experiment.md`
+Accepted ADR: `../../00_Specification/ADR/ADR-0055_Release_Evidence_Alpha_Experiment.md`
 Reference Implementation: `../../02_Reference_Implementations/FDOS_Runtime/`
 Validation Level: Level 1 — Experimental
 Planning Date: 2026-11-09
@@ -74,14 +74,15 @@ work is repeated.
 - Product direction documented.
 - Alpha boundaries documented.
 - Architecture and security plan documented.
-- Implementation has not started.
+- Human Governance accepted Plan 0 and authorized Phase 0 on 2026-11-09.
+- Implementation begins with independent defect reproduction; no product
+  feature work is authorized before Gate G1.
 - Reported security findings have not yet been reproduced inside this
   project.
 - External actions and customer-system mutations remain disabled.
 
 ## Next Gate
 
-Human Governance reviews ADR-0055 and the Plan 0 package. If accepted, Phase 0
-begins with independent reproduction tests for the three reported security
-defects and the OCI fixture failure. No new agent or GitHub feature precedes
-that work.
+Gate G1 requires independent reproduction and accepted repairs for the three
+reported security defects and the OCI fixture failure. No new agent or GitHub
+feature precedes that work.

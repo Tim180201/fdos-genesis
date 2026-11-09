@@ -168,3 +168,15 @@ they cannot modify tools, capabilities, memory, policy or approvals.
 
 Rationale: Agents may have recognizable personalities without turning persona
 configuration into an authority or prompt-injection channel.
+
+## REA-DEC-017 — Accept Plan 0 and Authorize Phase 0
+
+Date: 2026-11-09
+
+Decision: Human Governance accepted the Release Evidence Alpha Plan 0 and
+authorized Phase 0 integrity reproduction and repair work inside the FDOS
+repository.
+
+Rationale: The plan now defines scope, authority, architecture, acceptance,
+risk and stop gates sufficiently to begin bounded implementation without
+authorizing product expansion or external operation.

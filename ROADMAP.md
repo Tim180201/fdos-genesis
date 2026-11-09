@@ -70,10 +70,11 @@ FDOS Runtime Level 1
 → Single-Project Validation Decision
 ```
 
-## Proposed Product Validation Track
+## Active Product Validation Track
 
 Plan 0 for a materially narrower Release Evidence Alpha is documented under
-`03_Projects/Release_Evidence_Alpha/` and proposed ADR-0055.
+`03_Projects/Release_Evidence_Alpha/`. Human Governance accepted ADR-0055 and
+authorized Phase 0 integrity work on 2026-11-09.
 
 ```text
 Human Plan Review

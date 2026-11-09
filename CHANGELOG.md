@@ -2,9 +2,9 @@
 
 ## Unreleased — FDOS Runtime Level 1 Experiment
 
-- Added proposed ADR-0055 and the Release Evidence Alpha Plan 0 package,
-  documenting a narrow GitHub/Actions product-validation path without
-  authorizing implementation or changing the FDOS Core.
+- Added and accepted ADR-0055 plus the Release Evidence Alpha Plan 0 package,
+  authorizing Phase 0 integrity reproduction and repair for a narrow
+  GitHub/Actions product-validation path without changing the FDOS Core.
 - Added ADR-0043 authorizing a bounded FDOS Runtime Reference Implementation
   experiment without changing the FDOS Core.
 - Added ADR-0044 authorizing an authenticated Invocation boundary experiment

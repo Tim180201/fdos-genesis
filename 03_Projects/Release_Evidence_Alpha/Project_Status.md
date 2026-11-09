@@ -1,15 +1,15 @@
 # Release Evidence Alpha — Project Status
 
-Status: Plan 0 Documented; Human Governance Review Pending
+Status: Phase 0 Active — Integrity Reproduction and Repair
 Status Date: 2026-11-09
 Owner: Human Governance
-Branch: `codex/release-evidence-plan-0`
+Branch: `codex/release-evidence-phase-0`
 Starting Commit: `7e3960c088f15d2640a7717bcae0366b9d3cd0ec`
 
 ## Current Decision State
 
 - Product direction: documented.
-- Implementation authorization: pending acceptance of proposed ADR-0055.
+- Implementation authorization: Phase 0 accepted under ADR-0055.
 - FDOS Core impact: none.
 - Runtime production readiness: not claimed.
 - External repository mutation: disabled.
@@ -26,7 +26,8 @@ Starting Commit: `7e3960c088f15d2640a7717bcae0366b9d3cd0ec`
 - Eight-week internal delivery plan and later pilot gates.
 - Acceptance matrix with technical and commercial evidence requirements.
 - Risk register and project decision log.
-- Proposed ADR-0055 separating the experiment from the FDOS Core.
+- Accepted ADR-0055 separating the experiment from the FDOS Core.
+- Human Governance acceptance of Plan 0 and Phase 0 authorization.
 
 ## Repository Facts at Start
 
@@ -55,15 +56,15 @@ environment and record exact evidence before the project changes their status.
 
 | Gate | State | Blocking condition |
 |---|---|---|
-| G0 — Plan accepted | Pending | Human Governance review of Plan 0 and ADR-0055 |
-| G1 — Integrity base | Not started | REA-SEC-001..003 and REA-TEST-001 unresolved |
+| G0 — Plan accepted | Accepted 2026-11-09 | Plan 0 and ADR-0055 accepted by Human Governance |
+| G1 — Integrity base | Active | REA-SEC-001..003 and REA-TEST-001 unresolved |
 | G2 — Deterministic verifier | Not started | G1 and domain implementation required |
 | G3 — Internal vertical slice | Not started | Verifier, agent contracts and real workflow required |
 | G4 — Internal Alpha | Not started | Three dogfood changes and measurements required |
 | G5 — External pilot | Not authorized | Security/operations hardening and paid pilot required |
 | G6 — Sellable product | Not authorized | Repeated paid use and margin evidence required |
 
-## Immediate Next Actions After G0
+## Active Phase 0 Actions
 
 1. Pin and record the supported runtime environment.
 2. Reproduce REA-SEC-001 and add a multi-hop leakage regression.
