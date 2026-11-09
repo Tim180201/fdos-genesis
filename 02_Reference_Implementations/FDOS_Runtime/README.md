@@ -29,6 +29,13 @@ contains no autonomous model call, real connector or external execution.
 Callers supply all substantive work results; FDOS governs who may act, in
 which order, within which information scope and under which approval.
 
+Runtime `0.15.0-experimental` also contains the G2 Release Evidence domain
+candidate: immutable change/decision revisions, exact release baselines,
+deterministic evidence eligibility, exact human release approval and atomic
+single-use authorization with SQLite-backed replay. It is local-only,
+review-pending and does not connect GitHub, execute a release or render the
+final dossier.
+
 ## Implemented Scope
 
 - separate Chief of Staff, Operations and Marketing role definitions;
@@ -111,6 +118,18 @@ which order, within which information scope and under which approval.
 - exclusive, process-leased ownership of each local event store;
 - append-only, hash-chained audit events;
 - evidence-bundle export without raw task content;
+- versioned immutable Change and Decision Revisions;
+- exact Work Order, Release Candidate and Release Baseline bindings;
+- exact Evidence, Finding, Policy, Approval and typed Relationship contracts;
+- independent evidence, implementation, review, approval and release status
+  axes;
+- deterministic eligibility with missing, invalid, stale, unknown,
+  untrusted-producer and subject-mismatch findings;
+- deterministic evaluation reproduction from retained exact inputs;
+- admitted human decision and release-approval authority;
+- atomic single-use approval consumption and release authorization through
+  the existing transactional SQLite store;
+- deterministic Release Evidence event replay and restart/replay rejection;
 - deterministic end-to-end pilot and security tests.
 
 ## Intentionally Disabled
@@ -187,9 +206,10 @@ node src/cli.js reference-snapshot company-ai /absolute/path/to/company-ai-platf
 - `src/identity/` — signed Invocation Contexts and public-key verification;
 - `src/domain/` — roles, personality profiles, action and delivery intents,
   connector contracts, worker package and release contracts, OCI workload
-  policy, workflow definitions, plus the ephemeral workload-session and
-  verified-worker-receipt contracts;
-- `src/runtime/` — authenticated gateway, coordination, approvals and memory;
+  policy, workflow definitions, Release Evidence contracts, plus the
+  ephemeral workload-session and verified-worker-receipt contracts;
+- `src/runtime/` — authenticated gateway, coordination, approvals, memory and
+  the transactional Release Evidence coordinator;
 - `src/integrations/` — read-only reference, process-worker and local OCI
   admission boundaries;
 - `src/workers/` — verifier bootstrap, closed dry-run protocol and packaged
@@ -213,6 +233,7 @@ See:
 - `docs/AUTHENTICATED_WORKLOAD_SESSION.md`
 - `docs/VERIFIED_WORKER_RECEIPT.md`
 - `docs/OCI_WORKLOAD_ADMISSION.md`
+- `docs/RELEASE_EVIDENCE_DOMAIN.md`
 - `docs/AGENT_AND_ROLE_MODEL.md`
 - `docs/AGENT_PERSONALITY_MODEL.md`
 - `docs/SECURITY_MODEL.md`

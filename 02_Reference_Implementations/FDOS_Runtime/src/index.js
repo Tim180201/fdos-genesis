@@ -110,6 +110,76 @@ export {
   WorkflowRegistry
 } from "./domain/workflow-definition.js";
 export {
+  CLASSIFICATIONS as RELEASE_EVIDENCE_CLASSIFICATIONS,
+  RELEASE_EVIDENCE_SCHEMA_VERSION,
+  RELEASE_OBJECT_KINDS
+} from "./domain/release-evidence-common.js";
+export {
+  createChangeRevision,
+  createDecisionRevision,
+  reviseChangeRevision,
+  reviseDecisionRevision,
+  verifyChangeRevision,
+  verifyDecisionRevision
+} from "./domain/release-revisions.js";
+export {
+  createReleaseBaseline,
+  createReleaseCandidate,
+  createWorkOrder,
+  verifyReleaseBaseline,
+  verifyReleaseCandidate,
+  verifyWorkOrder
+} from "./domain/release-work.js";
+export {
+  createEvidenceRecord,
+  createReleaseFinding,
+  EVIDENCE_STATES,
+  FINDING_CODES,
+  verifyEvidenceRecord,
+  verifyReleaseFinding
+} from "./domain/release-evidence-record.js";
+export {
+  createReleaseStatus,
+  RELEASE_STATUS_AXES,
+  transitionReleaseStatus,
+  verifyReleaseStatus,
+  verifyReleaseStatusTransition
+} from "./domain/release-status.js";
+export {
+  createReleaseRelationship,
+  verifyReleaseRelationship
+} from "./domain/release-relationship.js";
+export {
+  consumeReleaseApproval,
+  consumeWorkOrderApproval,
+  createReleaseApproval,
+  createWorkOrderApproval,
+  verifyApprovalConsumption,
+  verifyReleaseApproval,
+  verifyReleaseEvidenceApproval,
+  verifyWorkOrderApproval
+} from "./domain/release-approval.js";
+export {
+  createReleaseAuthorization,
+  verifyReleaseAuthorization,
+  verifyReleaseAuthorizationBinding
+} from "./domain/release-authorization.js";
+export {
+  createReleaseEvidencePolicy,
+  evaluateReleaseEligibility,
+  RELEASE_EVIDENCE_VERIFIER,
+  releaseEvidencePolicyBinding,
+  supportedReleaseFindingCodes,
+  verifyReleaseEvaluation,
+  verifyReleaseEvaluationAgainst,
+  verifyReleaseEvidencePolicy
+} from "./domain/release-eligibility.js";
+export {
+  createReleaseDomainEvent,
+  replayReleaseEvidenceDomain,
+  verifyReleaseDomainEventChain
+} from "./domain/release-evidence-ledger.js";
+export {
   AuthorizationError,
   ConflictError,
   FdosError,
@@ -217,3 +287,6 @@ export {
   FdosRuntime,
   verifyEvidenceBundle
 } from "./runtime/fdos-runtime.js";
+export {
+  ReleaseEvidenceCoordinator
+} from "./runtime/release-evidence-coordinator.js";

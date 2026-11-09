@@ -2,6 +2,23 @@
 
 ## Unreleased — FDOS Runtime Level 1 Experiment
 
+- Added the `0.15.0-experimental` deterministic Release Evidence G2 domain
+  candidate with immutable Change/Decision revisions, exact Work Orders and
+  baselines, evidence/finding/policy contracts, typed relationships and five
+  independent status axes.
+- Added deterministic eligibility reproduction, 31 named adverse
+  applicability fixtures and explicit blocking for missing, invalid, stale,
+  unknown, untrusted-producer, subject-mismatch and unadmitted-authority
+  conditions.
+- Added exact work-order and release approvals plus an atomic content-addressed
+  Release Authorization that consumes approval and records both final status
+  successors in one durable SQLite transaction.
+- Added failure-injection, rollback, restart and post-restart replay tests;
+  the complete candidate suite now passes 202 tests with zero failures or
+  skips.
+- Added proposed ADR-0056 and the versioned Release Evidence domain,
+  migration/reversibility and non-claim documentation. G2 acceptance remains
+  pending independent Human Governance review.
 - Added and accepted ADR-0055 plus the Release Evidence Alpha Plan 0 package,
   authorizing Phase 0 integrity reproduction and repair for a narrow
   GitHub/Actions product-validation path without changing the FDOS Core.
