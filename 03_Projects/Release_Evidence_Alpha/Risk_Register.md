@@ -5,17 +5,17 @@ Review Date: 2026-11-09
 
 | ID | Risk | Severity | Mitigation / Test | Status |
 |---|---|---|---|---|
-| REA-R-001 | Reported handoff leak exposes confidential content | Critical | Reproduce first; provenance, sensitivity inheritance and transfer authorization | Open — blocks G1 |
-| REA-R-002 | False Git path/blob binding creates invalid source evidence | Critical | Trusted Git reconstruction and substitution tests | Open — blocks G1 |
-| REA-R-003 | Canonicalization collision undermines digests and approvals | Critical | Versioned canonicalizer, property tests and migration decision | Open — blocks G1 |
-| REA-R-004 | Host-dependent OCI fixture keeps supported suite red | High | Small controlled fixture; retain explicit production size limits | Open — blocks G1 |
+| REA-R-001 | Reported handoff leak exposes confidential content | Critical | Reproduce first; provenance, sensitivity inheritance and transfer authorization | Mitigated by same-department dynamic-handoff boundary; G1 acceptance pending |
+| REA-R-002 | False Git path/blob binding creates invalid source evidence | Critical | Trusted Git reconstruction and substitution tests | Mitigated in `d51f8ce`; G1 acceptance pending |
+| REA-R-003 | Canonicalization collision undermines digests and approvals | Critical | Versioned canonicalizer, property tests and migration decision | Mitigated by canonical JSON v2; G1 acceptance pending |
+| REA-R-004 | Host-dependent OCI fixture keeps supported suite red | High | Small controlled fixture; retain explicit production size limits | Mitigated by controlled fixture and exact boundary tests; G1 acceptance pending |
 | REA-R-005 | Existing runtime complexity costs more than selective replacement | High | Measure repair effort; permit small module replacement behind stable contracts | Open |
 | REA-R-006 | Native GitHub/CI features provide equivalent value | High | Implement identical reference case with native controls and compare | Open — commercial kill risk |
 | REA-R-007 | Evidence applicability rules create false green | Critical | Adversarial corpus, mutation matrix and unknown-fails-closed rule | Open |
 | REA-R-008 | Excess false blocks make product unusable | High | Explainable findings, golden cases and measured operator intervention | Open |
 | REA-R-009 | Agent prompt injection alters scope or claims | High | Closed contracts, isolated context and deterministic validation | Open |
 | REA-R-010 | Reviewer is not meaningfully independent | High | Separate identity/context; prohibit self-review; human gate | Open |
-| REA-R-011 | Shared documents leak beyond task need | High | Context Projection and classification/provenance tests | Open |
+| REA-R-011 | Shared documents leak beyond task need | High | Context Projection and classification/provenance tests | Open — cross-department dynamic handoff remains disabled pending G3 projection model |
 | REA-R-012 | Multi-agent parallelism causes conflicting implementation | Medium | One Programmer first; isolated worktrees and dependency graph before expansion | Mitigated by scope |
 | REA-R-013 | GitHub permissions or credentials are too broad | Critical | Minimal manifest, no source write, secret lifecycle before G5 | Open — external gate |
 | REA-R-014 | Local controls are mistaken for production security | High | Explicit Level 1 status and repeated known-gap disclosure | Open interpretation risk |

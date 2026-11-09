@@ -180,3 +180,43 @@ repository.
 Rationale: The plan now defines scope, authority, architecture, acceptance,
 risk and stop gates sufficiently to begin bounded implementation without
 authorizing product expansion or external operation.
+
+## REA-DEC-018 — Introduce Canonical JSON v2 as a Breaking Boundary
+
+Date: 2026-11-09
+
+Decision: Preserve every supported own property, reject ambiguous JavaScript
+shapes and bind `fdos-canonical-json:2.0` directly into affected digests and
+signatures. Reject old non-empty stores rather than silently migrating or
+re-signing them.
+
+Rationale: The `__proto__` collision invalidated the assumption that distinct
+supported input always has distinct canonical meaning. Cryptographic format
+changes require explicit versioning and must not retroactively upgrade old
+authority.
+
+## REA-DEC-019 — Disable Free-Form Cross-Department Handoffs
+
+Date: 2026-11-09
+
+Decision: Restrict dynamic free-form handoffs to roles in the same department.
+Use predeclared workflow dependencies for current cross-department work. Do
+not add a declassification shortcut during Phase 0.
+
+Rationale: The existing handoff accepted caller-declared sensitivity without
+trusted source provenance. A fail-closed boundary is safer and smaller than
+inventing an incomplete transfer model. Dynamic cross-department work may
+return only after task-scoped Context Projection and independent Human
+Governance declassification exist.
+
+## REA-DEC-020 — Retain the OCI Launcher Security Limit
+
+Date: 2026-11-09
+
+Decision: Replace the host Node executable test fixture with controlled local
+fixtures and test the exact 64 MiB boundary. Do not raise the runtime launcher
+size limit to make an environment-specific test pass.
+
+Rationale: Test portability and production admission policy are separate
+concerns. Weakening the policy would hide the fixture defect instead of
+repairing it.

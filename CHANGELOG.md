@@ -5,6 +5,18 @@
 - Added and accepted ADR-0055 plus the Release Evidence Alpha Plan 0 package,
   authorizing Phase 0 integrity reproduction and repair for a narrow
   GitHub/Actions product-validation path without changing the FDOS Core.
+- Implemented the bounded Release Evidence Phase 0 integrity repairs:
+  canonical JSON v2 with explicit migration boundaries, trusted Git
+  path/object reconstruction, same-department-only dynamic handoffs and a
+  host-independent OCI launcher fixture without raising the 64 MiB limit.
+- Advanced the experimental Runtime to `0.14.0-experimental`, event and SQLite
+  schemas to `2.0`, and retained a newly signed deterministic v3 worker
+  package after the canonical integrity change.
+- Expanded the complete Runtime suite to 159 passing tests with zero failures
+  or skips; recorded 91.61% line, 79.50% branch and 92.80% function coverage.
+- Added Evidence Item `EV-FDOS-PHASE0-INTEGRITY-014` and its SHA-256 source
+  manifest. Gate G1 remains subject to Human Governance or independent
+  acceptance.
 - Added ADR-0043 authorizing a bounded FDOS Runtime Reference Implementation
   experiment without changing the FDOS Core.
 - Added ADR-0044 authorizing an authenticated Invocation boundary experiment

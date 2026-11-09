@@ -1,6 +1,6 @@
 # ADR-0055 — Release Evidence Alpha Experiment
 
-Status: Accepted for Experiment; Phase 0 Implementation Authorized
+Status: Accepted for Experiment; Phase 0 Implemented; G1 Review Pending
 Decision Date: 2026-11-09
 Decision Owner: Human Governance
 Validation Level: Level 1 — Experimental
@@ -15,6 +15,10 @@ Human Governance accepted the Plan 0 package and authorized Phase 0 on
 2026-11-09. The Alpha shall extend the existing experimental FDOS Runtime
 selectively. It shall not create a second platform, redefine the FDOS Core or
 imply production readiness.
+
+Implementation note: commit `d51f8ce` completed the bounded Phase 0 repairs.
+Evidence item `EV-FDOS-PHASE0-INTEGRITY-014` awaits Human Governance or
+independent Gate G1 acceptance. G2 is not authorized by this implementation.
 
 The Alpha shall prove one narrow outcome:
 
@@ -33,8 +37,9 @@ or a real GitHub-to-release workflow.
 An independent product and technical review dated 2026-11-09 recommended a
 materially narrower product direction: a GitHub-near Release Evidence service
 for existing software teams. The review also reported three integrity or
-confidentiality defects and a non-green test baseline. Those findings are
-inputs to Phase 0, not yet validated FDOS Evidence Items.
+confidentiality defects and a non-green test baseline. Those findings were
+Phase 0 inputs and are now addressed by the review-pending Evidence Item
+`EV-FDOS-PHASE0-INTEGRITY-014`.
 
 The proposed experiment exists to test the product direction without
 unfreezing the FDOS Core or building a general autonomous company platform.

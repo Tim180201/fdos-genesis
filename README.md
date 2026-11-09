@@ -58,6 +58,7 @@ Review and validate the Level 1 Company OS Pilot:
 - `04_Evidence/fdos-runtime/EV-FDOS-WORKLOAD-SESSION-011.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-WORKER-RECEIPT-012.md`
 - `04_Evidence/fdos-runtime/EV-FDOS-OCI-ADMISSION-013.md`
+- `04_Evidence/fdos-runtime/EV-FDOS-PHASE0-INTEGRITY-014.md`
 
 The pilot now includes exact read-only Git reference intake for TapTime and
 Company AI, Human-reviewed source provenance and an exclusive local runtime
@@ -96,7 +97,7 @@ recorded host had no running daemon or FDOS image, so the provider failed
 closed and no container ran. This is admission evidence, not portable
 isolation or immutable-deployment evidence.
 
-Human Governance should review all thirteen evidence records and the remaining
+Human Governance should review all fourteen evidence records and the remaining
 identity, database, recovery, model and isolation limits. The deprecated
 Darwin adapter must be replaced by a supported portable sandbox with outbound
 allowlisting, read/resource restrictions, workload identity, immutable
@@ -109,8 +110,8 @@ A separate bounded product-validation experiment is documented under
 `03_Projects/Release_Evidence_Alpha/` and accepted ADR-0055. It narrows the
 next experiment to exact release-evidence applicability for one GitHub/Actions
 workflow with controlled Technical Lead, Programmer and Reviewer roles. Phase
-0 authorizes integrity reproduction and repair only; it does not authorize
-external operation or FDOS Core expansion.
+0 repairs are implemented in commit `d51f8ce`; Gate G1 acceptance is still
+pending. This does not authorize G2, external operation or FDOS Core expansion.
 
 Do not expand the Core until real evidence proves the need.
 

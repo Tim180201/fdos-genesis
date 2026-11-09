@@ -1,6 +1,6 @@
 # FDOS Release Evidence Alpha
 
-Status: Active Experiment — Phase 0 Authorized
+Status: Active Experiment — Phase 0 Implemented, G1 Review Required
 Owner: Human Governance
 Accepted ADR: `../../00_Specification/ADR/ADR-0055_Release_Evidence_Alpha_Experiment.md`
 Reference Implementation: `../../02_Reference_Implementations/FDOS_Runtime/`
@@ -55,6 +55,7 @@ work is repeated.
 | `Risk_Register.md` | Active product, technical and operational risks |
 | `Decision_Log.md` | Project-level decisions and rationale |
 | `Project_Status.md` | Current verified state and next action |
+| `Gate_G1_Review.md` | Human/independent acceptance checklist for the Phase 0 evidence |
 
 ## Operating Rules
 
@@ -75,14 +76,15 @@ work is repeated.
 - Alpha boundaries documented.
 - Architecture and security plan documented.
 - Human Governance accepted Plan 0 and authorized Phase 0 on 2026-11-09.
-- Implementation begins with independent defect reproduction; no product
-  feature work is authorized before Gate G1.
-- Reported security findings have not yet been reproduced inside this
-  project.
+- Commit `d51f8ce` implements the Phase 0 confidentiality, Git binding,
+  canonicalization and OCI fixture repairs.
+- Evidence item `EV-FDOS-PHASE0-INTEGRITY-014` records 159 passing tests,
+  coverage, migration boundaries and remaining non-claims.
+- Gate G1 requires Human Governance or independent review; product feature
+  work remains unauthorized until that decision.
 - External actions and customer-system mutations remain disabled.
 
 ## Next Gate
 
-Gate G1 requires independent reproduction and accepted repairs for the three
-reported security defects and the OCI fixture failure. No new agent or GitHub
-feature precedes that work.
+Gate G1 review must accept or reject REA-AC-001 through REA-AC-007. No new
+agent or GitHub feature precedes explicit G1 acceptance and G2 authorization.

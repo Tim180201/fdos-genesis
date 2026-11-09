@@ -1,6 +1,6 @@
 # Release Evidence Alpha — Security and Threat Model
 
-Status: Planning Baseline
+Status: Phase 0 Controls Implemented — G1 Review Pending
 Date: 2026-11-09
 Validation Level: Level 1 — Experimental
 
@@ -57,28 +57,31 @@ These assumptions are insufficient for a hosted or customer-facing service.
     authorizes the exact effect.
 12. Every accepted state transition is attributable and replayable.
 
-## Reported Phase 0 Findings
+## Phase 0 Findings and Repair State
 
 The 2026-11-09 review reported the following defects at repository baseline
-`7e3960c088f15d2640a7717bcae0366b9d3cd0ec`. They are treated as reported
-findings until independently reproduced by project tests.
+`7e3960c088f15d2640a7717bcae0366b9d3cd0ec`. The three security conditions
+were reproduced with adverse tests. The OCI failure was environment-dependent
+and did not fail on the recorded small Node binary, but its fixture dependency
+was confirmed and removed.
 
-| ID | Reported condition | Impact | Required repair gate |
+| ID | Condition | Implemented Phase 0 control | Acceptance state |
 |---|---|---|---|
-| REA-SEC-001 | Confidential source content can be copied into a lower-classified handoff/task | Cross-scope disclosure | Source labels, highest-sensitivity inheritance, transfer authorization and independent declassification |
-| REA-SEC-002 | Controlled Git snapshot input can assert a false path/blob association | False source evidence | Reconstruct commit, tree, path, mode and blob from trusted Git data |
-| REA-SEC-003 | Canonical JSON can lose an own `__proto__` property | Different inputs may share a digest | Versioned safe canonicalization, adversarial tests and explicit migration policy |
-| REA-TEST-001 | OCI tests depend on the size of the host Node.js binary fixture | Non-portable red test suite | Controlled small launcher fixture plus explicit size-boundary tests; do not raise the security limit |
+| REA-SEC-001 | Confidential source content can be copied into a lower-classified handoff/task | Free-form dynamic handoffs are same-department only; direct and multi-hop transfer tests | Implemented; G1 review pending |
+| REA-SEC-002 | Controlled Git snapshot input can assert a false path/blob association | Trusted Git reconstructs commit, tree, full manifest and exact path/object tuple before read | Implemented; G1 review pending |
+| REA-SEC-003 | Canonical JSON can lose an own `__proto__` property | Canonical JSON v2 preserves own data, rejects ambiguous shapes and domain-separates integrity bytes | Implemented; G1 review pending |
+| REA-TEST-001 | OCI tests depend on the size of the host Node.js binary fixture | Controlled launcher fixture plus exact 64 MiB and 64 MiB + 1 boundary tests; limit unchanged | Implemented; G1 review pending |
 
-No GitHub integration, agent automation or external pilot precedes these
-repair gates.
+Evidence is recorded in `EV-FDOS-PHASE0-INTEGRITY-014`. No GitHub integration,
+agent automation or external pilot precedes Human Governance acceptance of
+Gate G1.
 
 ## Threats and Controls
 
 | ID | Threat | Required control | Alpha evidence |
 |---|---|---|---|
 | REA-T-001 | Agent reads unrelated or more sensitive documents | Task-scoped Context Projection with classification ceiling | Positive and negative access tests |
-| REA-T-002 | Handoff lowers sensitivity | Highest-source sensitivity inheritance; explicit declassification | Multi-hop leakage regression |
+| REA-T-002 | Handoff lowers sensitivity | Same-department-only dynamic handoff now; future cross-department projection requires independent declassification | Direct and multi-hop leakage regression |
 | REA-T-003 | Agent claims another role | Server-side Agent Registry role derivation | Conflicting-role rejection test |
 | REA-T-004 | Agent expands Work Order | Exact approved Work Order digest and path/tool allowlists | Changed-scope rejection test |
 | REA-T-005 | Reviewer approves own code | Separate agent identity and implementation attribution | Self-review rejection test |

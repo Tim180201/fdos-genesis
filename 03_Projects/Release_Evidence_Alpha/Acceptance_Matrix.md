@@ -21,7 +21,7 @@ All items below begin as `Planned` unless stated otherwise in
 | ID | Mandatory acceptance | Required evidence | Gate |
 |---|---|---|---|
 | REA-AC-001 | Confidential data cannot enter a lower-classified task through direct or multi-hop handoff | Regression and adverse transfer tests | G1 |
-| REA-AC-002 | Declassification requires an independent authorized record | Positive/negative declassification tests | G1 |
+| REA-AC-002 | Declassification requires an independent authorized record; until that mechanism exists, every free-form cross-department handoff is rejected | Negative transfer tests now; positive and negative declassification tests before any future mechanism is enabled | G1 |
 | REA-AC-003 | Git evidence reconstructs commit, tree, path, mode and blob from trusted repository data | Valid fixture and path/blob substitution rejection | G1 |
 | REA-AC-004 | Canonicalization preserves every supported own property, including `__proto__`, or rejects input explicitly | Unit, property and collision regression tests | G1 |
 | REA-AC-005 | Canonical format version participates in every affected digest/signature contract | Contract and migration tests | G1 |

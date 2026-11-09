@@ -41,8 +41,8 @@ Operational Mode: Project Validation
 |---|---|---|
 | Reference Implementation | `02_Reference_Implementations/FDOS_Runtime/` | Level 1 — Experimental |
 | Project | `03_Projects/Company_OS_Pilot/` | Technical slice passed; human review pending |
-| Project | `03_Projects/Release_Evidence_Alpha/` | Phase 0 integrity reproduction and repair active |
-| ADR | `00_Specification/ADR/ADR-0055_Release_Evidence_Alpha_Experiment.md` | Accepted for experiment; Phase 0 authorized |
+| Project | `03_Projects/Release_Evidence_Alpha/` | Phase 0 implemented; Gate G1 Human Review required |
+| ADR | `00_Specification/ADR/ADR-0055_Release_Evidence_Alpha_Experiment.md` | Accepted for experiment; Phase 0 implemented; G1 review pending |
 | Evidence | `04_Evidence/fdos-runtime/EV-FDOS-RUNTIME-PILOT-001.md` | Evidence Item |
 | Evidence | `04_Evidence/fdos-runtime/EV-FDOS-REFERENCE-INTAKE-002.md` | Evidence Item |
 | Evidence | `04_Evidence/fdos-runtime/EV-FDOS-AUTHENTICATED-INVOCATION-003.md` | Evidence Item |
@@ -54,6 +54,9 @@ Operational Mode: Project Validation
 | Evidence | `04_Evidence/fdos-runtime/EV-FDOS-WORKER-ARTIFACT-009.md` | Evidence Item |
 | Evidence | `04_Evidence/fdos-runtime/EV-FDOS-WORKER-PACKAGE-010.md` | Evidence Item |
 | Evidence | `04_Evidence/fdos-runtime/EV-FDOS-WORKLOAD-SESSION-011.md` | Evidence Item |
+| Evidence | `04_Evidence/fdos-runtime/EV-FDOS-WORKER-RECEIPT-012.md` | Evidence Item |
+| Evidence | `04_Evidence/fdos-runtime/EV-FDOS-OCI-ADMISSION-013.md` | Evidence Item |
+| Evidence | `04_Evidence/fdos-runtime/EV-FDOS-PHASE0-INTEGRITY-014.md` | Evidence Item / Human Review Required |
 | Knowledge | `05_Knowledge/Cross_Project_Patterns/KP-006_Approval_Must_Bind_Exact_Action_Intent.md` | Candidate |
 | Knowledge | `05_Knowledge/Cross_Project_Patterns/KP-007_External_Knowledge_Requires_Exact_Source_Binding.md` | Candidate |
 | Knowledge | `05_Knowledge/Cross_Project_Patterns/KP-008_Nontransactional_Event_Store_Requires_Exclusive_Ownership.md` | Candidate |
