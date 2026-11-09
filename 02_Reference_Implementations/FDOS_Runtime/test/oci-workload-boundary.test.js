@@ -9,7 +9,7 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { after, before } from "node:test";
 import {
   createOciWorkloadPolicy,
   digestObject,
@@ -30,6 +30,36 @@ const layerOne = `sha256:${"c".repeat(64)}`;
 const layerTwo = `sha256:${"d".repeat(64)}`;
 const endpoint = "unix:///tmp/fdos-docker-test.sock";
 const MAX_LAUNCHER_BYTES = 64 * 1024 * 1024;
+let controlledLauncherDirectory;
+let controlledLauncherPath;
+let controlledLauncherResolvedPath;
+
+before(async () => {
+  controlledLauncherDirectory = await mkdtemp(
+    path.join(os.tmpdir(), "fdos-controlled-launcher-")
+  );
+  controlledLauncherPath = path.join(
+    controlledLauncherDirectory,
+    "docker-fixture"
+  );
+  await writeFile(controlledLauncherPath, "#!/bin/sh\nexit 0\n", {
+    encoding: "utf8",
+    mode: 0o500,
+    flag: "wx"
+  });
+  await chmod(controlledLauncherPath, 0o500);
+  controlledLauncherResolvedPath = await realpath(
+    controlledLauncherPath
+  );
+});
+
+after(async () => {
+  if (!controlledLauncherDirectory) return;
+  await rm(controlledLauncherDirectory, {
+    recursive: true,
+    force: true
+  });
+});
 
 function mutableClone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -169,7 +199,7 @@ function fakeDockerRunner({
 
 function provider(commandRunner) {
   return new DockerOciWorkloadProvider({
-    executable: process.execPath,
+    executable: controlledLauncherPath,
     endpoint,
     commandRunner
   });
@@ -411,7 +441,7 @@ test("Docker OCI preflight binds runtime, image and exact hardened launch templa
     ["version", "info", "inspect"]
   );
   for (const call of fake.calls) {
-    assert.equal(call.executable, process.execPath);
+    assert.equal(call.executable, controlledLauncherResolvedPath);
     assert.equal(call.arguments[0], "--host");
     assert.equal(call.arguments[1], endpoint);
   }

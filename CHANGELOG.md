@@ -19,6 +19,10 @@
 - Added proposed ADR-0056 and the versioned Release Evidence domain,
   migration/reversibility and non-claim documentation. G2 acceptance remains
   pending independent Human Governance review.
+- Replaced the remaining OCI preflight tests' implicit `process.execPath`
+  launcher with one controlled executable fixture after cross-version
+  validation reproduced the old host-binary-size dependency on Node.js 22;
+  the complete suite now passes on both Node.js 22.23.0 and pinned 26.3.1.
 - Added and accepted ADR-0055 plus the Release Evidence Alpha Plan 0 package,
   authorizing Phase 0 integrity reproduction and repair for a narrow
   GitHub/Actions product-validation path without changing the FDOS Core.
