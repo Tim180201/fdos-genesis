@@ -69,3 +69,23 @@ FDOS Runtime Level 1
 → Authenticated Read-Only Sandboxed Connector
 → Single-Project Validation Decision
 ```
+
+## Proposed Product Validation Track
+
+Plan 0 for a materially narrower Release Evidence Alpha is documented under
+`03_Projects/Release_Evidence_Alpha/` and proposed ADR-0055.
+
+```text
+Human Plan Review
+→ Integrity and Confidentiality Repairs
+→ Deterministic Release Evidence Verifier
+→ Technical Lead / Programmer / Reviewer Vertical Slice
+→ Three Internal FDOS Changes
+→ Measured Internal Alpha Decision
+→ Separately Authorized Paid External Pilot
+```
+
+This track does not unfreeze the FDOS Core. It remains subordinate to the
+existing evidence, security and Human Governance gates. No broad Company OS,
+multi-integration platform or production SaaS expansion is authorized by the
+planning documents.
