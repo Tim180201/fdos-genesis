@@ -1,6 +1,9 @@
 # FDOS Genesis
 
-Status: Long-Term Stable  
+> **Eingefroren seit 2026-11-10.** Dieses Repository wird nicht weiterentwickelt; es bleibt als Referenz stehen (Tag `freeze-2026-11-10` auf `main`, Tag `herkunft-abnahme-dossier` auf `5f020a9`).
+> Die Weiterentwicklung findet im Repository **`abnahme-dossier`** statt: Produkt Stufe 1 (Abnahme-Dossier), Richtung in `docs/vision.md`, Weg in `docs/plan.md`. Der Kernel (Canonical JSON v2, Validierung, Content-Adressierung) wurde aus Commit `5f020a9` dieses Repositories übernommen (ADR 0001 dort).
+
+Status: Long-Term Stable (eingefroren)  
 Repository Baseline: v3.12.0 Clean LTS  
 Mode: Project Validation
 
